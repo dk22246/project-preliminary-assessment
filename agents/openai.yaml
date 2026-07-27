@@ -1,0 +1,4 @@
+interface:
+  display_name: "项目前期评估"
+  short_description: "面向三亚中央商务区招商人员的企业尽调政策匹配与落地初判"
+  default_prompt: "Use $project-preliminary-assessment to assess a company for a Sanya CBD investment prospect and deliver a verified Word report."
