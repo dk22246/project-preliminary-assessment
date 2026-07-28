@@ -3,4 +3,4 @@ __pycache__/
 .pytest_cache/
 outputs/
 qa_*/
-
+examples/nanfu-report-data.json

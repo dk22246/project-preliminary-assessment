@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Sanya CBD Preliminary Assessment Report Data",
+  "type": "object",
+    "required": ["meta", "entity_resolution", "equity", "businesses", "financials", "risks", "landing_businesses", "policy_research", "policies", "sources"],
+  "properties": {
+    "meta": {"type": "object", "required": ["report_title", "generated_at", "reporting_entity"]},
+    "entity_resolution": {"type": "object", "required": ["user_input", "name_type", "legal_entity", "analysis_entity", "financial_scope", "risk_scope"]},
+    "equity": {"type": "object", "required": ["nodes", "edges"]},
+    "businesses": {"type": "array", "minItems": 1},
+    "financials": {"type": "array", "minItems": 3},
+    "government_support": {"type": "array"},
+    "risks": {"type": "object"},
+    "landing_businesses": {"type": "array", "minItems": 1},
+    "policy_research": {"type": "array", "minItems": 1},
+    "policies": {"type": "array"},
+    "sources": {"type": "array", "minItems": 1}
+  }
+}

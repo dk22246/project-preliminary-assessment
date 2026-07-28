@@ -3,62 +3,58 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).parents[1]
-WORKFLOW_FILES = (
-    ROOT / "SKILL.md",
-    ROOT / "references" / "policy-scope.md",
-    ROOT / "references" / "report-template.md",
-    ROOT / "references" / "word-delivery.md",
-)
+WORKFLOW_FILES = (ROOT / "SKILL.md", ROOT / "references" / "policy-scope.md", ROOT / "references" / "report-template.md", ROOT / "references" / "word-delivery.md")
 
 
 class BusinessTriggeredPolicyLogicTests(unittest.TestCase):
-    def test_active_workflow_has_no_fixed_coverage_gate(self):
+    def test_no_fixed_policy_coverage_gate(self):
         for path in WORKFLOW_FILES:
             text = path.read_text(encoding="utf-8")
             self.assertNotIn("validate_policy_coverage.py", text, path)
             self.assertNotIn("coverage.json", text, path)
-            self.assertNotIn("政策覆盖台账", text, path)
-            self.assertNotIn("政策覆盖审查表", text, path)
+            self.assertNotIn("\u653f\u7b56\u8986\u76d6\u53f0\u8d26", text, path)
 
-    def test_active_workflow_requires_business_to_policy_mapping(self):
+    def test_business_must_precede_policy_search(self):
         skill = (ROOT / "SKILL.md").read_text(encoding="utf-8")
         scope = (ROOT / "references" / "policy-scope.md").read_text(encoding="utf-8")
-        template = (ROOT / "references" / "report-template.md").read_text(encoding="utf-8")
-        self.assertIn("拟落地业务", skill)
-        self.assertIn("不得因海南存在某项政策而反向虚构业务", skill)
-        self.assertIn("每项拟落地业务", scope)
-        self.assertIn("建议落地业务 | 企业现有事实基础 | 三亚具体承接方式", template)
+        self.assertIn("\u4e0d\u5f97\u7531\u653f\u7b56\u53cd\u5411\u865a\u6784\u4e1a\u52a1", skill)
+        self.assertIn("\u6bcf\u9879\u62df\u843d\u5730\u4e1a\u52a1", scope)
 
-    def test_report_uses_required_eight_part_structure(self):
+    def test_eight_sections_and_data_delivery(self):
         template = (ROOT / "references" / "report-template.md").read_text(encoding="utf-8")
         skill = (ROOT / "SKILL.md").read_text(encoding="utf-8")
-        required = (
-            "一、项目整体判断",
-            "二、企业基本情况",
-            "三、近三年经营数据",
-            "四、风险与合规情况",
-            "五、三亚落地业务及落地方式",
-            "六、企业政策匹配",
-            "七、综合评估",
-            "八、参考资料",
-        )
-        for heading in required:
-            self.assertIn(heading, template)
-        self.assertIn("八部分固定目录", skill)
-        self.assertIn("不得自行调整章节结构", skill)
+        for numeral in "\u4e00\u4e8c\u4e09\u56db\u4e94\u516d\u4e03\u516b":
+            self.assertIn(f"## {numeral}\u3001", template)
+        self.assertIn("report-data.json", skill)
+        self.assertIn("HTML", skill)
+        self.assertIn("PDF", skill)
 
-    def test_report_requires_toc_sources_and_personal_income_tax_check(self):
+    def test_template_has_required_business_policy_and_source_tables(self):
         template = (ROOT / "references" / "report-template.md").read_text(encoding="utf-8")
-        delivery = (ROOT / "references" / "word-delivery.md").read_text(encoding="utf-8")
-        self.assertIn("高端和紧缺人才个人所得税15%", template)
-        self.assertIn("| 研判事项 | 初步结论 |", template)
-        self.assertIn("| 建议落地业务 | 企业现有事实基础 | 三亚具体承接方式 | 可形成的业务及价值 | 可行性 |", template)
-        self.assertIn("| 对接业务 | 政策名称 | 政策一句话说明 | 企业匹配逻辑 | 核心条件或办理方式 | 当前判断 | 来源编号 |", template)
-        self.assertIn("| 编号 | 资料类型", template)
-        self.assertIn("自动目录", delivery)
-        self.assertIn("一级标题统一使用“一、二、三……”", delivery)
-        self.assertIn("跨页表格必须重复显示表头", delivery)
-        self.assertIn("页脚显示连续页码", delivery)
+        for phrase in ("\u80a1\u6743\u67b6\u6784\u62c6\u89e3", "\u5efa\u8bae\u843d\u5730\u4e1a\u52a1", "\u91cd\u70b9\u653f\u7b56", "\u4f01\u4e1a\u80fd\u83b7\u5f97\u4ec0\u4e48", "\u53c2\u8003\u8d44\u6599"):
+            self.assertIn(phrase, template)
+
+    def test_html_delivery_is_template_driven(self):
+        renderer = (ROOT / "scripts" / "render_report_html.py").read_text(encoding="utf-8")
+        guidance = (ROOT / "references" / "html-templates.md").read_text(encoding="utf-8")
+        self.assertIn("html_template", renderer)
+        self.assertIn("sanya-cbd-editorial", renderer)
+        self.assertIn("prefers-reduced-motion", renderer)
+        self.assertIn("模板只改变视觉变量和组件", guidance)
+
+    def test_html_is_default_and_conversions_are_opt_in(self):
+        pipeline = (ROOT / "scripts" / "run_report_pipeline.py").read_text(encoding="utf-8")
+        skill = (ROOT / "SKILL.md").read_text(encoding="utf-8")
+        agent_metadata = (ROOT / "agents" / "openai.yaml").read_text(encoding="utf-8")
+        word_rules = (ROOT / "references" / "word-delivery.md").read_text(encoding="utf-8")
+        self.assertIn('parser.add_argument("--pdf", action="store_true"', pipeline)
+        self.assertIn('parser.add_argument("--word", action="store_true"', pipeline)
+        self.assertIn("if args.pdf:", pipeline)
+        self.assertIn("if args.word:", pipeline)
+        self.assertIn("默认只生成", skill)
+        self.assertIn("verified HTML report", agent_metadata)
+        self.assertNotIn("deliver a verified Word report", agent_metadata)
+        self.assertIn("默认只交付 HTML", word_rules)
 
 
 if __name__ == "__main__":

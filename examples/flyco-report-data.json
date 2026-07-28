@@ -1,0 +1,700 @@
+{
+  "meta": {
+    "report_title": "飞科电器招商项目整体落地研判报告",
+    "generated_at": "2026年7月27日",
+    "reporting_entity": "上海飞科电器股份有限公司",
+    "unit": "三亚中央商务区招商研判组",
+    "html_template": "sanya-cbd-editorial"
+  },
+  "entity_resolution": {
+    "user_input": "飞科电器",
+    "name_type": "上市公司",
+    "legal_entity": "上海飞科电器股份有限公司",
+    "security": "飞科电器（603868）",
+    "direct_shareholder": "上海飞科投资有限公司（80.99%）",
+    "ultimate_controller": "李丐腾",
+    "core_operators": "上海飞科电器股份有限公司、芜湖飞科电器有限公司、浙江博锐个护电器有限公司、飞科供应链有限公司",
+    "analysis_entity": "上海飞科电器股份有限公司",
+    "financial_scope": "上市公司合并口径",
+    "risk_scope": "上市公司及控股股东、实际控制人公开披露范围",
+    "equity_summary": "上海飞科电器股份有限公司为本轮分析主体；生产、供应链和电商销售功能由相关子公司承担。上海飞科投资有限公司主要为控股平台，不以其单体数据判断经营实力。"
+  },
+  "overall_judgment": [
+    [
+      "企业综合实力",
+      "较强。A股上市小家电企业，2025年合并营业收入38.61亿元、归母净利润5.12亿元。"
+    ],
+    [
+      "行业地位",
+      "国内个护电器知名品牌，核心品类为电动剃须刀和电吹风。"
+    ],
+    [
+      "建议落地业务",
+      "总部及品牌运营、自营电商与数字营销、供应链贸易结算、海外运营支持。"
+    ],
+    [
+      "主要政策匹配",
+      "企业所得税15%、高端紧缺人才个人所得税优惠、EF账户等须由真实三亚业务触发。"
+    ],
+    [
+      "主要风险",
+      "收入连续回落、产品集中及海外业务尚处起步；制造产线不宜机械迁入。"
+    ],
+    [
+      "招商建议",
+      "重点推进，先锁定三亚主体承接的人员、合同、收入、利润和完税路径。"
+    ]
+  ],
+  "equity": {
+    "nodes": [
+      {
+        "id": "controller",
+        "name": "李丐腾",
+        "entity_type": "实际控制人",
+        "role": "最终控制方",
+        "level": 0
+      },
+      {
+        "id": "holding",
+        "name": "上海飞科投资有限公司",
+        "entity_type": "控股平台",
+        "role": "无主要实体经营",
+        "level": 1
+      },
+      {
+        "id": "listed",
+        "name": "上海飞科电器股份有限公司",
+        "entity_type": "上市公司",
+        "role": "核心经营主体／分析主体",
+        "level": 2
+      },
+      {
+        "id": "wuhu",
+        "name": "芜湖飞科电器有限公司",
+        "entity_type": "子公司",
+        "role": "生产制造",
+        "level": 3
+      },
+      {
+        "id": "poree",
+        "name": "浙江博锐个护电器有限公司",
+        "entity_type": "子公司",
+        "role": "生产制造／品牌",
+        "level": 3
+      },
+      {
+        "id": "supply",
+        "name": "飞科供应链有限公司",
+        "entity_type": "子公司",
+        "role": "集中采购与供应链",
+        "level": 3
+      }
+    ],
+    "edges": [
+      {
+        "from": "controller",
+        "to": "holding",
+        "relationship": "实际控制"
+      },
+      {
+        "from": "holding",
+        "to": "listed",
+        "relationship": "持股80.99%"
+      },
+      {
+        "from": "listed",
+        "to": "wuhu",
+        "relationship": "直接控制"
+      },
+      {
+        "from": "listed",
+        "to": "poree",
+        "relationship": "直接控制"
+      },
+      {
+        "from": "listed",
+        "to": "supply",
+        "relationship": "直接控制"
+      }
+    ]
+  },
+  "businesses": [
+    {
+      "segment": "个人护理电器",
+      "products": "电动剃须刀、电吹风、电动牙刷、冲牙器、理发器",
+      "entity": "上市公司及制造子公司",
+      "revenue_model": "经销与自营电商销售",
+      "footprint": "以国内为主",
+      "sanya_fit": "品牌运营、电商运营和数据营销可研判承接"
+    },
+    {
+      "segment": "生活及厨房电器",
+      "products": "挂烫机等生活电器与厨房电器",
+      "entity": "上市公司及相关子公司",
+      "revenue_model": "经销与线上销售",
+      "footprint": "国内渠道为主",
+      "sanya_fit": "渠道管理、品牌与贸易职能可研判承接"
+    },
+    {
+      "segment": "供应链管理",
+      "products": "零部件、原材料集中采购与供应商管理",
+      "entity": "飞科供应链有限公司",
+      "revenue_model": "集团供应链协同",
+      "footprint": "服务现有生产和销售网络",
+      "sanya_fit": "采购协调、贸易合同和结算可研判承接"
+    },
+    {
+      "segment": "海外市场运营",
+      "products": "海外渠道、认证、合作方及品牌推广",
+      "entity": "上市公司及相关业务主体",
+      "revenue_model": "海外销售和投资机会",
+      "footprint": "东南亚、非洲、中东等规划方向",
+      "sanya_fit": "海外运营支持、投资管理和跨境结算可研判承接"
+    }
+  ],
+  "industry_position": "公司年报将飞科定位为国内个护电器行业著名品牌。公开资料未发现可直接用于本轮报告的权威市场份额数据，因此不作市场份额推算。",
+  "upstream_downstream": "上游由飞科供应链有限公司实施集中采购，年报未披露可确认的核心外部供应商名称；下游包含淘宝天猫、京东、拼多多、唯品会及内容平台的自营或合作运营。海外业务已有产品、渠道、认证及合作方规划，但2025年境外收入规模较小。",
+  "financials": [
+    {
+      "year": "2025",
+      "revenue": "38.61亿元",
+      "revenue_change": "-6.90%",
+      "profit": "5.12亿元",
+      "profit_change": "+11.84%",
+      "tax_value": "4.22亿元",
+      "tax_basis": "支付的各项税费",
+      "government_support": "计入当期损益4,792.88万元；期末递延6,649.02万元",
+      "source": "F01"
+    },
+    {
+      "year": "2024",
+      "revenue": "41.47亿元",
+      "revenue_change": "-18.03%",
+      "profit": "4.58亿元",
+      "profit_change": "-55.09%",
+      "tax_value": "3.29亿元",
+      "tax_basis": "支付的各项税费",
+      "government_support": "未公开披露",
+      "source": "F02"
+    },
+    {
+      "year": "2023",
+      "revenue": "50.60亿元",
+      "revenue_change": "+9.35%",
+      "profit": "10.20亿元",
+      "profit_change": "+23.90%",
+      "tax_value": "6.92亿元",
+      "tax_basis": "支付的各项税费",
+      "government_support": "未公开披露",
+      "source": "F02"
+    }
+  ],
+  "government_support": [
+    {
+      "year": "2025",
+      "name": "其他收益—政府补助",
+      "department": "未公开披露",
+      "amount": "787.04万元",
+      "purpose": "与收益相关的政府补助",
+      "conditions": "本轮公开检索未发现逐项条件，需企业补充",
+      "source": "F01"
+    },
+    {
+      "year": "2025",
+      "name": "营业外收入—政府补助",
+      "department": "未公开披露",
+      "amount": "4,005.84万元",
+      "purpose": "与收益相关的政府补助",
+      "conditions": "本轮公开检索未发现逐项条件，需企业补充",
+      "source": "F01"
+    },
+    {
+      "year": "2025",
+      "name": "期末递延政府补助余额",
+      "department": "未公开披露",
+      "amount": "6,649.02万元",
+      "purpose": "递延政府补助",
+      "conditions": "需核验项目、验收节点、地域约束及迁出追缴条款",
+      "source": "F01"
+    }
+  ],
+  "financial_analysis": "收入和利润在2023年处于阶段高位，2024年明显回落，2025年收入继续下降但利润恢复增长。纳税相关数据均为现金流量表“支付的各项税费”，不等同于纳税总额。公开补助的发放部门、项目、持续性和履约约束仍需企业补充。",
+  "risks": {
+    "regulatory": [
+      [
+        "—",
+        "行政处罚及监管",
+        "截至公开检索未发现重大行政处罚或证券监管处罚记录，仍需企业及主管部门核验。",
+        "不适用",
+        "不适用",
+        "未发现阻断性风险；需补充合规证明。",
+        "R01、R02"
+      ]
+    ],
+    "litigation": [
+      [
+        "2025年度",
+        "重大诉讼、仲裁、执行及失信",
+        "年度报告未披露重大事项；个别劳动争议线索需企业核验。",
+        "未发现重大事项",
+        "未发现阻断性风险；需核验或有负债。",
+        "R01"
+      ]
+    ],
+    "summary": "本轮未发现阻断性合规风险。招商协议应以实质运营、人员、合同、收入、利润、完税和既有补助义务核验为前置条件。"
+  },
+  "landing_businesses": [
+    {
+      "id": "L01",
+      "business": "区域总部及品牌运营",
+      "fact_basis": "公司已有研发设计、品牌建设和销售管理职能。",
+      "sanya_path": "设立三亚区域总部或功能总部，承接品牌战略、产品规划、营销管理和经营决策。",
+      "value": "形成总部管理、人才集聚和品牌影响力。",
+      "feasibility": "较高",
+      "policy_departments": [
+        "三亚市投资促进局",
+        "国家税务总局海南省税务局",
+        "海南省财政厅"
+      ]
+    },
+    {
+      "id": "L02",
+      "business": "自营电商与数字营销",
+      "fact_basis": "2025年直销收入约19.88亿元，自营电商和内容营销为现有模式。",
+      "sanya_path": "三亚主体承接部分店铺运营、数字营销、消费者数据分析、平台服务和销售结算。",
+      "value": "形成现代商贸及数字经济收入。",
+      "feasibility": "较高",
+      "policy_departments": [
+        "海南省商务厅",
+        "三亚市商务局",
+        "国家税务总局海南省税务局"
+      ]
+    },
+    {
+      "id": "L03",
+      "business": "供应链管理与贸易结算",
+      "fact_basis": "集团已有集中采购、渠道、物流和成本管理能力。",
+      "sanya_path": "承接部分供应商管理、采购协调、贸易合同和结算；制造仍保留原基地。",
+      "value": "形成贸易、结算及供应链管理价值。",
+      "feasibility": "一般",
+      "policy_departments": [
+        "海南省商务厅",
+        "中国人民银行海南省分行",
+        "国家外汇管理局海南省分局"
+      ]
+    },
+    {
+      "id": "L04",
+      "business": "海外市场投资与运营支持",
+      "fact_basis": "已有海外产品、渠道、认证和合作方规划。",
+      "sanya_path": "统筹海外渠道、品牌推广、服务网络及新增ODI项目。",
+      "value": "形成跨境贸易、境外投资和品牌出海价值。",
+      "feasibility": "一般",
+      "policy_departments": [
+        "海南省商务厅",
+        "国家外汇管理局海南省分局",
+        "中国人民银行海南省分行"
+      ]
+    }
+  ],
+  "policy_research": [
+    {
+      "landing_business_id": "L01",
+      "topic": "总部企业认定及地方支持",
+      "searched_departments": [
+        "三亚市投资促进局"
+      ],
+      "outcome": "no_current_policy",
+      "conclusion": "本轮检索到三亚市投资促进局对历史总部经济暂行办法的介绍，但未取得可核验的现行认定办法、有效期和兑现通知，暂不列为可享受权益。",
+      "next_evidence": "需由三亚市投资促进局确认现行认定文件、门槛及兑现口径；企业补充拟注册资本、组织架构、地方贡献和人员方案。",
+      "evidence_source_ids": [
+        "P10"
+      ],
+      "policy_ids": []
+    },
+    {
+      "landing_business_id": "L01",
+      "topic": "高端紧缺人才个人所得税优惠",
+      "searched_departments": [
+        "海南省财政厅",
+        "国家税务总局海南省税务局",
+        "海南省人力资源和社会保障厅"
+      ],
+      "outcome": "conditional_opportunity",
+      "conclusion": "总部、品牌和海外运营核心人员在三亚主体实际任职并满足人才清单、收入或居住等条件后，可申请个人所得税实际税负超过15%部分免征。",
+      "next_evidence": "需锁定人员岗位、劳动关系、社保、居住天数、海南来源收入及人才认定或收入证明。",
+      "evidence_source_ids": [
+        "P03",
+        "P04"
+      ],
+      "policy_ids": [
+        "P03",
+        "P04"
+      ]
+    },
+    {
+      "landing_business_id": "L02",
+      "topic": "鼓励类产业企业所得税15%优惠",
+      "searched_departments": [
+        "海南省商务厅",
+        "国家税务总局海南省税务局",
+        "三亚市商务局"
+      ],
+      "outcome": "conditional_opportunity",
+      "conclusion": "自营电商、数字营销和销售结算迁入三亚后，只有经目录归类确认、主营业务收入及实质运营条件同时满足，才可适用15%企业所得税。",
+      "next_evidence": "需确认目录对应产业项目、三亚主体主营收入占比、管理机构、人员、账务和资产控制。",
+      "evidence_source_ids": [
+        "P01"
+      ],
+      "policy_ids": [
+        "P01"
+      ]
+    },
+    {
+      "landing_business_id": "L03",
+      "topic": "EF账户、跨境人民币及外汇便利",
+      "searched_departments": [
+        "中国人民银行海南省分行",
+        "国家外汇管理局海南省分局"
+      ],
+      "outcome": "conditional_opportunity",
+      "conclusion": "供应链贸易合同、跨境收付款和结算职能真实进入三亚主体后，可向经办银行申请EF账户等跨境资金结算服务；该项为账户和结算便利，不是直接财政补贴。",
+      "next_evidence": "需确认跨境合同、收付款流水、贸易真实性、资金用途、反洗钱材料及经办银行准入要求。",
+      "evidence_source_ids": [
+        "P06"
+      ],
+      "policy_ids": [
+        "P06"
+      ]
+    },
+    {
+      "landing_business_id": "L03",
+      "topic": "离岸转手买卖印花税优惠",
+      "searched_departments": [
+        "国家税务总局海南省税务局",
+        "海南省财政厅"
+      ],
+      "outcome": "conditional_opportunity",
+      "conclusion": "如三亚主体从非居民企业购货后向另一非居民企业转售，且货物始终不实际进出我国关境，相关买卖合同可按条件免征印花税。",
+      "next_evidence": "需核验是否形成离岸转手买卖，而非一般出口、进口或境内采购；需留存非居民交易对手、货物流向和合同证据。",
+      "evidence_source_ids": [
+        "P07"
+      ],
+      "policy_ids": [
+        "P07"
+      ]
+    },
+    {
+      "landing_business_id": "L03",
+      "topic": "零关税及加工增值内销免关税",
+      "searched_departments": [
+        "海口海关",
+        "海南省商务厅"
+      ],
+      "outcome": "not_triggered",
+      "conclusion": "飞科本轮拟迁入的是供应链协调、贸易合同和结算，未形成海南进口自用、岛内加工或加工增值业务事实，暂不作为可享受政策。",
+      "next_evidence": "如后续拟在海南进口设备或料件、设加工主体或形成加工增值链条，需补充货物清单、加工地点、增值率、海关监管和内销路径。",
+      "evidence_source_ids": [
+        "P11"
+      ],
+      "policy_ids": []
+    },
+    {
+      "landing_business_id": "L04",
+      "topic": "ODI备案、外汇登记及境外投资合规支持",
+      "searched_departments": [
+        "海南省商务厅",
+        "国家外汇管理局海南省分局"
+      ],
+      "outcome": "not_triggered",
+      "conclusion": "海南商务部门已发布境外投资合规管理指引，但飞科公开资料尚不足以确认由三亚主体实施的新增ODI项目，暂不写作已可办理或可享受的招商权益。",
+      "next_evidence": "需企业提供拟投国别、境外主体、项目、投资金额、资金来源、董事会决议和收益安排后，再核验备案及外汇登记路径。",
+      "evidence_source_ids": [
+        "P08"
+      ],
+      "policy_ids": []
+    },
+    {
+      "landing_business_id": "L04",
+      "topic": "新增境外直接投资所得企业所得税优惠",
+      "searched_departments": [
+        "国家税务总局海南省税务局",
+        "海南省商务厅"
+      ],
+      "outcome": "not_triggered",
+      "conclusion": "公开官方说明显示该项免税针对2025年前新增境外直接投资取得的所得；飞科尚无三亚主体在该期间形成新增投资的公开事实，不能按现行招商权益承诺。",
+      "next_evidence": "如企业主张历史项目适用，需提供海南主体设立时间、投资完成时间、被投企业税率、境外所得及完税资料，由税务部门核验。",
+      "evidence_source_ids": [
+        "P09"
+      ],
+      "policy_ids": []
+    }
+  ],
+  "policies": [
+    {
+      "name": "海南自由贸易港鼓励类产业企业所得税15%优惠",
+      "region": "海南省",
+      "region_evidence": "财税〔2025〕3号适用于海南自由贸易港，延续相关企业所得税优惠至2027年12月31日。",
+      "source_type": "official",
+      "source_url": "https://dofcom.hainan.gov.cn/dofcom/Policys/202506/b200f0e7989e47198ad69f6ed11b4b0b.shtml?ddtab=true",
+      "status": "current",
+      "issuer": "财政部、税务总局",
+      "document_number": "财税〔2025〕3号",
+      "published_at": "2025-01-24",
+      "validity_evidence": "文件明确延续执行至2027-12-31。",
+      "applicable_object": "在海南自由贸易港登记注册并实质性运营、符合鼓励类产业条件的企业。",
+      "enterprise_business": "三亚主体承接的自营电商、数字营销及销售结算",
+      "landing_action": "形成可核验的目录内主营业务、管理机构、人员、账务及资产实质运营。",
+      "plain_language": "三亚主体以符合目录的业务为主营并满足实质运营条件后，可按规定适用15%企业所得税。",
+      "policy_value": "将符合条件业务的企业所得税税率降至15%。",
+      "match_logic": "飞科已有自营电商和数字营销基础，但目录归类与收入结构尚未核验。",
+      "conditions": "鼓励类产业目录、主营业务收入占比及实质运营条件均须满足。",
+      "handling_route": "企业按企业所得税申报规定享受，并留存目录归类与实质运营证据。",
+      "judgment": "条件型政策机会",
+      "source_id": "P01",
+      "report_title": "企业所得税15%优惠",
+      "report_business": "自营电商、数字营销及销售结算",
+      "report_value": "三亚主体经营符合鼓励类目录业务并满足实质运营条件后，企业所得税按15%征收。",
+      "report_conditions": "主营业务属于鼓励类目录，主营业务收入占比达标，并在三亚形成管理、人员、账务及资产的实质运营。",
+      "report_landing_action": "由三亚主体承接可归入鼓励类目录的业务、收入和利润，并建立完整账务与运营痕迹。",
+      "report_judgment": "整体落地情景下重点税收政策"
+    },
+    {
+      "name": "海南自由贸易港高端紧缺人才个人所得税优惠",
+      "region": "海南省",
+      "region_evidence": "财税〔2025〕4号适用于在海南自由贸易港工作的高端和紧缺人才。",
+      "source_type": "official",
+      "source_url": "https://mof.hainan.gov.cn/sczt/zcfg/202502/28bd363fc59d4779a0752b535ba457cb/files/25a735d4dac34e43b28d1f77257b188a.pdf",
+      "status": "current",
+      "issuer": "财政部、税务总局",
+      "document_number": "财税〔2025〕4号",
+      "published_at": "2025-01-24",
+      "validity_evidence": "文件明确自2025-01-01执行至2027-12-31。",
+      "applicable_object": "在海南自由贸易港工作的高端人才和紧缺人才。",
+      "enterprise_business": "区域总部、品牌、电商及海外运营团队",
+      "landing_action": "在三亚实质运营并建立劳动关系、个税缴纳、社保和居住记录。",
+      "plain_language": "符合条件的人才在海南实际税负超过15%的部分可免征。",
+      "policy_value": "降低符合条件核心人才的个人所得税实际负担。",
+      "match_logic": "拟落地方案涉及核心管理、品牌、电商和海外运营岗位。",
+      "conditions": "人才清单或收入条件、居住或特定行业劳动关系条件，以及所属企业实质运营要求。",
+      "handling_route": "在海南办理个人所得税年度汇算并按清单管理及税务规定申报。",
+      "judgment": "条件型政策机会",
+      "source_id": "P03",
+      "report_group": "talent-iit",
+      "report_title": "高端紧缺人才个人所得税优惠（实际税负15%封顶）",
+      "report_business": "区域总部及核心管理、品牌、电商和海外运营团队",
+      "report_value": "符合条件的高端和紧缺人才，实际个人所得税负超过15%的部分免征。",
+      "report_conditions": "人才符合高端或紧缺人才条件；在海南的居住、劳动关系、海南来源所得及所属单位实质运营等要求满足。",
+      "report_landing_action": "由三亚主体承接核心人员的劳动关系、薪酬发放、个税申报、社保和实际办公。",
+      "report_judgment": "区域总部落地的核心人才政策"
+    },
+    {
+      "name": "海南省财政厅等五部门关于落实海南自由贸易港个人所得税优惠政策有关事项的公告",
+      "region": "海南省",
+      "region_evidence": "公告适用于在海南自由贸易港工作并享受个人所得税优惠政策的高端紧缺人才。",
+      "source_type": "official",
+      "source_url": "https://mof.hainan.gov.cn/sczt/0503/202509/035b9fef33be404492e9cd6877b84363.shtml?ddtab=true",
+      "status": "current",
+      "issuer": "海南省财政厅等五部门",
+      "document_number": "2025年第24号",
+      "published_at": "2025-09-01",
+      "validity_evidence": "公告依据琼府〔2025〕43号清单管理办法发布并明确办理口径。",
+      "applicable_object": "符合海南自由贸易港高端紧缺人才清单管理条件的个人及其实质运营所属单位。",
+      "enterprise_business": "区域总部及核心运营团队",
+      "landing_action": "由三亚主体承接劳动关系、薪酬发放、社保及个税申报。",
+      "plain_language": "符合条件的人员须以海南来源所得在海南申报，并按清单管理和年度汇算规则办理优惠。",
+      "policy_value": "明确人才个税优惠的来源所得、单位实质运营和申报执行口径。",
+      "match_logic": "飞科如迁入核心人员，需要以三亚主体实际任职和收入安排承接。",
+      "conditions": "海南来源所得、人才条件、居住或特定行业条件、所属单位实质运营。",
+      "handling_route": "按公告、清单管理办法及税务年度汇算要求办理。",
+      "judgment": "条件型政策机会",
+      "source_id": "P04",
+      "report_group": "talent-iit"
+    },
+    {
+      "name": "海南自由贸易港多功能自由贸易账户业务管理办法",
+      "region": "海南省",
+      "region_evidence": "琼银发〔2024〕32号适用于海南自由贸易港内符合条件的经营主体。",
+      "source_type": "official",
+      "source_url": "https://haikou.pbc.gov.cn/haikou/fileDir/resource/cms/2025/07/2025072316565467907.pdf",
+      "status": "current",
+      "issuer": "中国人民银行海南省分行",
+      "document_number": "琼银发〔2024〕32号",
+      "published_at": "2024-04-03",
+      "validity_evidence": "中国人民银行海南省分行现行文件库收录该办法。",
+      "applicable_object": "在海南自由贸易港有真实跨境业务需求并符合银行审查要求的经营主体。",
+      "enterprise_business": "海外销售、采购或投资的跨境收付",
+      "landing_action": "以三亚主体形成真实对外贸易、投资和资金结算需求。",
+      "plain_language": "具备真实跨境业务需求的海南主体可按银行要求开立EF账户并办理跨境资金结算等服务。",
+      "policy_value": "提升跨境资金收付和账户体系的便利性，不属于直接税收减免。",
+      "match_logic": "供应链贸易结算及海外运营存在业务基础，但跨境规模和合同尚待确认。",
+      "conditions": "银行尽调、反洗钱、真实性审核及真实业务需求。",
+      "handling_route": "向可办理EF业务的经办银行提交开户和业务材料，接受持续合规管理。",
+      "judgment": "条件型政策机会",
+      "source_id": "P06",
+      "report_title": "EF账户（多功能自由贸易账户）",
+      "report_business": "海外销售、采购、投融资及跨境资金结算",
+      "report_value": "三亚主体可开立EF账户，用于跨境贸易、投融资和资金结算的便利化管理；该项为账户与资金便利，不是税收减免。",
+      "report_conditions": "存在真实跨境贸易、投资或资金结算需求，并通过经办银行尽调、反洗钱和真实性审核。",
+      "report_landing_action": "以三亚主体承接跨境合同、收付款、投融资及资金结算。",
+      "report_judgment": "跨境业务落地的核心账户工具"
+    },
+    {
+      "name": "继续实施离岸贸易印花税优惠政策",
+      "region": "海南省",
+      "region_evidence": "财税〔2025〕10号明确适用于海南自由贸易港企业开展符合定义的离岸转手买卖业务。",
+      "source_type": "official",
+      "source_url": "https://www.mof.gov.cn/gkml/caizhengwengao/wg2025/wg202503/202505/P020250513318507070749.pdf",
+      "status": "current",
+      "issuer": "财政部、税务总局",
+      "document_number": "财税〔2025〕10号",
+      "published_at": "2025-03-24",
+      "validity_evidence": "文件明确自2025-04-01执行至2027-12-31。",
+      "applicable_object": "在海南自由贸易港注册登记并开展离岸转手买卖的企业。",
+      "enterprise_business": "由三亚主体承接的境外采购、境外销售和贸易合同结算",
+      "landing_action": "形成货物始终未实际进出我国关境的非居民间离岸转手买卖。",
+      "plain_language": "海南主体开展符合定义的离岸转手买卖并书立买卖合同，可免征印花税。",
+      "policy_value": "对符合定义的离岸转手买卖合同免征印花税。",
+      "match_logic": "飞科存在海外渠道和供应链管理基础，但尚未证明形成离岸转手买卖。",
+      "conditions": "买卖双方为非居民企业，货物始终未实际进出我国关境。",
+      "handling_route": "按印花税申报管理要求留存合同、交易对手和货物流向证明。",
+      "judgment": "条件型政策机会",
+      "source_id": "P07",
+      "report_title": "离岸贸易印花税优惠",
+      "report_business": "境外采购、境外销售及贸易合同结算",
+      "report_value": "符合离岸转手买卖定义的合同，可免征印花税。",
+      "report_conditions": "买卖双方均为非居民企业，货物始终未实际进出我国关境。",
+      "report_landing_action": "由三亚主体承接符合条件的非居民间离岸转手买卖合同和结算。",
+      "report_judgment": "离岸贸易模式下的专项税收优惠"
+    }
+  ],
+  "comprehensive_assessment": "飞科电器具备上市公司主体、品牌渠道和现金创造能力，适合以区域总部、数字营销、贸易结算和海外运营支持功能在三亚中央商务区推进。项目现实性取决于管理人员、合同、收入、利润和跨境结算是否真实进入三亚主体；制造产线不作为本轮迁入假设。",
+  "sources": [
+    {
+      "id": "E01",
+      "type": "企业信息",
+      "name": "上海飞科电器股份有限公司2025年年度报告",
+      "issuer": "上海飞科电器股份有限公司／上交所法定披露",
+      "date": "2026-04-29",
+      "location": "https://money.finance.sina.com.cn/corp/view/vCB_AllBulletinDetail.php?id=12246280&stockid=603868",
+      "used_in": "第二、五、七部分"
+    },
+    {
+      "id": "F01",
+      "type": "财务数据",
+      "name": "上海飞科电器股份有限公司2025年年度报告",
+      "issuer": "上海飞科电器股份有限公司／上交所法定披露",
+      "date": "2026-04-29",
+      "location": "同E01，近三年主要会计数据及财务报表附注",
+      "used_in": "第三部分"
+    },
+    {
+      "id": "F02",
+      "type": "财务数据",
+      "name": "上海飞科电器股份有限公司2024年年度报告",
+      "issuer": "上海飞科电器股份有限公司／上交所法定披露",
+      "date": "2025-04-30",
+      "location": "https://static.cninfo.com.cn/finalpage/2025-04-30/1223423209.PDF",
+      "used_in": "第三部分"
+    },
+    {
+      "id": "R01",
+      "type": "风险与监管",
+      "name": "上海飞科电器股份有限公司2025年年度报告",
+      "issuer": "上海飞科电器股份有限公司／上交所法定披露",
+      "date": "2026-04-29",
+      "location": "同E01，重大诉讼、仲裁及风险因素",
+      "used_in": "第四部分"
+    },
+    {
+      "id": "R02",
+      "type": "风险与监管",
+      "name": "产品质量监督抽查结果公示",
+      "issuer": "杭州市市场监督管理局",
+      "date": "2026-04-10",
+      "location": "https://z.hangzhou.com.cn/2015/hzspaqkp/2026-04/10/9a0a5461-2fef-47f5-96d5-19334eeb7d69.pdf",
+      "used_in": "第四部分"
+    },
+    {
+      "id": "P01",
+      "type": "政策文件",
+      "name": "财政部 税务总局关于延续实施海南自由贸易港企业所得税优惠政策的通知",
+      "issuer": "财政部、税务总局",
+      "date": "2025-01-24",
+      "location": "https://dofcom.hainan.gov.cn/dofcom/Policys/202506/b200f0e7989e47198ad69f6ed11b4b0b.shtml?ddtab=true",
+      "used_in": "第六部分"
+    },
+    {
+      "id": "P03",
+      "type": "政策文件",
+      "name": "财政部 税务总局关于延续实施海南自由贸易港高端紧缺人才个人所得税政策的通知",
+      "issuer": "财政部、税务总局",
+      "date": "2025-01-24",
+      "location": "https://mof.hainan.gov.cn/sczt/zcfg/202502/28bd363fc59d4779a0752b535ba457cb/files/25a735d4dac34e43b28d1f77257b188a.pdf",
+      "used_in": "第六部分"
+    },
+    {
+      "id": "P04",
+      "type": "政策文件",
+      "name": "海南省财政厅等五部门关于落实海南自由贸易港个人所得税优惠政策有关事项的公告",
+      "issuer": "海南省财政厅等五部门",
+      "date": "2025-09-01",
+      "location": "https://mof.hainan.gov.cn/sczt/0503/202509/035b9fef33be404492e9cd6877b84363.shtml?ddtab=true",
+      "used_in": "第六部分"
+    },
+    {
+      "id": "P06",
+      "type": "政策文件",
+      "name": "海南自由贸易港多功能自由贸易账户业务管理办法",
+      "issuer": "中国人民银行海南省分行",
+      "date": "2024-04-03",
+      "location": "https://haikou.pbc.gov.cn/haikou/fileDir/resource/cms/2025/07/2025072316565467907.pdf",
+      "used_in": "第六部分"
+    },
+    {
+      "id": "P07",
+      "type": "政策文件",
+      "name": "财政部 税务总局关于继续实施离岸贸易印花税优惠政策的通知",
+      "issuer": "财政部、税务总局",
+      "date": "2025-03-24",
+      "location": "https://www.mof.gov.cn/gkml/caizhengwengao/wg2025/wg202503/202505/P020250513318507070749.pdf",
+      "used_in": "第六部分"
+    },
+    {
+      "id": "P08",
+      "type": "官方指引",
+      "name": "海南自由贸易港企业境外投资合规管理指引（2023年版）",
+      "issuer": "海南省商务厅",
+      "date": "2023-11-01",
+      "location": "https://dofcom.hainan.gov.cn/dofcom/zwdt/202311/a2d8baa540b642eea9b94b70d2378652/files/8432d09ab5fd443293cfa4c7546d105a.pdf",
+      "used_in": "第六部分"
+    },
+    {
+      "id": "P09",
+      "type": "官方政策说明",
+      "name": "支持海南自由贸易港建设的税收政策",
+      "issuer": "国家税务总局",
+      "date": "2020-06-08",
+      "location": "https://www.chinatax.gov.cn/chinatax/n810351/n810906/c5153897/content.html",
+      "used_in": "第六部分"
+    },
+    {
+      "id": "P10",
+      "type": "官方历史政策介绍",
+      "name": "三亚市促进总部经济发展暂行办法（历史页面）",
+      "issuer": "三亚市投资促进局",
+      "date": "2020-06-01",
+      "location": "https://syipb.sanya.gov.cn/tzcjjsite/index.shtml",
+      "used_in": "第六部分；仅作现行状态待核依据"
+    },
+    {
+      "id": "P11",
+      "type": "政策文件",
+      "name": "关于海南自由贸易港货物进出“一线”、“二线”及在岛内流通税收政策的通知",
+      "issuer": "财政部、海关总署、税务总局",
+      "date": "2025-09-29",
+      "location": "https://hq.mof.gov.cn/tongzhitonggao/202509/t20250929_3973443.htm",
+      "used_in": "第六部分"
+    }
+  ]
+}
