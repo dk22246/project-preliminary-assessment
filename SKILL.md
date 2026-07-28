@@ -11,6 +11,14 @@ description: 对拟招引企业开展三亚中央商务区招商前期尽调、�
 
 默认只生成 `report-data.json` 驱动的 HTML 报告，HTML 是主阅读版。用户明确需要时，才从这份最终 HTML 转换 PDF，或从同一份数据生成可编辑 Word。不得分别撰写三套内容，也不得以聊天正文代替文件。
 
+## 跨 Agent 部署门禁
+
+- 仅通过 Git 仓库完整克隆或复制整个 Skill 目录，不得只复制 `SKILL.md`、聊天文本或单个脚本。
+- 所有文本和结构化数据均为 UTF-8；读入 JSON 时兼容 UTF-8 BOM，写入时明确指定 UTF-8。Windows PowerShell 必须通过 `scripts/run_utf8.ps1` 启动 Python，以同时统一 Python 与终端输出编码；其他终端使用 `python -X utf8`。
+- 新 Agent 首次使用前，必须运行部署预检和测试：PowerShell 使用 `powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\run_utf8.ps1 scripts\preflight.py --smoke` 及同一启动器的 `-m unittest discover -s tests -v`；其他终端使用 `python -X utf8 scripts/preflight.py --smoke` 和 `python -X utf8 -m unittest discover -s tests -v`。任一失败时不得生成正式报告。
+- 必须先形成 `report-data.json`，再运行 `scripts/run_report_pipeline.py`；不得绕过结构化数据、校验器或 HTML 渲染器直接手写报告。
+- 以固定 Git commit 部署并记录 commit SHA；升级时重新执行上述部署门禁。PDF 和 Word 继续仅按用户要求生成。
+
 ## 核心运行顺序
 
 1. **确认主体。** 用户只给企业名称时，先判断名称是集团、上市公司、品牌还是经营主体。唯一可识别时直接研究；存在同名、集团与上市主体混淆、品牌与主体混淆时，列出 2—4 个明确选项，请用户确认。确认前不得混用信息。
@@ -64,6 +72,8 @@ description: 对拟招引企业开展三亚中央商务区招商前期尽调、�
 - `references/html-delivery.md`：HTML/PDF 与 Word 的同源交付、排版和质检。
 - `references/word-delivery.md`：仅在用户要求可编辑 Word 时读取的 Word 原生结构与页面复核规则。
 - `scripts/run_report_pipeline.py`：`validate → SVG → HTML` 主入口；`--pdf` 和 `--word` 为预置的可选转换。
+- `scripts/preflight.py`：跨 Agent 部署预检；检查目录、UTF-8、示例数据和政策门禁，`--smoke` 同时生成示例 HTML。
+- `scripts/run_utf8.ps1`：Windows PowerShell 的 UTF-8 启动器，避免 UTF-8 Python 输出被本地代码页错误显示。
 - `scripts/validate_report_data.py`、`scripts/validate_text_quality.py`：唯一事实源和文字质量校验。
 - `scripts/render_equity_chart.py`、`scripts/render_report_html.py`、`scripts/render_report_pdf.mjs`：图表与渲染器。
 

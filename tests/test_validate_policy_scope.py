@@ -16,7 +16,7 @@ def run_validator(policies):
             json.dumps({"policies": policies}, ensure_ascii=False), encoding="utf-8"
         )
         return subprocess.run(
-            [sys.executable, str(SCRIPT), str(source)], text=True, capture_output=True
+            [sys.executable, "-X", "utf8", str(SCRIPT), str(source)], text=True, capture_output=True
         )
 
 

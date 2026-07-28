@@ -19,7 +19,9 @@ TERMS = ("实质性运营", "拟落地主体", "核心经营主体", "控股股�
 
 
 def load_data(path: str | Path) -> dict:
-    return json.loads(Path(path).read_text(encoding="utf-8"))
+    # Accept UTF-8 with or without BOM: several Windows-based agents add a BOM
+    # when saving JSON, while the generated report data remains UTF-8.
+    return json.loads(Path(path).read_text(encoding="utf-8-sig"))
 
 
 def validate_report_data(data: dict) -> list[str]:
@@ -133,8 +135,8 @@ def validate_business_policy_ledger(data: dict) -> list[str]:
 def validate_text(data: dict) -> list[str]:
     payload = json.dumps(data, ensure_ascii=False)
     errors = []
-    if "�" in payload:
-        errors.append("发现乱码替代字符：�")
+    if chr(0xFFFD) in payload:
+        errors.append("发现乱码替代字符：U+FFFD")
     if re.search(r"\?{2,}", payload):
         errors.append("发现连续问号，需人工检查乱码或残缺文本")
     names = {data.get("entity_resolution", {}).get("legal_entity", ""), data.get("entity_resolution", {}).get("analysis_entity", "")}
