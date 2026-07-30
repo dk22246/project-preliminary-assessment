@@ -9,6 +9,19 @@
 
 用户提供文件优先于网页二次摘要，但不替代现行政策的官方检索。上市公司财务优先年报、交易所公告和审计报告；每个政府补助、税费、处罚、诉讼和政策结论均须进入台账。来源不足的结论标为“待核”，不得当作事实。
 
+## 网页证据采集
+
+在确定企业主体、拟落地业务和需核验主题后，先由 Agent 找到候选的官方或法定披露 URL，再使用 `scripts/collect_web_evidence.py` 采集公开 HTML。例如：
+
+```powershell
+& $py scripts/collect_web_evidence.py "企业名称" "海南跨境贸易政策" --url "https://hainan.chinatax.gov.cn/..." --out-dir evidence/enterprise-policy
+& $py scripts/validate_evidence.py evidence/enterprise-policy/evidence.json
+```
+
+企业官网仅在已核验主体后，作为显式 `--allow-domain` 传入。采集器不登录、不保存 Cookie、不绕过验证码；仅收集公开网页正文并发现页面内 PDF/DOCX 链接。失败记录必须保留。
+
+采集到的新闻、规划、招商宣传和企业宣传仅是线索，不能替代财务、风险或政策原文。将已校验 `evidence.json` 通过报告流水线的 `--evidence` 参数传入；再按本文件和 `references/policy-scope.md` 的证据层级写入 `report-data.json`。网页取证不能绕过政策正式性、地域、现行状态和企业承接路径校验。
+
 ## 企业公开信息检索规则
 
 ### 企业研究范围

@@ -8,17 +8,22 @@ import subprocess
 import sys
 
 from report_core import load_data, validate_business_policy_ledger, validate_report_data, validate_text
+from validate_evidence import validate_ledger
 from validate_policy_scope import validate_policy
 
 
 ROOT = Path(__file__).resolve().parents[1]
 SAMPLE = ROOT / "examples" / "flyco-report-data.json"
+EVIDENCE_SAMPLE = ROOT / "examples" / "evidence-sample.json"
 REQUIRED = (
     "SKILL.md", "agents/openai.yaml", ".editorconfig", ".gitattributes",
     "references/policy-scope.md", "references/report-template.md", "references/html-delivery.md",
-    "schemas/report.schema.json", "scripts/run_report_pipeline.py", "scripts/render_report_html.py",
+    "references/source-registry.md", "schemas/report.schema.json", "schemas/evidence.schema.json",
+    "scripts/run_report_pipeline.py", "scripts/render_report_html.py", "scripts/collect_web_evidence.py", "scripts/validate_evidence.py",
+    "scripts/evidence_collectors/__init__.py", "scripts/evidence_collectors/registry.py", "scripts/evidence_collectors/html_extract.py",
     "scripts/validate_policy_scope.py", "scripts/validate_report_data.py", "scripts/validate_text_quality.py",
     "tests/test_business_triggered_policy_logic.py", SAMPLE.relative_to(ROOT).as_posix(),
+    EVIDENCE_SAMPLE.relative_to(ROOT).as_posix(), "examples/evidence-sample/official-policy.md",
 )
 TEXT_SUFFIXES = {".md", ".py", ".json", ".yaml", ".yml", ".mjs", ".ps1", ".html", ".css"}
 
@@ -51,6 +56,13 @@ def static_errors() -> list[str]:
             errors.extend(validate_text(data))
             errors.extend(validate_business_policy_ledger(data))
             errors.extend(message for index, policy in enumerate(data.get("policies", [])) for message in validate_policy(policy, index))
+    if EVIDENCE_SAMPLE.is_file():
+        try:
+            evidence = load_data(EVIDENCE_SAMPLE)
+        except (OSError, ValueError) as error:
+            errors.append(f"网页证据示例无法按UTF-8读取：{error}")
+        else:
+            errors.extend(validate_ledger(evidence, EVIDENCE_SAMPLE.parent))
     return errors
 
 
@@ -71,7 +83,7 @@ def main() -> int:
     if args.smoke and smoke(args.out_dir) != 0:
         print("HTML 冒烟测试失败", file=sys.stderr)
         return 1
-    print("通过：Skill 目录完整、文本均为UTF-8、示例数据及政策门禁有效" + ("，HTML 冒烟测试通过" if args.smoke else ""))
+    print("通过：Skill 目录完整、文本均为UTF-8、示例数据及政策门禁有效、网页证据台账有效" + ("，HTML 冒烟测试通过" if args.smoke else ""))
     return 0
 
 

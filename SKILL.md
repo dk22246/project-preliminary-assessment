@@ -22,11 +22,11 @@ description: 对拟招引企业开展三亚中央商务区招商前期尽调、�
 ## 核心运行顺序
 
 1. **确认主体。** 用户只给企业名称时，先判断名称是集团、上市公司、品牌还是经营主体。唯一可识别时直接研究；存在同名、集团与上市主体混淆、品牌与主体混淆时，列出 2—4 个明确选项，请用户确认。确认前不得混用信息。
-2. **研究企业。** 建立企业主体、股权结构、主要业务与产品、行业竞争位置、代表性上下游、国内外业务、近三年经营数据、政府补助和重大风险的事实卡。范围与来源见 `references/evidence-intake.md`。
+2. **研究企业。** 建立企业主体、股权结构、主要业务与产品、行业竞争位置、代表性上下游、国内外业务、近三年经营数据、政府补助和重大风险的事实卡。需要提高网页取证效率时，先从官方或法定披露候选 URL 生成并校验 `evidence.json`；采集结果只是可审计事实证据，不是政策资格。范围、来源和采集边界见 `references/evidence-intake.md`、`references/source-registry.md`。
 3. **拆解招商价值。** 从企业已有业务、组织能力、区域布局中识别可在三亚中央商务区实质运营的业务与管理职能；不得由政策反向虚构业务。
 4. **设计落地路径。** 对每项业务写清三亚承接主体、职能、人员、合同、收入、利润、结算或投资路径，以及可形成的税收、贸易、投资、就业、品牌和产业带动。
 5. **检索、核验并提炼重点政策。** 按每项拟落地业务对应的主管部门，先检索海南省级和驻琼执行机构，再检索三亚市及园区正式政策。每项业务均须形成动态“业务—政策检索台账”：写明主题、检索部门、结论、正式政策编号或未纳入原因和下一步核实事项。该台账用于后台防遗漏，不直接作为正式报告主体。逐项核验政策原文、地域、现行状态、条件、办理方式和企业承接路径后，按“企业整体在三亚实质落地”的招商情景，将同一项优惠的政策原文和执行公告合并为一条重点政策，使用业务语言说明实际价值；规则见 `references/policy-scope.md`。
-6. **汇总成唯一事实源。** 将确认结果写入符合 `schemas/report.schema.json` 的 `report-data.json`。先运行数据、文本、业务—政策检索台账与政策范围校验，再渲染输出。
+6. **汇总成唯一事实源。** 将确认结果写入符合 `schemas/report.schema.json` 的 `report-data.json`。如使用网页采集，先运行 `scripts/validate_evidence.py evidence.json`，并在主流水线传入 `--evidence evidence.json`；再运行数据、文本、业务—政策检索台账与政策范围校验，最后渲染输出。
 7. **生成并复核交付物。** 运行 `scripts/run_report_pipeline.py` 默认生成 HTML；仅在用户要求时附加 `--pdf` 或 `--word`。PDF 和 Word 均须复核文件结构、文字、目录、图表、表格和来源。
 
 ## 企业与落地业务判断
@@ -65,6 +65,7 @@ description: 对拟招引企业开展三亚中央商务区招商前期尽调、�
 
 - `references/entity-resolution.md`：主体确认与股权核验。
 - `references/evidence-intake.md`：企业、财务、风险公开信息来源和禁用来源。
+- `references/source-registry.md`：网页取证的允许来源、企业官网显式登记与禁止范围。
 - `references/business-decomposition.md`：业务拆分和落地业务筛选。
 - `references/policy-scope.md`：官方政策来源、搜索顺序、政策卡与地域/状态门禁。
 - `references/park-policy.md`：用户提供园区正式政策时的使用边界；未提供前不得虚构园区奖励。
@@ -72,6 +73,7 @@ description: 对拟招引企业开展三亚中央商务区招商前期尽调、�
 - `references/html-delivery.md`：HTML/PDF 与 Word 的同源交付、排版和质检。
 - `references/word-delivery.md`：仅在用户要求可编辑 Word 时读取的 Word 原生结构与页面复核规则。
 - `scripts/run_report_pipeline.py`：`validate → SVG → HTML` 主入口；`--pdf` 和 `--word` 为预置的可选转换。
+- `scripts/collect_web_evidence.py`、`scripts/validate_evidence.py`：可选的公开网页证据采集与台账门禁；只增强取证，不改变政策卡校验。
 - `scripts/preflight.py`：跨 Agent 部署预检；检查目录、UTF-8、示例数据和政策门禁，`--smoke` 同时生成示例 HTML。
 - `scripts/run_utf8.ps1`：Windows PowerShell 的 UTF-8 启动器，避免 UTF-8 Python 输出被本地代码页错误显示。
 - `scripts/validate_report_data.py`、`scripts/validate_text_quality.py`：唯一事实源和文字质量校验。
@@ -82,6 +84,10 @@ description: 对拟招引企业开展三亚中央商务区招商前期尽调、�
 ```powershell
 # 默认：只生成 HTML
 & $py scripts/run_report_pipeline.py examples/flyco-report-data.json --out-dir outputs/flyco
+
+# 如本次使用网页取证，先校验证据台账并接入主流水线
+& $py scripts/validate_evidence.py evidence/enterprise/evidence.json
+& $py scripts/run_report_pipeline.py examples/flyco-report-data.json --evidence evidence/enterprise/evidence.json --out-dir outputs/flyco
 
 # 按需：HTML + PDF
 & $py scripts/run_report_pipeline.py examples/flyco-report-data.json --out-dir outputs/flyco --pdf --node $node

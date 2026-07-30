@@ -1,0 +1,22 @@
+{
+  "enterprise": "示例企业",
+  "topic": "海南正式政策网页取证",
+  "allowed_domains": [],
+  "evidence": [
+    {
+      "source_url": "https://hainan.chinatax.gov.cn/example",
+      "canonical_url": "https://hainan.chinatax.gov.cn/example",
+      "title": "海南官方政策网页证据示例",
+      "publisher": "国家税务总局海南省税务局",
+      "source_category": "government",
+      "purpose": "预检示例",
+      "fetched_at": "2026-07-30T00:00:00+00:00",
+      "http_status": 200,
+      "extraction_status": "success",
+      "content_path": "evidence-sample/official-policy.md",
+      "content_sha256": "00359aaaff5cef59f2872e5b267e16531640353881943623a960fe5f8b4a5aa1",
+      "attachments": [],
+      "error": ""
+    }
+  ]
+}

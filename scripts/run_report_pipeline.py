@@ -24,10 +24,13 @@ def main() -> int:
     parser.add_argument("--pdf", action="store_true", help="also convert the generated HTML to PDF")
     parser.add_argument("--word", action="store_true", help="also generate an editable Word report from the same data")
     parser.add_argument("--node", help="Node executable; required only with --pdf and/or --word")
+    parser.add_argument("--evidence", help="optional validated public-web evidence ledger used in this report")
     args = parser.parse_args()
     out = Path(args.out_dir)
     out.mkdir(parents=True, exist_ok=True)
     data = Path(args.report_data)
+    if args.evidence:
+        run([sys.executable, str(SCRIPTS / "validate_evidence.py"), args.evidence])
     run([sys.executable, str(SCRIPTS / "validate_report_data.py"), str(data)])
     run([sys.executable, str(SCRIPTS / "validate_text_quality.py"), str(data)])
     run([sys.executable, str(SCRIPTS / "validate_business_policy_ledger.py"), str(data)])

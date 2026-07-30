@@ -1,0 +1,34 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Project preliminary assessment web evidence ledger",
+  "type": "object",
+  "required": ["enterprise", "topic", "evidence"],
+  "properties": {
+    "enterprise": {"type": "string", "minLength": 1},
+    "topic": {"type": "string", "minLength": 1},
+    "allowed_domains": {"type": "array", "items": {"type": "string"}},
+    "evidence": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["source_url", "canonical_url", "source_category", "purpose", "fetched_at", "extraction_status"],
+        "properties": {
+          "source_url": {"type": "string", "format": "uri"},
+          "canonical_url": {"type": "string", "format": "uri"},
+          "title": {"type": "string"},
+          "publisher": {"type": "string"},
+          "source_category": {"enum": ["government", "disclosure", "enterprise"]},
+          "purpose": {"type": "string"},
+          "fetched_at": {"type": "string"},
+          "http_status": {"type": "integer"},
+          "extraction_status": {"enum": ["success", "failed"]},
+          "content_path": {"type": "string"},
+          "content_sha256": {"type": "string"},
+          "attachments": {"type": "array"},
+          "error": {"type": "string"}
+        }
+      }
+    }
+  }
+}

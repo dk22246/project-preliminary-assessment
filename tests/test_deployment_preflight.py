@@ -23,6 +23,11 @@ class DeploymentPreflightTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("文本均为UTF-8", result.stdout)
 
+    def test_preflight_validates_web_evidence_sample(self):
+        result = subprocess.run([sys.executable, "-X", "utf8", str(ROOT / "scripts" / "preflight.py")], cwd=ROOT, text=True, capture_output=True)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("网页证据台账有效", result.stdout)
+
     def test_windows_utf8_launcher_sets_console_and_python_encoding(self):
         launcher = (ROOT / "scripts" / "run_utf8.ps1").read_text(encoding="utf-8")
         self.assertIn("[Console]::OutputEncoding", launcher)
