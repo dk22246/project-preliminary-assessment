@@ -1,0 +1,7 @@
+{
+  "version": "1.0",
+  "enterprise": "示例企业",
+  "landing_business_hypotheses": [{"id": "PH01", "landing_business_id": "L01", "fact_ids": ["FA01"], "actions": ["主办"], "roles": ["运营方"], "forms": ["体育活动"], "effects": ["消费带动"], "government_matters": [{"name": "体育赛事", "disposition": "route", "route_ids": ["DR01"]}], "policy_instruments": ["赛事奖励"]}],
+  "searches": [{"id": "PS01", "landing_business_id": "L01", "topic": "体育赛事支持", "route_ids": ["DR01"], "fact_ids": ["FA01"], "department_searches": [{"department": "三亚市旅游和文化广电体育局", "department_role": "primary_regulator", "routing_basis": "部门职责", "runs": [{"path": "theme_search", "status": "failed", "entry_url": "https://lwj.sanya.gov.cn/lwjsite/zcwj/list.shtml"}]}], "candidate_policy_ids": [], "coverage_status": "research_incomplete"}],
+  "policy_candidates": []
+}

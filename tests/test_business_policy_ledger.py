@@ -102,6 +102,12 @@ class BusinessPolicyLedgerTests(unittest.TestCase):
     def test_accepts_all_outcomes_when_each_business_is_accounted_for(self):
         self.assertEqual(validate_business_policy_ledger(valid_data()), [])
 
+    def test_accepts_not_applicable_as_distinct_from_not_triggered(self):
+        data = valid_data()
+        data["policy_research"][-1]["outcome"] = "not_applicable"
+        data["policy_research"][-1]["conclusion"] = "已核验现有主体不符合该政策的适用条件。"
+        self.assertEqual(validate_business_policy_ledger(data), [])
+
     def test_html_renderer_prioritizes_grouped_policies_under_the_landing_scenario(self):
         with tempfile.TemporaryDirectory() as directory:
             output = Path(directory) / "report.html"
@@ -132,6 +138,50 @@ class BusinessPolicyLedgerTests(unittest.TestCase):
 
         svg = equity_svg(FLYCO["equity"])
         self.assertIn("paint-order:stroke", svg)
+
+    def test_equity_svg_wraps_long_node_text_and_deduplicates_shared_relationship_labels(self):
+        from report_core import equity_svg
+
+        equity = {
+            "nodes": [
+                {"id": "parent", "name": "Logitech International S.A.", "entity_type": "上市公司", "role": "分析主体／集团控制平台", "level": 0},
+                {"id": "eu", "name": "Logitech Europe S.A.", "entity_type": "合并子公司", "role": "欧洲及集团知识产权相关经营", "level": 1},
+                {"id": "us", "name": "Logitech Inc.", "entity_type": "合并子公司", "role": "美国经营主体", "level": 1},
+                {"id": "cn", "name": "中国经营主体（3家）", "entity_type": "合并子公司组", "role": "中国销售、咨询与苏州制造", "level": 1},
+            ],
+            "edges": [
+                {"from": "parent", "to": "eu", "relationship": "合并控制；比例未披露"},
+                {"from": "parent", "to": "us", "relationship": "合并控制；比例未披露"},
+                {"from": "parent", "to": "cn", "relationship": "合并控制；比例未披露"},
+            ],
+        }
+
+        svg = equity_svg(equity)
+        self.assertIn('width="100%"', svg)
+        self.assertIn('viewBox="0 0 640 ', svg)
+        self.assertIn("<tspan", svg)
+        self.assertEqual(svg.count("合并控制；比例未披露"), 1)
+        self.assertNotRegex(svg, r"<tspan[^>]*>[^<]{1}</tspan>")
+
+    def test_browser_layout_gate_checks_equity_svg_bounds(self):
+        source = (ROOT / "scripts" / "verify_html_layout.mjs").read_text(encoding="utf-8")
+        self.assertIn("股权图元素越出 SVG 画布", source)
+
+    def test_browser_layout_gate_covers_every_report_table_and_page_width(self):
+        source = (ROOT / "scripts" / "verify_html_layout.mjs").read_text(encoding="utf-8")
+        self.assertIn('document.querySelectorAll(".report-table")', source)
+        self.assertIn("页面出现横向越界", source)
+
+    def test_report_pipeline_runs_layout_gate_before_any_optional_conversion(self):
+        source = (ROOT / "scripts" / "run_report_pipeline.py").read_text(encoding="utf-8")
+        self.assertIn('"verify_html_layout.mjs"', source)
+        self.assertIn("HTML 版式验收失败", source)
+
+    def test_html_table_renderer_rejects_rows_with_more_or_fewer_cells_than_headers(self):
+        from render_report_html import report_table
+
+        with self.assertRaisesRegex(ValueError, "列数"):
+            report_table(["时间", "事项类型", "来源编号"], [["FY2026", "诉讼", "持续", "R02"]])
 
     def test_word_renderer_uses_the_same_policy_match_table_without_pending_table(self):
         source = (ROOT / "scripts" / "render_report_word.py").read_text(encoding="utf-8")

@@ -5,7 +5,7 @@ import argparse
 from html import escape
 from pathlib import Path
 
-from report_core import equity_svg, load_data, validate_report_data, validate_text
+from report_core import equity_svg, financial_change_notes, financial_headers, load_data, validate_report_data, validate_text
 
 
 CSS = r'''
@@ -19,7 +19,7 @@ CSS = r'''
 /* Let the report flow naturally; headings never detach from following content. */
 .report-section{padding:0 17mm}.section-head{margin:16pt 0 10pt;padding:0 0 7pt;border-bottom:2px solid var(--accent);break-after:avoid;page-break-after:avoid}.section-head h1{margin:0}.section-mark{display:none}
 /* Fixed-layout tables prevent column drift and visual overflow. */
-table.report-table{width:100%;table-layout:fixed;border-collapse:collapse;margin:7pt 0 13pt;font-size:9.2pt;line-height:1.48;break-inside:auto}table.report-table th,table.report-table td{border:1px solid var(--line);padding:6pt 6.5pt;vertical-align:top;overflow-wrap:anywhere;word-break:break-word}table.report-table th{background:var(--accent-soft);color:var(--ink);font-weight:700;text-align:center;vertical-align:middle}table.report-table tbody tr:nth-child(even){background:#f8fafb}table.report-table tr{break-inside:avoid;page-break-inside:avoid}table.report-table td:first-child{text-align:center;vertical-align:middle}.wide{font-size:8.55pt}.financial-table td:nth-child(1),.financial-table td:nth-child(2),.financial-table td:nth-child(3),.financial-table td:nth-child(4),.financial-table td:nth-child(5),.financial-table td:nth-child(9){white-space:nowrap;text-align:center;font-variant-numeric:tabular-nums}.financial-table td:nth-child(3),.financial-table td:nth-child(5){font-weight:700;color:var(--accent)}.support-table td:first-child{white-space:nowrap;font-variant-numeric:tabular-nums}.source-table{font-size:8.45pt}.source-table a{color:#006e7a;text-decoration:underline;text-underline-offset:2px;word-break:break-all}.svg-wrap{margin:7pt 0 12pt;padding:8pt;border:1px solid var(--line);background:#f5f9f9}.svg-wrap svg{display:block;width:100%;height:auto}.summary-note{margin:8pt 0 12pt;padding:8pt 10pt;border-left:3px solid var(--accent);background:#f0f7f7;color:var(--text);font-size:9.5pt;text-indent:0}
+table.report-table{width:100%;table-layout:fixed;border-collapse:collapse;margin:7pt 0 13pt;font-size:9.2pt;line-height:1.48;break-inside:auto}table.report-table th,table.report-table td{border:1px solid var(--line);padding:6pt 6.5pt;vertical-align:top;overflow-wrap:anywhere;word-break:break-word}.financial-table th,.financial-table td{min-width:0;max-width:100%;overflow:hidden}table.report-table th{background:var(--accent-soft);color:var(--ink);font-weight:700;text-align:center;vertical-align:middle}table.report-table tbody tr:nth-child(even){background:#f8fafb}table.report-table tr{break-inside:avoid;page-break-inside:avoid}table.report-table td:first-child{text-align:center;vertical-align:middle}.wide{font-size:8.55pt}.financial-table td:nth-child(1),.financial-table td:nth-child(2),.financial-table td:nth-child(4),.financial-table td:nth-child(9){white-space:nowrap;text-align:center;font-variant-numeric:tabular-nums}.financial-table td:nth-child(3),.financial-table td:nth-child(5){white-space:normal;overflow-wrap:anywhere;word-break:break-word;text-align:center;font-weight:700;color:var(--accent);font-variant-numeric:tabular-nums}.support-table td:first-child{white-space:nowrap;font-variant-numeric:tabular-nums}.source-table{font-size:8.45pt}.source-table a{color:#006e7a;text-decoration:underline;text-underline-offset:2px;word-break:break-all}.svg-wrap{margin:7pt 0 12pt;padding:8pt;border:1px solid var(--line);background:#f5f9f9;overflow:hidden}.svg-wrap svg{display:block;width:100%;max-width:100%;height:auto}.summary-note{margin:8pt 0 12pt;padding:8pt 10pt;border-left:3px solid var(--accent);background:#f0f7f7;color:var(--text);font-size:9.5pt;text-indent:0}.table-note{margin:-5pt 0 10pt;padding:6pt 8pt;border-left:2px solid var(--accent);background:#f5f9f9;color:var(--muted);font-size:8.7pt;line-height:1.45;text-indent:0}
 /* Policy matching is a decision table. Internal research controls remain in
    validation data and never displace the actual policy results in the report. */
 .policy-note{margin:0 0 7pt;color:var(--muted);font-size:8.8pt;line-height:1.45;text-indent:0}.policy-match-table{font-size:8.55pt}.policy-match-table td:first-child{text-align:left;vertical-align:top}.policy-match-table td:nth-child(2){white-space:pre-line}.policy-match-table a{color:#006e7a;font-weight:700;text-decoration:underline;text-underline-offset:2px}.policy-ref{display:block;margin-top:2pt;color:var(--muted);font-size:7.8pt;line-height:1.35}.policy-match-table .status{display:block;font-weight:700;color:var(--accent);line-height:1.4}.pending-policy-table{font-size:8.65pt}.pending-policy-table td:first-child{text-align:left;vertical-align:top}
@@ -27,7 +27,16 @@ table.report-table{width:100%;table-layout:fixed;border-collapse:collapse;margin
 '''
 
 
+def validate_table_shape(headers: list[str], rows: list[list[str]], widths: list[int] | None = None) -> None:
+    if widths and (len(widths) != len(headers) or sum(widths) != 100):
+        raise ValueError(f"表格列宽配置无效：表头 {len(headers)} 列，列宽 {len(widths)} 列，合计 {sum(widths)}%")
+    for index, row in enumerate(rows, start=1):
+        if len(row) != len(headers):
+            raise ValueError(f"表格第 {index} 行列数不匹配：表头 {len(headers)} 列，数据 {len(row)} 列")
+
+
 def report_table(headers: list[str], rows: list[list[str]], table_class: str = "", widths: list[int] | None = None) -> str:
+    validate_table_shape(headers, rows, widths)
     cols = "" if not widths else "<colgroup>" + "".join(f'<col style="width:{width}%">' for width in widths) + "</colgroup>"
     head = "".join(f"<th>{escape(str(item))}</th>" for item in headers)
     body = "".join("<tr>" + "".join(f"<td>{escape(str(item))}</td>" for item in row) + "</tr>" for row in rows)
@@ -43,10 +52,12 @@ def source_table(rows: list[dict[str, str]]) -> str:
         if location.startswith(("https://", "http://")):
             safe_location = f'<a href="{safe_location}">{safe_location}</a>'
         rendered.append([item.get(k, "") for k in ("id", "type", "name", "issuer", "date")] + [safe_location, item.get("used_in", "")])
+    widths = (6, 7, 19, 18, 9, 29, 12)
+    validate_table_shape(header, rendered, list(widths))
     head = "".join(f"<th>{escape(item)}</th>" for item in header)
     body = "".join("<tr>" + "".join(f"<td>{value if i == 5 else escape(str(value))}</td>" for i, value in enumerate(row)) + "</tr>" for row in rendered)
-    widths = "".join(f'<col style="width:{width}%">' for width in (6, 7, 19, 18, 9, 29, 12))
-    return f'<table class="report-table source-table"><colgroup>{widths}</colgroup><thead><tr>{head}</tr></thead><tbody>{body}</tbody></table>'
+    columns = "".join(f'<col style="width:{width}%">' for width in widths)
+    return f'<table class="report-table source-table"><colgroup>{columns}</colgroup><thead><tr>{head}</tr></thead><tbody>{body}</tbody></table>'
 
 
 def policy_reporting_groups(policies: list[dict]) -> list[list[dict]]:
@@ -80,10 +91,12 @@ def policy_match_table(policies: list[dict]) -> str:
             escape(f"享受前提：{conditions}\n三亚承接：{landing}"),
             f'<span class="status">{escape(str(lead.get("report_judgment") or "整体落地情景下重点政策"))}</span>',
         ])
+    widths = (17, 20, 20, 28, 15)
+    validate_table_shape(headers, rows, list(widths))
     head = "".join(f"<th>{escape(item)}</th>" for item in headers)
     body = "".join("<tr>" + "".join(f"<td>{value}</td>" for value in row) + "</tr>" for row in rows)
-    widths = "".join(f'<col style="width:{width}%">' for width in (17, 20, 20, 28, 15))
-    return f'<table class="report-table wide policy-match-table"><colgroup>{widths}</colgroup><thead><tr>{head}</tr></thead><tbody>{body}</tbody></table>'
+    columns = "".join(f'<col style="width:{width}%">' for width in widths)
+    return f'<table class="report-table wide policy-match-table"><colgroup>{columns}</colgroup><thead><tr>{head}</tr></thead><tbody>{body}</tbody></table>'
 
 
 def section(title: str, body: str) -> str:
@@ -117,7 +130,9 @@ def main() -> int:
     sections.append(section("二、企业基本情况", basic))
     financial_rows = [[item.get(key, "未公开披露") for key in ("year", "revenue", "revenue_change", "profit", "profit_change", "tax_value", "tax_basis", "government_support", "source")] for item in data["financials"]]
     support_rows = [[item.get(key, "未公开披露") for key in ("year", "name", "department", "amount", "purpose", "conditions", "source")] for item in data.get("government_support", [])] or [["—", "本轮公开检索未发现可确认的政府补助明细", "—", "—", "需企业补充", "需企业补充", "—"]]
-    finance = "<h2>（一）营业收入、利润、纳税及政府补助情况</h2>" + report_table(["年度", "营业收入（亿元）", "同比（%）", "净利润（亿元）", "同比（%）", "纳税相关数据", "纳税数据口径", "政府补助及财政支持", "来源编号"], financial_rows, "wide financial-table", [7, 11, 9, 11, 9, 10, 11, 24, 8]) + "<h3>政府补助及财政支持明细表</h3>" + report_table(["年度", "补助或支持名称", "发放部门", "金额", "对应项目或用途", "附带条件或履约要求", "来源编号"], support_rows, "wide support-table", [7, 16, 12, 12, 16, 28, 9]) + "<h2>（二）经营数据分析</h2>" + paragraph(data.get("financial_analysis", "需企业补充"))
+    notes = financial_change_notes(data["financials"])
+    note_html = "" if not notes else '<p class="table-note">注：' + escape("；".join(notes)) + "</p>"
+    finance = "<h2>（一）营业收入、利润、纳税及政府补助情况</h2>" + report_table(financial_headers(data["meta"]), financial_rows, "wide financial-table", [10, 11, 11, 11, 11, 9, 10, 20, 7]) + note_html + "<h3>政府补助及财政支持明细表</h3>" + report_table(["年度", "补助或支持名称", "发放部门", "金额", "对应项目或用途", "附带条件或履约要求", "来源编号"], support_rows, "wide support-table", [8, 16, 12, 12, 16, 28, 8]) + "<h2>（二）经营数据分析</h2>" + paragraph(data.get("financial_analysis", "需企业补充"))
     sections.append(section("三、近三年经营数据", finance))
     risk = data["risks"]
     risk_body = "<h2>（一）行政处罚及监管风险</h2>" + report_table(["时间", "风险类型", "具体事项", "处理结果", "是否已整改", "对招商的影响", "来源编号"], risk.get("regulatory", []), "wide risk-table", [6, 12, 33, 10, 10, 21, 8]) + "<h2>（二）诉讼、执行及失信情况</h2>" + report_table(["时间", "事项类型", "涉及对象或金额", "当前状态", "对招商的影响", "来源编号"], risk.get("litigation", []), "wide risk-table", [9, 18, 32, 16, 17, 8]) + "<h2>（三）风险综合判断</h2>" + paragraph(risk.get("summary", "需企业补充"))

@@ -26,7 +26,7 @@ class DeploymentPreflightTests(unittest.TestCase):
     def test_preflight_validates_web_evidence_sample(self):
         result = subprocess.run([sys.executable, "-X", "utf8", str(ROOT / "scripts" / "preflight.py")], cwd=ROOT, text=True, capture_output=True)
         self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertIn("网页证据台账有效", result.stdout)
+        self.assertIn("网页证据台账、研究路由和动态政策检索覆盖门禁有效", result.stdout)
 
     def test_windows_utf8_launcher_sets_console_and_python_encoding(self):
         launcher = (ROOT / "scripts" / "run_utf8.ps1").read_text(encoding="utf-8")
@@ -35,6 +35,13 @@ class DeploymentPreflightTests(unittest.TestCase):
         self.assertIn("-X utf8 @PythonArgs", launcher)
         self.assertIn("SKILL_PYTHON", launcher)
         self.assertIn("py -ErrorAction", launcher)
+
+    def test_portable_verifier_uses_python_not_powershell_for_preflight_and_tests(self):
+        verifier = (ROOT / "scripts" / "verify_skill.py").read_text(encoding="utf-8")
+        self.assertIn("sys.executable", verifier)
+        self.assertIn('"-X", "utf8"', verifier)
+        self.assertIn('"-m", "unittest", "discover", "-s", "tests", "-v"', verifier)
+        self.assertNotIn("powershell", verifier.lower())
 
 
 if __name__ == "__main__":

@@ -13,15 +13,34 @@ REQUIRED_ENTITY = ("user_input", "name_type", "legal_entity", "analysis_entity",
 REQUIRED_POLICY = ("name", "region", "region_evidence", "source_type", "source_url", "status", "enterprise_business", "landing_action")
 POLICY_EVIDENCE_FIELDS = ("source_id", "issuer", "document_number", "published_at", "validity_evidence", "applicable_object", "plain_language", "conditions", "policy_value", "handling_route")
 POLICY_EVIDENCE_LABELS = {"source_id": "来源编号", "issuer": "发文机关", "document_number": "文号", "published_at": "发布日期", "validity_evidence": "现行状态依据", "applicable_object": "适用对象", "plain_language": "政策一句话说明", "conditions": "核心条件", "policy_value": "政策实际价值", "handling_route": "办理方式"}
-LEDGER_OUTCOMES = {"direct_match", "conditional_opportunity", "not_triggered", "no_current_policy"}
-LEDGER_LABELS = {"direct_match": "可适用（条件待核）", "conditional_opportunity": "条件型政策机会", "not_triggered": "暂未触发", "no_current_policy": "未发现现行政策"}
+LEDGER_OUTCOMES = {"direct_match", "conditional_opportunity", "not_triggered", "not_applicable", "no_current_policy", "research_incomplete"}
+LEDGER_LABELS = {"direct_match": "可适用（条件待核）", "conditional_opportunity": "条件型政策机会", "not_triggered": "暂未触发", "not_applicable": "现有条件不适用", "no_current_policy": "未发现现行政策", "research_incomplete": "检索未完成（禁止交付）"}
 TERMS = ("实质性运营", "拟落地主体", "核心经营主体", "控股股东", "政府补助及财政支持")
+YOY_PATTERN = re.compile(r"(?:[+-]?\d+(?:\.\d+)?%|—|未计算|未公开披露)")
+FINANCIAL_VALUE_PATTERN = re.compile(r"\d{1,3}(?:,\d{3})*(?:\.\d+)?|\d+(?:\.\d+)?")
 
 
 def load_data(path: str | Path) -> dict:
     # Accept UTF-8 with or without BOM: several Windows-based agents add a BOM
     # when saving JSON, while the generated report data remains UTF-8.
     return json.loads(Path(path).read_text(encoding="utf-8-sig"))
+
+
+def financial_headers(meta: dict) -> list[str]:
+    """Use the explicitly declared display unit; never infer it from cell text."""
+    unit = str(meta.get("financial_unit", "")).strip()
+    suffix = f"（{unit}）" if unit else ""
+    return ["年度", f"营业收入{suffix}", "同比", f"净利润{suffix}", "同比", "纳税相关数据", "纳税数据口径", "政府补助及财政支持", "来源编号"]
+
+
+def financial_change_notes(financials: list[dict]) -> list[str]:
+    """Keep explanations outside narrow year-on-year columns."""
+    notes: list[str] = []
+    for row in financials:
+        note = str(row.get("change_note", "")).strip()
+        if note:
+            notes.append(f"{str(row.get('year', '未注明年度')).strip()}：{note}")
+    return notes
 
 
 def validate_report_data(data: dict) -> list[str]:
@@ -50,10 +69,31 @@ def validate_report_data(data: dict) -> list[str]:
                 errors.append(f"业务拆解缺少{field}：{item.get('segment', '未命名业务')}")
     if len(data.get("financials", [])) != 3:
         errors.append("财务数据必须恰好包含最近三个完整年度")
+    meta = data.get("meta", {})
+    currency = str(meta.get("financial_currency", "")).strip()
+    unit = str(meta.get("financial_unit", "")).strip()
+    if bool(currency) != bool(unit):
+        errors.append("财务币种和显示单位必须同时填写或同时缺省")
+    if currency and not re.fullmatch(r"[A-Z]{3}", currency):
+        errors.append("financial_currency 必须为三位大写 ISO 币种代码")
+    if unit and len(unit) > 20:
+        errors.append("financial_unit 过长，必须使用简短统一显示单位")
     for row in data.get("financials", []):
-        for field in ("year", "revenue", "profit", "tax_value", "tax_basis", "government_support", "source"):
+        for field in ("year", "revenue", "revenue_change", "profit", "profit_change", "tax_value", "tax_basis", "government_support", "source"):
             if not str(row.get(field, "")).strip():
                 errors.append(f"财务行缺少{field}：{row}")
+        for field in ("revenue", "profit"):
+            value = str(row.get(field, "")).strip()
+            if value and not FINANCIAL_VALUE_PATTERN.fullmatch(value):
+                errors.append(f"财务行{field}必须为不含币种和单位的数值显示：{value}")
+        for field in ("revenue_change", "profit_change"):
+            value = str(row.get(field, "")).strip()
+            if value and not YOY_PATTERN.fullmatch(value):
+                errors.append(f"财务行{field}同比字段格式不规范，必须为百分比、—、未计算或未公开披露：{value}")
+        if any(str(row.get(field, "")).strip() in {"—", "未计算"} for field in ("revenue_change", "profit_change")) and not str(row.get("change_note", "")).strip():
+            errors.append(f"财务行{row.get('year', '未注明年度')}未计算同比时必须填写change_note")
+        if len(str(row.get("change_note", "")).strip()) > 160:
+            errors.append(f"财务行{row.get('year', '未注明年度')}change_note 过长，应移入经营分析")
         if row.get("tax_basis") not in ("纳税总额", "支付的各项税费", "所得税费用", "税金及附加", "其他公开税费口径", "需企业补充"):
             errors.append(f"纳税口径不规范：{row.get('tax_basis')}")
     for item in data.get("landing_businesses", []):
@@ -108,8 +148,8 @@ def validate_business_policy_ledger(data: dict) -> list[str]:
                 errors.append(f"{label}: 检索依据不是有效P类参考资料：{source_id}")
         if outcome in {"direct_match", "conditional_opportunity"} and not item.get("policy_ids"):
             errors.append(f"{label}: 可适用或条件型机会必须关联正式政策")
-        if outcome in {"not_triggered", "no_current_policy"} and not str(item.get("next_evidence", "")).strip():
-            errors.append(f"{label}: 缺少未触发或无政策的原因及下一步核实事项")
+        if outcome in {"not_triggered", "not_applicable", "no_current_policy", "research_incomplete"} and not str(item.get("next_evidence", "")).strip():
+            errors.append(f"{label}: 缺少未触发、不适用、无政策或未完成检索的原因及下一步核实事项")
         for policy_id in item.get("policy_ids", []):
             if policy_id not in policy_by_id:
                 errors.append(f"{label}: 关联政策不存在：{policy_id}")
@@ -147,27 +187,97 @@ def validate_text(data: dict) -> list[str]:
     return errors
 
 
+def _svg_text_lines(value: str, limit: float) -> list[str]:
+    """Wrap mixed Chinese/Latin labels before emitting SVG text nodes."""
+    lines: list[str] = []
+    current = ""
+    current_width = 0.0
+    for character in str(value):
+        width = 0.58 if ord(character) < 128 else 1.0
+        if current and current_width + width > limit:
+            lines.append(current)
+            current, current_width = character, width
+        else:
+            current += character
+            current_width += width
+    if current:
+        lines.append(current)
+    if len(lines) > 1 and len(lines[-1]) == 1 and len(lines[-2]) > 1:
+        # Avoid an orphan Chinese character on its own visual line by moving
+        # one character from the preceding line into the final line.
+        lines[-1] = lines[-2][-1] + lines[-1]
+        lines[-2] = lines[-2][:-1]
+    return lines or [""]
+
+
+def _svg_text(class_name: str, x: int, first_y: int, lines: list[str], line_height: int) -> str:
+    spans = "".join(
+        f'<tspan x="{x}" y="{first_y + index * line_height}">{escape(line)}</tspan>'
+        for index, line in enumerate(lines)
+    )
+    return f'<text class="{class_name}" text-anchor="middle">{spans}</text>'
+
+
 def equity_svg(equity: dict) -> str:
+    """Build a responsive, wrapped ownership chart that cannot escape its panel."""
     nodes = equity["nodes"]
     levels: dict[int, list[dict]] = {}
+    node_width, horizontal_gap, margin, max_columns = 250, 30, 55, 2
+    node_layout: dict[str, dict] = {}
     for node in nodes:
         levels.setdefault(int(node.get("level", 0)), []).append(node)
-    width, height = 980, max(320, 180 + len(levels) * 150)
+        name_lines = _svg_text_lines(node["name"], 22)
+        detail_lines = _svg_text_lines(f'{node["entity_type"]}｜{node["role"]}', 18)
+        node_layout[node["id"]] = {
+            "name_lines": name_lines,
+            "detail_lines": detail_lines,
+            "height": 28 + len(name_lines) * 18 + 5 + len(detail_lines) * 16,
+        }
+
+    width = max(640, margin * 2 + max_columns * node_width + (max_columns - 1) * horizontal_gap)
     positions: dict[str, tuple[int, int]] = {}
-    for level, items in sorted(levels.items()):
-        gap = width // (len(items) + 1)
-        for index, node in enumerate(items, 1):
-            positions[node["id"]] = (gap * index, 100 + level * 145)
-    parts = [f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" viewBox="0 0 {width} {height}" role="img">', '<style>.n{fill:#fff;stroke:#4b5563;stroke-width:1.5}.t{font:14px Arial,"Microsoft YaHei",sans-serif;fill:#111827}.s{font:12px Arial,"Microsoft YaHei",sans-serif;fill:#4b5563}.e{stroke:#6b7280;stroke-width:1.5}.l{font:12px Arial,"Microsoft YaHei",sans-serif;fill:#374151;paint-order:stroke;stroke:#f5f9f9;stroke-width:4px;stroke-linejoin:round}</style>']
+    cursor_y = 60
+    for _, items in sorted(levels.items()):
+        for row_start in range(0, len(items), max_columns):
+            row = items[row_start:row_start + max_columns]
+            row_height = max(node_layout[node["id"]]["height"] for node in row)
+            occupied = len(row) * node_width + (len(row) - 1) * horizontal_gap
+            start_x = (width - occupied) // 2 + node_width // 2
+            for index, node in enumerate(row):
+                positions[node["id"]] = (start_x + index * (node_width + horizontal_gap), cursor_y + row_height // 2)
+            cursor_y += row_height + (36 if row_start + max_columns < len(items) else 0)
+        cursor_y += 92
+    height = max(300, cursor_y - 32)
+
+    parts = [f'<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="{height}" viewBox="0 0 {width} {height}" preserveAspectRatio="xMidYMid meet" role="img">', '<style>.n{fill:#fff;stroke:#4b5563;stroke-width:1.5}.t{font:14px Arial,"Microsoft YaHei",sans-serif;fill:#111827}.s{font:12px Arial,"Microsoft YaHei",sans-serif;fill:#4b5563}.e{stroke:#6b7280;stroke-width:1.5}.l{font:12px Arial,"Microsoft YaHei",sans-serif;fill:#374151;paint-order:stroke;stroke:#f5f9f9;stroke-width:4px;stroke-linejoin:round}</style>']
+    relationship_groups: dict[tuple[str, str], list[dict]] = {}
     for edge in equity["edges"]:
+        relationship_groups.setdefault((edge["from"], edge["relationship"]), []).append(edge)
         x1, y1 = positions[edge["from"]]; x2, y2 = positions[edge["to"]]
-        parts.append(f'<line class="e" x1="{x1}" y1="{y1 + 36}" x2="{x2}" y2="{y2 - 36}"/>')
-        parts.append(f'<text class="l" x="{(x1+x2)//2}" y="{(y1+y2)//2 - 5}" text-anchor="middle">{escape(edge["relationship"])}</text>')
+        source_height = node_layout[edge["from"]]["height"]
+        target_height = node_layout[edge["to"]]["height"]
+        parts.append(f'<line class="e" x1="{x1}" y1="{y1 + source_height // 2}" x2="{x2}" y2="{y2 - target_height // 2}"/>')
+    for (source_id, relationship), grouped_edges in relationship_groups.items():
+        x1, y1 = positions[source_id]
+        source_height = node_layout[source_id]["height"]
+        if len(grouped_edges) > 1:
+            label_x, label_y = x1, y1 + source_height // 2 + 27
+        else:
+            edge = grouped_edges[0]
+            x2, y2 = positions[edge["to"]]
+            label_x = (x1 + x2) // 2
+            label_y = (y1 + source_height // 2 + y2 - node_layout[edge["to"]]["height"] // 2) // 2
+        label_lines = _svg_text_lines(relationship, 18)
+        parts.append(_svg_text("l", label_x, label_y - (len(label_lines) - 1) * 7, label_lines, 14))
     for node in nodes:
         x, y = positions[node["id"]]
-        name = escape(node["name"]); entity_type = escape(node["entity_type"]); role = escape(node["role"])
-        parts.append(f'<rect class="n" x="{x-125}" y="{y-36}" width="250" height="72" rx="8"/>')
-        parts.append(f'<text class="t" x="{x}" y="{y-9}" text-anchor="middle">{name}</text><text class="s" x="{x}" y="{y+12}" text-anchor="middle">{entity_type}｜{role}</text>')
+        layout = node_layout[node["id"]]
+        node_height = layout["height"]
+        top = y - node_height // 2
+        parts.append(f'<rect class="n" x="{x-node_width//2}" y="{top}" width="{node_width}" height="{node_height}" rx="8"/>')
+        parts.append(_svg_text("t", x, top + 20, layout["name_lines"], 18))
+        detail_start = top + 28 + len(layout["name_lines"]) * 18 + 12
+        parts.append(_svg_text("s", x, detail_start, layout["detail_lines"], 16))
     return "".join(parts) + "</svg>"
 
 

@@ -20,6 +20,17 @@ class BusinessTriggeredPolicyLogicTests(unittest.TestCase):
         self.assertIn("\u4e0d\u5f97\u7531\u653f\u7b56\u53cd\u5411\u865a\u6784\u4e1a\u52a1", skill)
         self.assertIn("\u6bcf\u9879\u62df\u843d\u5730\u4e1a\u52a1", scope)
 
+    def test_report_pipeline_requires_validated_research_ledger(self):
+        pipeline = (ROOT / "scripts" / "run_report_pipeline.py").read_text(encoding="utf-8")
+        self.assertIn('parser.add_argument("--research-ledger", required=True', pipeline)
+        self.assertIn('validate_research_ledger.py', pipeline)
+
+    def test_report_pipeline_requires_dynamic_policy_search_coverage_before_rendering(self):
+        pipeline = (ROOT / "scripts" / "run_report_pipeline.py").read_text(encoding="utf-8")
+        self.assertIn('parser.add_argument("--policy-search-ledger", required=True', pipeline)
+        self.assertIn('validate_policy_search_coverage.py', pipeline)
+        self.assertLess(pipeline.index('validate_policy_search_coverage.py'), pipeline.index('render_report_html.py'))
+
     def test_eight_sections_and_data_delivery(self):
         template = (ROOT / "references" / "report-template.md").read_text(encoding="utf-8")
         skill = (ROOT / "SKILL.md").read_text(encoding="utf-8")

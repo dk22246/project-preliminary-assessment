@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Business Discovery and Policy Routing Research Ledger",
+  "type": "object",
+  "required": ["enterprise", "fact_ledger", "business_candidates", "department_routes", "policy_candidates"],
+  "properties": {
+    "enterprise": {"type": "string", "minLength": 1},
+    "fact_ledger": {"type": "array", "minItems": 1},
+    "business_candidates": {"type": "array", "minItems": 1},
+    "department_routes": {"type": "array", "minItems": 1},
+    "policy_candidates": {"type": "array"}
+  }
+}

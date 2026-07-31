@@ -1,0 +1,38 @@
+{
+  "headquarters_management": {
+    "label": "总部及经营管理",
+    "departments": ["三亚市投资促进局", "国家税务总局海南省税务局"],
+    "department_roles": {"三亚市投资促进局": "primary_regulator", "国家税务总局海南省税务局": "execution_authority"},
+    "policy_topics": ["总部认定", "企业所得税", "人才个人所得税"]
+  },
+  "digital_commerce_operation": {
+    "label": "数字商业运营",
+    "departments": ["海南省商务厅", "三亚市商务局", "国家税务总局海南省税务局"],
+    "department_roles": {"海南省商务厅": "provincial_counterpart", "三亚市商务局": "municipal_counterpart", "国家税务总局海南省税务局": "execution_authority"},
+    "policy_topics": ["数字贸易", "企业所得税", "电子商务"]
+  },
+  "cross_border_trade": {
+    "label": "跨境贸易与结算",
+    "departments": ["海南省商务厅", "三亚市商务局", "中国人民银行海南省分行", "国家外汇管理局海南省分局", "海口海关"],
+    "department_roles": {"海南省商务厅": "primary_regulator", "三亚市商务局": "municipal_counterpart", "中国人民银行海南省分行": "execution_authority", "国家外汇管理局海南省分局": "execution_authority", "海口海关": "execution_authority"},
+    "policy_topics": ["外贸支持", "跨境人民币", "EF账户", "离岸贸易", "海关税收政策"]
+  },
+  "overseas_investment": {
+    "label": "境外投资管理",
+    "departments": ["海南省商务厅", "国家外汇管理局海南省分局"],
+    "department_roles": {"海南省商务厅": "primary_regulator", "国家外汇管理局海南省分局": "execution_authority"},
+    "policy_topics": ["ODI", "境外投资所得", "外汇登记"]
+  },
+  "sports_event_operation": {
+    "label": "体育赛事组织与运营",
+    "departments": ["海南省旅游和文化广电体育厅", "三亚市旅游和文化广电体育局"],
+    "department_roles": {"海南省旅游和文化广电体育厅": "provincial_counterpart", "三亚市旅游和文化广电体育局": "primary_regulator"},
+    "policy_topics": ["体育赛事奖励", "大型活动资金", "体育旅游", "文体旅融合"]
+  },
+  "large_event_operation": {
+    "label": "大型活动组织与运营",
+    "departments": ["海南省旅游和文化广电体育厅", "三亚市旅游和文化广电体育局"],
+    "department_roles": {"海南省旅游和文化广电体育厅": "provincial_counterpart", "三亚市旅游和文化广电体育局": "primary_regulator"},
+    "policy_topics": ["大型活动", "旅游消费促进", "文体旅融合"]
+  }
+}

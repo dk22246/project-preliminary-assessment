@@ -4,7 +4,9 @@
     "generated_at": "2026年7月27日",
     "reporting_entity": "上海飞科电器股份有限公司",
     "unit": "三亚中央商务区招商研判组",
-    "html_template": "sanya-cbd-editorial"
+    "html_template": "sanya-cbd-editorial",
+    "financial_currency": "CNY",
+    "financial_unit": "亿元"
   },
   "entity_resolution": {
     "user_input": "飞科电器",
@@ -157,9 +159,9 @@
   "financials": [
     {
       "year": "2025",
-      "revenue": "38.61亿元",
+      "revenue": "38.61",
       "revenue_change": "-6.90%",
-      "profit": "5.12亿元",
+      "profit": "5.12",
       "profit_change": "+11.84%",
       "tax_value": "4.22亿元",
       "tax_basis": "支付的各项税费",
@@ -168,9 +170,9 @@
     },
     {
       "year": "2024",
-      "revenue": "41.47亿元",
+      "revenue": "41.47",
       "revenue_change": "-18.03%",
-      "profit": "4.58亿元",
+      "profit": "4.58",
       "profit_change": "-55.09%",
       "tax_value": "3.29亿元",
       "tax_basis": "支付的各项税费",
@@ -179,9 +181,9 @@
     },
     {
       "year": "2023",
-      "revenue": "50.60亿元",
+      "revenue": "50.60",
       "revenue_change": "+9.35%",
-      "profit": "10.20亿元",
+      "profit": "10.20",
       "profit_change": "+23.90%",
       "tax_value": "6.92亿元",
       "tax_basis": "支付的各项税费",

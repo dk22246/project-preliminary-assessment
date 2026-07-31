@@ -9,7 +9,7 @@ from docx import Document
 from docx.enum.text import WD_BREAK
 from docx.shared import Cm
 
-from report_core import load_data, validate_report_data, validate_text
+from report_core import financial_change_notes, financial_headers, load_data, validate_report_data, validate_text
 from word_report_builder import add_body, add_cover_line, add_heading, add_native_toc_with_cache, add_standard_table, configure_report_document, try_update_fields_with_word
 
 
@@ -74,7 +74,11 @@ def main() -> int:
     add_heading(doc, "（四）行业地位及竞争位置", 2); add_body(doc, data.get("industry_position", "需企业补充"))
     add_heading(doc, "（五）上下游及国内外业务", 2); add_body(doc, data.get("upstream_downstream", "需企业补充"))
     h1(doc, "三、近三年经营数据")
-    add_heading(doc, "（一）营业收入、利润、纳税及政府补助情况", 2); add_standard_table(doc, ["年度", "营业收入", "同比", "净利润", "同比", "纳税相关数据", "纳税口径", "政府补助", "来源"], rows(data["financials"], ("year", "revenue", "revenue_change", "profit", "profit_change", "tax_value", "tax_basis", "government_support", "source")), [1.1, 1.55, 0.9, 1.45, 0.9, 1.5, 1.5, 1.6, 1.0])
+    headers = financial_headers(data["meta"])
+    add_heading(doc, "（一）营业收入、利润、纳税及政府补助情况", 2); add_standard_table(doc, headers, rows(data["financials"], ("year", "revenue", "revenue_change", "profit", "profit_change", "tax_value", "tax_basis", "government_support", "source")), [1.1, 1.55, 0.9, 1.45, 0.9, 1.5, 1.5, 1.6, 1.0])
+    change_notes = financial_change_notes(data["financials"])
+    if change_notes:
+        add_body(doc, "注：" + "；".join(change_notes))
     add_heading(doc, "政府补助及财政支持明细表", 3); add_standard_table(doc, ["年度", "名称", "发放部门", "金额", "用途", "附带条件", "来源"], rows(data.get("government_support", []), ("year", "name", "department", "amount", "purpose", "conditions", "source")) or [["—", "本轮公开检索未发现可确认明细", "—", "—", "需企业补充", "需企业补充", "—"]], [1.1, 2.5, 2.0, 1.3, 3.0, 3.0, 1.0])
     add_heading(doc, "（二）经营数据分析", 2); add_body(doc, data.get("financial_analysis", "需企业补充"))
     h1(doc, "四、风险与合规情况")

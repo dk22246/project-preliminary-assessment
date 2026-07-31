@@ -10,20 +10,26 @@ import sys
 from report_core import load_data, validate_business_policy_ledger, validate_report_data, validate_text
 from validate_evidence import validate_ledger
 from validate_policy_scope import validate_policy
+from validate_research_ledger import validate_research_ledger
+from validate_policy_search_coverage import validate_policy_search_coverage
 
 
 ROOT = Path(__file__).resolve().parents[1]
 SAMPLE = ROOT / "examples" / "flyco-report-data.json"
 EVIDENCE_SAMPLE = ROOT / "examples" / "evidence-sample.json"
+RESEARCH_SAMPLE = ROOT / "examples" / "flyco-research-ledger.json"
+POLICY_SEARCH_SAMPLE = ROOT / "examples" / "flyco-policy-search-ledger.json"
 REQUIRED = (
     "SKILL.md", "agents/openai.yaml", ".editorconfig", ".gitattributes",
     "references/policy-scope.md", "references/report-template.md", "references/html-delivery.md",
     "references/source-registry.md", "schemas/report.schema.json", "schemas/evidence.schema.json",
-    "scripts/run_report_pipeline.py", "scripts/render_report_html.py", "scripts/collect_web_evidence.py", "scripts/validate_evidence.py",
-    "scripts/evidence_collectors/__init__.py", "scripts/evidence_collectors/registry.py", "scripts/evidence_collectors/html_extract.py",
+    "references/business-discovery.md", "references/policy-discovery.md", "references/policy-search-coverage.md", "references/department-routing.json", "schemas/research-ledger.schema.json", "schemas/policy-search-ledger.schema.json",
+    "scripts/run_report_pipeline.py", "scripts/render_report_html.py", "scripts/verify_html_layout.mjs", "scripts/collect_web_evidence.py", "scripts/validate_evidence.py",
+    "scripts/verify_skill.py",
+    "scripts/evidence_collectors/__init__.py", "scripts/evidence_collectors/registry.py", "scripts/evidence_collectors/html_extract.py", "scripts/validate_research_ledger.py", "scripts/validate_policy_search_coverage.py",
     "scripts/validate_policy_scope.py", "scripts/validate_report_data.py", "scripts/validate_text_quality.py",
     "tests/test_business_triggered_policy_logic.py", SAMPLE.relative_to(ROOT).as_posix(),
-    EVIDENCE_SAMPLE.relative_to(ROOT).as_posix(), "examples/evidence-sample/official-policy.md",
+    EVIDENCE_SAMPLE.relative_to(ROOT).as_posix(), RESEARCH_SAMPLE.relative_to(ROOT).as_posix(), POLICY_SEARCH_SAMPLE.relative_to(ROOT).as_posix(), "examples/evidence-sample/official-policy.md",
 )
 TEXT_SUFFIXES = {".md", ".py", ".json", ".yaml", ".yml", ".mjs", ".ps1", ".html", ".css"}
 
@@ -56,6 +62,20 @@ def static_errors() -> list[str]:
             errors.extend(validate_text(data))
             errors.extend(validate_business_policy_ledger(data))
             errors.extend(message for index, policy in enumerate(data.get("policies", [])) for message in validate_policy(policy, index))
+            if RESEARCH_SAMPLE.is_file():
+                try:
+                    research = load_data(RESEARCH_SAMPLE)
+                except (OSError, ValueError) as error:
+                    errors.append(f"研究底稿示例无法按UTF-8读取：{error}")
+                else:
+                    errors.extend(validate_research_ledger(research, data))
+                    if POLICY_SEARCH_SAMPLE.is_file():
+                        try:
+                            policy_search = load_data(POLICY_SEARCH_SAMPLE)
+                        except (OSError, ValueError) as error:
+                            errors.append(f"政策检索覆盖台账示例无法按UTF-8读取：{error}")
+                        else:
+                            errors.extend(validate_policy_search_coverage(policy_search, research, data))
     if EVIDENCE_SAMPLE.is_file():
         try:
             evidence = load_data(EVIDENCE_SAMPLE)
@@ -67,7 +87,11 @@ def static_errors() -> list[str]:
 
 
 def smoke(out_dir: Path) -> int:
-    command = [sys.executable, "-X", "utf8", str(ROOT / "scripts" / "run_report_pipeline.py"), str(SAMPLE), "--out-dir", str(out_dir)]
+    node = Path(sys.executable).parents[1] / "node" / "bin" / "node.exe"
+    if not node.is_file():
+        print(f"未找到随附 Node，无法执行浏览器版式验收：{node}", file=sys.stderr)
+        return 1
+    command = [sys.executable, "-X", "utf8", str(ROOT / "scripts" / "run_report_pipeline.py"), str(SAMPLE), "--research-ledger", str(RESEARCH_SAMPLE), "--policy-search-ledger", str(POLICY_SEARCH_SAMPLE), "--out-dir", str(out_dir), "--node", str(node)]
     return subprocess.run(command, cwd=ROOT, check=False).returncode
 
 
@@ -83,7 +107,7 @@ def main() -> int:
     if args.smoke and smoke(args.out_dir) != 0:
         print("HTML 冒烟测试失败", file=sys.stderr)
         return 1
-    print("通过：Skill 目录完整、文本均为UTF-8、示例数据及政策门禁有效、网页证据台账有效" + ("，HTML 冒烟测试通过" if args.smoke else ""))
+    print("通过：Skill 目录完整、文本均为UTF-8、示例数据及政策门禁有效、网页证据台账、研究路由和动态政策检索覆盖门禁有效" + ("，HTML 冒烟测试通过" if args.smoke else ""))
     return 0
 
 
