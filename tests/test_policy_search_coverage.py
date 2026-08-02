@@ -186,6 +186,7 @@ class PolicySearchCoverageTests(unittest.TestCase):
                 [
                     sys.executable, "-X", "utf8", str(ROOT / "scripts" / "run_report_pipeline.py"),
                     str(ROOT / "examples" / "flyco-report-data.json"),
+                    "--equity-evidence", str(ROOT / "examples" / "flyco-equity-evidence.json"),
                     "--research-ledger", str(ROOT / "examples" / "flyco-research-ledger.json"),
                     "--policy-search-ledger", str(ledger_path),
                     "--out-dir", str(output_dir),

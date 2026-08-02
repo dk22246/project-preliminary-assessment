@@ -1,0 +1,19 @@
+{
+  "hainan_added_2024": {
+    "name": "海南自由贸易港鼓励类产业目录（2024年本）",
+    "effective_date": "2024-03-01",
+    "source_url": "https://www.ndrc.gov.cn/xxgk/zcfb/ghxwj/202403/t20240301_1364306_ext.html",
+    "local_data": "hainan-encouraged-industries-2024.json",
+    "local_source": "hainan-encouraged-industries-2024-guide.xlsx"
+  },
+  "industrial_restructuring_current": {
+    "name": "产业结构调整指导目录（2024年本）",
+    "effective_date": "2024-02-01",
+    "source_url": "https://www.ndrc.gov.cn/xxgk/zcfb/fzggwl/202312/P020231229700886191069.pdf"
+  },
+  "foreign_investment_current": {
+    "name": "鼓励外商投资产业目录（2025年版）",
+    "effective_date": "2026-02-01",
+    "source_url": "https://www.ndrc.gov.cn/xxgk/zcfb/fzggwl/202512/P020251224301773999332.pdf"
+  }
+}

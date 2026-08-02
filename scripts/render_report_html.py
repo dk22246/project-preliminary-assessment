@@ -19,10 +19,11 @@ CSS = r'''
 /* Let the report flow naturally; headings never detach from following content. */
 .report-section{padding:0 17mm}.section-head{margin:16pt 0 10pt;padding:0 0 7pt;border-bottom:2px solid var(--accent);break-after:avoid;page-break-after:avoid}.section-head h1{margin:0}.section-mark{display:none}
 /* Fixed-layout tables prevent column drift and visual overflow. */
-table.report-table{width:100%;table-layout:fixed;border-collapse:collapse;margin:7pt 0 13pt;font-size:9.2pt;line-height:1.48;break-inside:auto}table.report-table th,table.report-table td{border:1px solid var(--line);padding:6pt 6.5pt;vertical-align:top;overflow-wrap:anywhere;word-break:break-word}.financial-table th,.financial-table td{min-width:0;max-width:100%;overflow:hidden}table.report-table th{background:var(--accent-soft);color:var(--ink);font-weight:700;text-align:center;vertical-align:middle}table.report-table tbody tr:nth-child(even){background:#f8fafb}table.report-table tr{break-inside:avoid;page-break-inside:avoid}table.report-table td:first-child{text-align:center;vertical-align:middle}.wide{font-size:8.55pt}.financial-table td:nth-child(1),.financial-table td:nth-child(2),.financial-table td:nth-child(4),.financial-table td:nth-child(9){white-space:nowrap;text-align:center;font-variant-numeric:tabular-nums}.financial-table td:nth-child(3),.financial-table td:nth-child(5){white-space:normal;overflow-wrap:anywhere;word-break:break-word;text-align:center;font-weight:700;color:var(--accent);font-variant-numeric:tabular-nums}.support-table td:first-child{white-space:nowrap;font-variant-numeric:tabular-nums}.source-table{font-size:8.45pt}.source-table a{color:#006e7a;text-decoration:underline;text-underline-offset:2px;word-break:break-all}.svg-wrap{margin:7pt 0 12pt;padding:8pt;border:1px solid var(--line);background:#f5f9f9;overflow:hidden}.svg-wrap svg{display:block;width:100%;max-width:100%;height:auto}.summary-note{margin:8pt 0 12pt;padding:8pt 10pt;border-left:3px solid var(--accent);background:#f0f7f7;color:var(--text);font-size:9.5pt;text-indent:0}.table-note{margin:-5pt 0 10pt;padding:6pt 8pt;border-left:2px solid var(--accent);background:#f5f9f9;color:var(--muted);font-size:8.7pt;line-height:1.45;text-indent:0}
+table.report-table{width:100%;table-layout:fixed;border-collapse:collapse;margin:7pt 0 13pt;font-size:9.2pt;line-height:1.48;break-inside:auto}table.report-table th,table.report-table td{border:1px solid var(--line);padding:6pt 6.5pt;vertical-align:top;overflow-wrap:anywhere;word-break:break-word}.financial-table th,.financial-table td{min-width:0;max-width:100%;overflow:hidden}table.report-table th{background:var(--accent-soft);color:var(--ink);font-weight:700;text-align:center;vertical-align:middle}table.report-table tbody tr:nth-child(even){background:#f8fafb}table.report-table tr{break-inside:avoid;page-break-inside:avoid}table.report-table td:first-child{text-align:center;vertical-align:middle}.wide{font-size:8.55pt}.financial-table td:nth-child(1),.financial-table td:nth-child(2),.financial-table td:nth-child(4),.financial-table td:nth-child(9){white-space:nowrap;text-align:center;font-variant-numeric:tabular-nums}.financial-table td:nth-child(3),.financial-table td:nth-child(5){white-space:normal;overflow-wrap:anywhere;word-break:break-word;text-align:center;font-weight:700;color:var(--accent);font-variant-numeric:tabular-nums}.support-table td:first-child{white-space:nowrap;font-variant-numeric:tabular-nums}.source-table{font-size:8.45pt}.source-table a{color:#006e7a;text-decoration:underline;text-underline-offset:2px;word-break:break-all}.svg-wrap{margin:7pt 0 12pt;padding:8pt;border:1px solid var(--line);background:#f5f9f9;overflow:hidden}.svg-wrap svg{display:block;width:100%;max-width:100%;height:auto}.equity-conflicts{margin:9pt 0 13pt;padding:8pt 10pt;border:1px solid #d4b16a;border-left:4px solid #b7791f;background:#fffaf0}.equity-conflicts h3{margin:0 0 6pt;color:#7a4b00}.equity-conflict{padding:6pt 0;border-top:1px solid #ead7ae;break-inside:avoid}.equity-conflict:first-of-type{border-top:0}.equity-conflict h4{margin:0 0 4pt;color:var(--ink);font-size:10pt}.equity-conflict p{margin:2pt 0;text-indent:0;font-size:8.9pt;line-height:1.48}.equity-conflict .conflict-status{display:inline-block;margin-left:5pt;padding:1pt 5pt;border-radius:8pt;background:#f4e7c9;color:#7a4b00;font-size:7.8pt;vertical-align:1pt}.summary-note{margin:8pt 0 12pt;padding:8pt 10pt;border-left:3px solid var(--accent);background:#f0f7f7;color:var(--text);font-size:9.5pt;text-indent:0}.table-note{margin:-5pt 0 10pt;padding:6pt 8pt;border-left:2px solid var(--accent);background:#f5f9f9;color:var(--muted);font-size:8.7pt;line-height:1.45;text-indent:0}
 /* Policy matching is a decision table. Internal research controls remain in
    validation data and never displace the actual policy results in the report. */
 .policy-note{margin:0 0 7pt;color:var(--muted);font-size:8.8pt;line-height:1.45;text-indent:0}.policy-match-table{font-size:8.55pt}.policy-match-table td:first-child{text-align:left;vertical-align:top}.policy-match-table td:nth-child(2){white-space:pre-line}.policy-match-table a{color:#006e7a;font-weight:700;text-decoration:underline;text-underline-offset:2px}.policy-ref{display:block;margin-top:2pt;color:var(--muted);font-size:7.8pt;line-height:1.35}.policy-match-table .status{display:block;font-weight:700;color:var(--accent);line-height:1.4}.pending-policy-table{font-size:8.65pt}.pending-policy-table td:first-child{text-align:left;vertical-align:top}
+.catalog-summary,.equity-evidence-summary{margin:7pt 0 9pt;padding:7pt 9pt;border-left:3px solid var(--accent);background:#f0f7f7;text-indent:0}.catalog-table td:nth-child(2){font-weight:700;color:var(--accent)}.catalog-table td:first-child{text-align:left;vertical-align:top}
 @media screen{body{padding:24px 0;background:var(--canvas)}main{box-shadow:0 8px 28px rgba(23,42,69,.12)}.report-section{animation:fade-in .2s ease both}}@keyframes fade-in{from{opacity:.96;transform:translateY(2px)}to{opacity:1;transform:none}}@media (max-width:760px){body{padding:0}.toc-grid{grid-template-columns:1fr}.cover{min-height:100vh}.cover h1{font-size:21pt}.report-section,.toc{padding-left:11mm;padding-right:11mm}.wide{font-size:7.8pt}}@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}@media print{html,body{background:#fff}main{max-width:none;box-shadow:none}.cover{min-height:260mm}.report-section{padding-left:0;padding-right:0}.toc{padding-left:0;padding-right:0}}
 '''
 
@@ -99,6 +100,68 @@ def policy_match_table(policies: list[dict]) -> str:
     return f'<table class="report-table wide policy-match-table"><colgroup>{columns}</colgroup><thead><tr>{head}</tr></thead><tbody>{body}</tbody></table>'
 
 
+def equity_conflict_disclosures(items: list[dict]) -> str:
+    """Keep uncertain platform differences out of the graph and explain them in prose."""
+    if not items:
+        return ""
+    blocks = []
+    for item in items:
+        status = "已核实" if item.get("status") == "resolved" else "待核实"
+        blocks.append(
+            '<article class="equity-conflict">'
+            f'<h4>{escape(str(item.get("title", "未命名差异")))}<span class="conflict-status">{status}</span></h4>'
+            f'<p><strong>差异情况：</strong>{escape(str(item.get("difference", "未说明")))}</p>'
+            f'<p><strong>可能原因：</strong>{escape(str(item.get("reason", "未说明")))}</p>'
+            f'<p><strong>本报告处理口径：</strong>{escape(str(item.get("adopted_basis", "未说明")))}</p>'
+            f'<p><strong>对招商判断的影响：</strong>{escape(str(item.get("impact", "未说明")))}</p>'
+            f'<p><strong>后续核实：</strong>{escape(str(item.get("next_action", "未说明")))}</p>'
+            f'<p><strong>证据来源：</strong>{escape("、".join(str(source_id) for source_id in item.get("evidence_source_ids", [])))}</p>'
+            '</article>'
+        )
+    return '<div class="equity-conflicts"><h3>股权数据差异说明</h3>' + "".join(blocks) + "</div>"
+
+
+def equity_evidence_summary(equity: dict) -> str:
+    summary = equity.get("evidence_summary", {})
+    attempted = "、".join(str(item) for item in summary.get("attempted_channels", [])) or "未记录"
+    successful = "、".join(str(item) for item in summary.get("successful_channels", [])) or "未取得商业平台成功回执"
+    adopted = str(summary.get("adopted_basis", "需补充实际取证口径"))
+    statement = str(summary.get("status_statement", "需补充股权取证状态"))
+    return (
+        '<div class="equity-evidence-summary"><strong>股权取证渠道与采用口径：</strong>'
+        + escape(f"已尝试：{attempted}；成功来源：{successful}；采用口径：{adopted}。{statement}")
+        + "</div>"
+    )
+
+
+def encouraged_industry_table(assessment: dict) -> str:
+    labels = {"direct_match": "明确符合", "potential_match": "存在相近可能", "no_match": "暂未发现明确匹配"}
+    rows = []
+    for item in assessment.get("business_assessments", []):
+        matched = []
+        for candidate in item.get("matched_items", []):
+            matched.append(
+                f"{candidate.get('catalog_item_no', '—')}．{candidate.get('catalog_item', '未注明条目')}"
+                f"｜{candidate.get('detailed_item', '未注明细化目录')}"
+            )
+        matched_text = "；".join(matched) or "完成三条目录路径检索后，未发现可合理对应的具体条目"
+        verification = str(item.get("verification_needed", "无"))
+        rows.append([
+            str(item.get("business", "未命名业务")),
+            labels.get(str(item.get("judgment")), "研究未完成"),
+            matched_text,
+            str(item.get("reason", "未说明")),
+            verification,
+        ])
+    summary = '<p class="catalog-summary"><strong>总体判断：</strong>' + escape(str(assessment.get("summary", "未说明"))) + '</p>'
+    return summary + report_table(
+        ["企业业务", "匹配结论", "对应目录条目", "判断依据", "相近可能或待核事项"],
+        rows,
+        "wide catalog-table",
+        [15, 11, 25, 29, 20],
+    )
+
+
 def section(title: str, body: str) -> str:
     anchor = title.split("、", 1)[0]
     return f'<section id="s{anchor}" class="report-section"><div class="section-head"><h1>{escape(title)}</h1></div>{body}</section>'
@@ -126,7 +189,7 @@ def main() -> int:
     sections = [section("一、项目整体判断", report_table(["研判事项", "初步结论"], data["overall_judgment"], "judgment-table", [16, 84]))]
     entity_rows = [[label, entity.get(key, "未公开披露")] for label, key in [("用户输入名称", "user_input"), ("名称性质", "name_type"), ("对应法律主体", "legal_entity"), ("证券简称及代码", "security"), ("直接控股股东", "direct_shareholder"), ("最终控制方", "ultimate_controller"), ("核心经营主体", "core_operators"), ("本报告分析主体", "analysis_entity"), ("财务数据口径", "financial_scope"), ("风险检索范围", "risk_scope")]]
     business_rows = [[item[key] for key in ("segment", "products", "entity", "revenue_model", "footprint", "sanya_fit")] for item in data["businesses"]]
-    basic = "<h2>（一）企业主体认定</h2>" + report_table(["认定事项", "认定结果"], entity_rows, "entity-table", [16, 84]) + "<h2>（二）股权架构拆解</h2><div class=\"svg-wrap\">" + equity_svg(data["equity"]) + "</div>" + paragraph(entity.get("equity_summary", "需企业补充")) + "<h2>（三）主要业务及产品拆解</h2>" + report_table(["业务板块", "主要产品或服务", "主要承载主体", "客户及收入来源", "国内外业务布局", "与三亚的潜在结合点"], business_rows, "wide business-table", [12, 22, 16, 18, 14, 18]) + "<h2>（四）行业地位及竞争位置</h2>" + paragraph(data.get("industry_position", "本轮公开检索未发现可靠数据，需企业补充。")) + "<h2>（五）上下游及国内外业务</h2>" + paragraph(data.get("upstream_downstream", "本轮公开检索未发现可靠数据，需企业补充。"))
+    basic = "<h2>（一）企业主体认定</h2>" + report_table(["认定事项", "认定结果"], entity_rows, "entity-table", [16, 84]) + "<h2>（二）股权架构拆解</h2><div class=\"svg-wrap\">" + equity_svg(data["equity"]) + "</div>" + paragraph(entity.get("equity_summary", "需企业补充")) + equity_evidence_summary(data["equity"]) + equity_conflict_disclosures(data["equity"].get("conflict_disclosures", [])) + "<h2>（三）主要业务及产品拆解</h2>" + report_table(["业务板块", "主要产品或服务", "主要承载主体", "客户及收入来源", "国内外业务布局", "与三亚的潜在结合点"], business_rows, "wide business-table", [12, 22, 16, 18, 14, 18]) + "<h2>（四）海南自由贸易港鼓励类产业目录匹配</h2>" + encouraged_industry_table(data["encouraged_industry_assessment"]) + "<h2>（五）行业地位及竞争位置</h2>" + paragraph(data.get("industry_position", "本轮公开检索未发现可靠数据，需企业补充。")) + "<h2>（六）上下游及国内外业务</h2>" + paragraph(data.get("upstream_downstream", "本轮公开检索未发现可靠数据，需企业补充。"))
     sections.append(section("二、企业基本情况", basic))
     financial_rows = [[item.get(key, "未公开披露") for key in ("year", "revenue", "revenue_change", "profit", "profit_change", "tax_value", "tax_basis", "government_support", "source")] for item in data["financials"]]
     support_rows = [[item.get(key, "未公开披露") for key in ("year", "name", "department", "amount", "purpose", "conditions", "source")] for item in data.get("government_support", [])] or [["—", "本轮公开检索未发现可确认的政府补助明细", "—", "—", "需企业补充", "需企业补充", "—"]]
@@ -143,6 +206,9 @@ def main() -> int:
     sections.append(section("六、企业政策匹配", policy_body))
     sections.append(section("七、综合评估", '<div class="summary-note">' + escape(data.get("comprehensive_assessment", "需企业补充")) + "</div>"))
     visible_policy_sources = {str(item.get("source_id", "")) for item in data["policies"]}
+    visible_policy_sources.update(str(item.get("source_id", "")) for item in data["encouraged_industry_assessment"].get("catalogs_checked", []))
+    for item in data["encouraged_industry_assessment"].get("business_assessments", []):
+        visible_policy_sources.update(str(source_id) for source_id in item.get("catalog_source_ids", []))
     visible_sources = [item for item in data["sources"] if not str(item.get("id", "")).startswith("P") or str(item.get("id", "")) in visible_policy_sources]
     sections.append(section("八、参考资料", source_table(visible_sources)))
     toc_html = "".join(f'<a href="#s{anchor}"><span class="toc-index">{anchor}</span><span>{escape(title.split("、", 1)[1])}</span><span class="toc-arrow">→</span></a>' for title, anchor in toc)

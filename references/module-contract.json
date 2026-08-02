@@ -1,0 +1,28 @@
+{
+  "encouraged_industry_assessment": {
+    "required_files": [
+      "references/encouraged-industry-assessment.md",
+      "references/catalogs/source-metadata.json",
+      "references/catalogs/hainan-encouraged-industries-2024-guide.xlsx",
+      "references/catalogs/hainan-encouraged-industries-2024.json",
+      "scripts/search_industry_catalog.py",
+      "scripts/validate_encouraged_industry_assessment.py",
+      "tests/test_encouraged_industry_contract.py"
+    ],
+    "schema_required_field": "encouraged_industry_assessment",
+    "pipeline_validator": "validate_encouraged_industry_assessment.py",
+    "html_marker": "海南自由贸易港鼓励类产业目录匹配",
+    "word_marker": "海南自由贸易港鼓励类产业目录匹配"
+  },
+  "equity_evidence": {
+    "required_files": [
+      "references/equity-evidence.md",
+      "schemas/equity-evidence.schema.json",
+      "scripts/collect_equity_provider.py",
+      "scripts/validate_equity_evidence.py"
+    ],
+    "pipeline_validator": "validate_equity_evidence.py",
+    "html_marker": "股权取证渠道与采用口径",
+    "word_marker": "股权取证渠道与采用口径"
+  }
+}

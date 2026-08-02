@@ -22,6 +22,40 @@ def h1(doc, title):
     add_heading(doc, title, 1)
 
 
+def add_equity_conflict_disclosures(doc, items):
+    if not items:
+        return
+    add_heading(doc, "股权数据差异说明", 3)
+    for item in items:
+        status = "已核实" if item.get("status") == "resolved" else "待核实"
+        add_body(doc, f"{item.get('title', '未命名差异')}（{status}）")
+        add_body(doc, f"差异情况：{item.get('difference', '未说明')}")
+        add_body(doc, f"可能原因：{item.get('reason', '未说明')}")
+        add_body(doc, f"本报告处理口径：{item.get('adopted_basis', '未说明')}")
+        add_body(doc, f"对招商判断的影响：{item.get('impact', '未说明')}")
+        add_body(doc, f"后续核实：{item.get('next_action', '未说明')}")
+        add_body(doc, "证据来源：" + "、".join(str(source_id) for source_id in item.get("evidence_source_ids", [])))
+
+
+def add_equity_evidence_summary(doc, equity):
+    summary = equity.get("evidence_summary", {})
+    attempted = "、".join(str(item) for item in summary.get("attempted_channels", [])) or "未记录"
+    successful = "、".join(str(item) for item in summary.get("successful_channels", [])) or "未取得商业平台成功回执"
+    add_body(doc, f"股权取证渠道与采用口径：已尝试：{attempted}；成功来源：{successful}；采用口径：{summary.get('adopted_basis', '需补充')}。{summary.get('status_statement', '需补充股权取证状态')}")
+
+
+def encouraged_industry_rows(assessment):
+    labels = {"direct_match": "明确符合", "potential_match": "存在相近可能", "no_match": "暂未发现明确匹配"}
+    rendered = []
+    for item in assessment.get("business_assessments", []):
+        matched = "；".join(
+            f"{candidate.get('catalog_item_no', '—')}．{candidate.get('catalog_item', '未注明条目')}｜{candidate.get('detailed_item', '未注明细化目录')}"
+            for candidate in item.get("matched_items", [])
+        ) or "完成三条目录路径检索后，未发现可合理对应的具体条目"
+        rendered.append([item.get("business", "未命名业务"), labels.get(item.get("judgment"), "研究未完成"), matched, item.get("reason", "未说明"), item.get("verification_needed", "无")])
+    return rendered
+
+
 def policy_match_rows(policies):
     """Keep the editable Word table aligned with the HTML decision table."""
     groups = {}
@@ -69,10 +103,11 @@ def main() -> int:
     entity = data["entity_resolution"]
     entity_rows = [[label, entity.get(key, "未公开披露")] for label, key in (("用户输入名称", "user_input"), ("名称性质", "name_type"), ("对应法律主体", "legal_entity"), ("直接控股股东", "direct_shareholder"), ("最终控制方", "ultimate_controller"), ("本报告分析主体", "analysis_entity"))]
     add_standard_table(doc, ["认定事项", "认定结果"], entity_rows, [4.2, 11.7])
-    add_heading(doc, "（二）股权架构拆解", 2); doc.add_picture(str(image), width=Cm(15)); add_body(doc, entity.get("equity_summary", "需企业补充"))
+    add_heading(doc, "（二）股权架构拆解", 2); doc.add_picture(str(image), width=Cm(15)); add_body(doc, entity.get("equity_summary", "需企业补充")); add_equity_evidence_summary(doc, data["equity"]); add_equity_conflict_disclosures(doc, data["equity"].get("conflict_disclosures", []))
     add_heading(doc, "（三）主要业务及产品拆解", 2); add_standard_table(doc, ["业务板块", "主要产品或服务", "主要承载主体", "客户及收入来源", "国内外业务布局", "与三亚的潜在结合点"], rows(data["businesses"], ("segment", "products", "entity", "revenue_model", "footprint", "sanya_fit")), [2.2, 2.6, 2.2, 2.6, 2.5, 3.8])
-    add_heading(doc, "（四）行业地位及竞争位置", 2); add_body(doc, data.get("industry_position", "需企业补充"))
-    add_heading(doc, "（五）上下游及国内外业务", 2); add_body(doc, data.get("upstream_downstream", "需企业补充"))
+    add_heading(doc, "（四）海南自由贸易港鼓励类产业目录匹配", 2); add_body(doc, "总体判断：" + data["encouraged_industry_assessment"].get("summary", "未说明")); add_standard_table(doc, ["企业业务", "匹配结论", "对应目录条目", "判断依据", "相近可能或待核事项"], encouraged_industry_rows(data["encouraged_industry_assessment"]), [2.5, 1.7, 4.0, 4.8, 3.0])
+    add_heading(doc, "（五）行业地位及竞争位置", 2); add_body(doc, data.get("industry_position", "需企业补充"))
+    add_heading(doc, "（六）上下游及国内外业务", 2); add_body(doc, data.get("upstream_downstream", "需企业补充"))
     h1(doc, "三、近三年经营数据")
     headers = financial_headers(data["meta"])
     add_heading(doc, "（一）营业收入、利润、纳税及政府补助情况", 2); add_standard_table(doc, headers, rows(data["financials"], ("year", "revenue", "revenue_change", "profit", "profit_change", "tax_value", "tax_basis", "government_support", "source")), [1.1, 1.55, 0.9, 1.45, 0.9, 1.5, 1.5, 1.6, 1.0])

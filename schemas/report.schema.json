@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "Sanya CBD Preliminary Assessment Report Data",
   "type": "object",
-    "required": ["meta", "entity_resolution", "equity", "businesses", "financials", "risks", "landing_businesses", "policy_research", "policies", "sources"],
+    "required": ["meta", "entity_resolution", "equity", "businesses", "encouraged_industry_assessment", "financials", "risks", "landing_businesses", "policy_research", "policies", "sources"],
   "properties": {
     "meta": {
       "type": "object",
@@ -13,8 +13,76 @@
       }
     },
     "entity_resolution": {"type": "object", "required": ["user_input", "name_type", "legal_entity", "analysis_entity", "financial_scope", "risk_scope"]},
-    "equity": {"type": "object", "required": ["nodes", "edges"]},
-    "businesses": {"type": "array", "minItems": 1},
+    "equity": {
+      "type": "object",
+      "required": ["nodes", "edges", "conflict_disclosures", "evidence_summary"],
+      "properties": {
+        "nodes": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": ["id", "name", "entity_type", "role", "evidence_source_ids"],
+            "properties": {
+              "evidence_source_ids": {"type": "array", "minItems": 1, "items": {"type": "string", "pattern": "^E"}}
+            }
+          }
+        },
+        "edges": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": ["from", "to", "relationship", "evidence_source_ids"],
+            "properties": {
+              "evidence_source_ids": {"type": "array", "minItems": 1, "items": {"type": "string", "pattern": "^E"}}
+            }
+          }
+        },
+        "conflict_disclosures": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["id", "field", "severity", "status", "title", "difference", "reason", "adopted_basis", "impact", "next_action", "graph_action", "affected_node_ids", "affected_edges", "evidence_source_ids"],
+            "properties": {
+              "id": {"type": "string", "pattern": "^C[0-9]+$"},
+              "severity": {"enum": ["general", "material_local", "subject_critical"]},
+              "status": {"enum": ["resolved", "unresolved"]},
+              "graph_action": {"enum": ["keep_confirmed_part", "omit_disputed_part"]},
+              "evidence_source_ids": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "pattern": "^E"}}
+            }
+          }
+        },
+        "evidence_summary": {
+          "type": "object",
+          "required": ["attempted_channels", "successful_channels", "adopted_basis", "status_statement"],
+          "properties": {
+            "attempted_channels": {"type": "array"},
+            "successful_channels": {"type": "array", "minItems": 1},
+            "adopted_basis": {"type": "string", "minLength": 1},
+            "status_statement": {"type": "string", "minLength": 1}
+          }
+        }
+      }
+    },
+    "businesses": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["id", "segment", "products", "entity", "revenue_model", "footprint", "sanya_fit"],
+        "properties": {"id": {"type": "string", "pattern": "^B[0-9]+$"}}
+      }
+    },
+    "encouraged_industry_assessment": {
+      "type": "object",
+      "required": ["catalog_version", "overall_judgment", "summary", "catalogs_checked", "business_assessments"],
+      "properties": {
+        "overall_judgment": {"enum": ["direct_match", "potential_match_only", "no_match", "research_incomplete"]},
+        "catalogs_checked": {"type": "array", "minItems": 3, "maxItems": 3},
+        "business_assessments": {"type": "array", "minItems": 1}
+      }
+    },
     "financials": {
       "type": "array",
       "minItems": 3,

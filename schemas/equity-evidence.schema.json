@@ -1,0 +1,68 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Provider-backed equity evidence ledger",
+  "type": "object",
+  "required": ["schema_version", "subject", "provider_attempts", "sources", "nodes", "edges", "conflicts", "review_status"],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "subject": {
+      "type": "object",
+      "required": ["legal_entity"],
+      "properties": {
+        "legal_entity": {"type": "string", "minLength": 1},
+        "unified_social_credit_code": {"type": "string"}
+      }
+    },
+    "provider_attempts": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["provider", "status", "queried_at"],
+        "properties": {
+          "provider": {"enum": ["qcc_mcp", "qcc_cli", "qcc_api", "qcc_web", "tianyancha_api", "tianyancha_web"]},
+          "status": {"enum": ["success", "unavailable", "error"]},
+          "queried_at": {"type": "string", "minLength": 1},
+          "reason": {"type": "string"}
+        }
+      }
+    },
+    "sources": {"type": "array", "minItems": 1},
+    "nodes": {"type": "array", "minItems": 1},
+    "edges": {"type": "array", "minItems": 1},
+    "conflicts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "field", "severity", "status", "title", "difference", "reason", "adopted_basis", "impact", "next_action", "graph_action", "affected_node_ids", "affected_edges", "evidence_source_ids"],
+        "properties": {
+          "id": {"type": "string", "pattern": "^C[0-9]+$"},
+          "field": {"type": "string", "minLength": 1},
+          "severity": {"enum": ["general", "material_local", "subject_critical"]},
+          "status": {"enum": ["resolved", "unresolved"]},
+          "title": {"type": "string", "minLength": 1},
+          "difference": {"type": "string", "minLength": 1},
+          "reason": {"type": "string", "minLength": 1},
+          "adopted_basis": {"type": "string", "minLength": 1},
+          "impact": {"type": "string", "minLength": 1},
+          "next_action": {"type": "string", "minLength": 1},
+          "graph_action": {"enum": ["keep_confirmed_part", "omit_disputed_part"]},
+          "affected_node_ids": {"type": "array", "items": {"type": "string", "minLength": 1}},
+          "affected_edges": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["from", "to"],
+              "properties": {
+                "from": {"type": "string", "minLength": 1},
+                "to": {"type": "string", "minLength": 1}
+              }
+            }
+          },
+          "evidence_source_ids": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "pattern": "^E"}}
+        }
+      }
+    },
+    "review_status": {"enum": ["complete", "fallback_complete", "qualified_complete", "blocked"]}
+  }
+}

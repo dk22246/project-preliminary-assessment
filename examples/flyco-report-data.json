@@ -54,71 +54,116 @@
         "name": "李丐腾",
         "entity_type": "实际控制人",
         "role": "最终控制方",
-        "level": 0
+        "level": 0,
+        "evidence_source_ids": [
+          "E01"
+        ]
       },
       {
         "id": "holding",
         "name": "上海飞科投资有限公司",
         "entity_type": "控股平台",
         "role": "无主要实体经营",
-        "level": 1
+        "level": 1,
+        "evidence_source_ids": [
+          "E01"
+        ]
       },
       {
         "id": "listed",
         "name": "上海飞科电器股份有限公司",
         "entity_type": "上市公司",
         "role": "核心经营主体／分析主体",
-        "level": 2
+        "level": 2,
+        "evidence_source_ids": [
+          "E01"
+        ]
       },
       {
         "id": "wuhu",
         "name": "芜湖飞科电器有限公司",
         "entity_type": "子公司",
         "role": "生产制造",
-        "level": 3
+        "level": 3,
+        "evidence_source_ids": [
+          "E01"
+        ]
       },
       {
         "id": "poree",
         "name": "浙江博锐个护电器有限公司",
         "entity_type": "子公司",
         "role": "生产制造／品牌",
-        "level": 3
+        "level": 3,
+        "evidence_source_ids": [
+          "E01"
+        ]
       },
       {
         "id": "supply",
         "name": "飞科供应链有限公司",
         "entity_type": "子公司",
         "role": "集中采购与供应链",
-        "level": 3
+        "level": 3,
+        "evidence_source_ids": [
+          "E01"
+        ]
       }
     ],
     "edges": [
       {
         "from": "controller",
         "to": "holding",
-        "relationship": "实际控制"
+        "relationship": "实际控制",
+        "evidence_source_ids": [
+          "E01"
+        ]
       },
       {
         "from": "holding",
         "to": "listed",
-        "relationship": "持股80.99%"
+        "relationship": "持股80.99%",
+        "evidence_source_ids": [
+          "E01"
+        ]
       },
       {
         "from": "listed",
         "to": "wuhu",
-        "relationship": "直接控制"
+        "relationship": "直接控制",
+        "evidence_source_ids": [
+          "E01"
+        ]
       },
       {
         "from": "listed",
         "to": "poree",
-        "relationship": "直接控制"
+        "relationship": "直接控制",
+        "evidence_source_ids": [
+          "E01"
+        ]
       },
       {
         "from": "listed",
         "to": "supply",
-        "relationship": "直接控制"
+        "relationship": "直接控制",
+        "evidence_source_ids": [
+          "E01"
+        ]
       }
-    ]
+    ],
+    "conflict_disclosures": [],
+    "evidence_summary": {
+      "attempted_channels": [
+        "qcc_mcp",
+        "tianyancha_api"
+      ],
+      "successful_channels": [
+        "legal_disclosure"
+      ],
+      "adopted_basis": "上市公司2025年年度报告法定披露",
+      "status_statement": "部署示例未携带商业平台授权，因此未取得企查查或天眼查成功回执；本示例只验证法定披露降级门禁，不声称商业平台已核验。"
+    }
   },
   "businesses": [
     {
@@ -127,7 +172,8 @@
       "entity": "上市公司及制造子公司",
       "revenue_model": "经销与自营电商销售",
       "footprint": "以国内为主",
-      "sanya_fit": "品牌运营、电商运营和数据营销可研判承接"
+      "sanya_fit": "品牌运营、电商运营和数据营销可研判承接",
+      "id": "B01"
     },
     {
       "segment": "生活及厨房电器",
@@ -135,7 +181,8 @@
       "entity": "上市公司及相关子公司",
       "revenue_model": "经销与线上销售",
       "footprint": "国内渠道为主",
-      "sanya_fit": "渠道管理、品牌与贸易职能可研判承接"
+      "sanya_fit": "渠道管理、品牌与贸易职能可研判承接",
+      "id": "B02"
     },
     {
       "segment": "供应链管理",
@@ -143,7 +190,8 @@
       "entity": "飞科供应链有限公司",
       "revenue_model": "集团供应链协同",
       "footprint": "服务现有生产和销售网络",
-      "sanya_fit": "采购协调、贸易合同和结算可研判承接"
+      "sanya_fit": "采购协调、贸易合同和结算可研判承接",
+      "id": "B03"
     },
     {
       "segment": "海外市场运营",
@@ -151,7 +199,8 @@
       "entity": "上市公司及相关业务主体",
       "revenue_model": "海外销售和投资机会",
       "footprint": "东南亚、非洲、中东等规划方向",
-      "sanya_fit": "海外运营支持、投资管理和跨境结算可研判承接"
+      "sanya_fit": "海外运营支持、投资管理和跨境结算可研判承接",
+      "id": "B04"
     }
   ],
   "industry_position": "公司年报将飞科定位为国内个护电器行业著名品牌。公开资料未发现可直接用于本轮报告的权威市场份额数据，因此不作市场份额推算。",
@@ -697,6 +746,106 @@
       "date": "2025-09-29",
       "location": "https://hq.mof.gov.cn/tongzhitonggao/202509/t20250929_3973443.htm",
       "used_in": "第六部分"
+    },
+    {
+      "id": "P21",
+      "type": "产业目录",
+      "name": "海南自由贸易港鼓励类产业目录（2024年本）及界定指引",
+      "issuer": "国家发展改革委、财政部、税务总局；海南省发展改革委",
+      "date": "2024-03-01",
+      "location": "https://www.ndrc.gov.cn/xxgk/zcfb/ghxwj/202403/t20240301_1364306_ext.html",
+      "used_in": "第二部分鼓励类产业目录匹配"
+    },
+    {
+      "id": "P22",
+      "type": "产业目录",
+      "name": "产业结构调整指导目录（2024年本）",
+      "issuer": "国家发展和改革委员会",
+      "date": "2024-02-01",
+      "location": "https://www.ndrc.gov.cn/xxgk/zcfb/fzggwl/202312/P020231229700886191069.pdf",
+      "used_in": "第二部分鼓励类产业目录匹配"
     }
-  ]
+  ],
+  "encouraged_industry_assessment": {
+    "catalog_version": "海南自由贸易港鼓励类产业目录（2024年本）；产业结构调整指导目录（2024年本）；鼓励外商投资产业目录（2025年版）",
+    "overall_judgment": "potential_match_only",
+    "summary": "现有个护与生活电器销售本身未发现明确对应条目；海外网络销售与海南新增第91项电子商务存在相近可能，需补充实际线上跨境交易证据。",
+    "catalogs_checked": [
+      {
+        "catalog_scope": "hainan_added_2024",
+        "status": "checked",
+        "source_id": "P21"
+      },
+      {
+        "catalog_scope": "industrial_restructuring_current",
+        "status": "checked",
+        "source_id": "P22"
+      },
+      {
+        "catalog_scope": "foreign_investment_current",
+        "status": "not_applicable",
+        "reason": "分析主体不是外商投资企业"
+      }
+    ],
+    "business_assessments": [
+      {
+        "business_id": "B01",
+        "business": "个人护理电器",
+        "judgment": "no_match",
+        "matched_items": [],
+        "reason": "已检索三条目录路径，现有公开事实主要证明成品设计、制造与销售，未发现可直接对应的具体鼓励类条目。",
+        "enterprise_source_ids": [
+          "E01"
+        ],
+        "catalog_source_ids": [],
+        "verification_needed": "如企业新增智能硬件核心技术研发，应补充研发活动和技术材料后重新判断。"
+      },
+      {
+        "business_id": "B02",
+        "business": "生活及厨房电器",
+        "judgment": "no_match",
+        "matched_items": [],
+        "reason": "现有生活和厨房电器经营事实与目录中的具体研发、制造技术条目缺少直接对应。",
+        "enterprise_source_ids": [
+          "E01"
+        ],
+        "catalog_source_ids": [],
+        "verification_needed": "需补充是否存在目录规定的节能、智能或核心零部件研发活动。"
+      },
+      {
+        "business_id": "B03",
+        "business": "供应链管理",
+        "judgment": "no_match",
+        "matched_items": [],
+        "reason": "集团内部采购协调和供应商管理不等同于目录中的电子商务、物流平台或服务外包业务。",
+        "enterprise_source_ids": [
+          "E01"
+        ],
+        "catalog_source_ids": [],
+        "verification_needed": "如对外提供独立供应链服务并形成收入，应补充合同、客户和服务内容后重新判断。"
+      },
+      {
+        "business_id": "B04",
+        "business": "海外市场运营",
+        "judgment": "potential_match",
+        "matched_items": [
+          {
+            "catalog_scope": "hainan_added_2024",
+            "catalog_item_no": "91",
+            "catalog_item": "电子商务（含跨境电子商务）",
+            "detailed_item": "电子商务",
+            "match_type": "potential"
+          }
+        ],
+        "reason": "企业存在海外渠道和销售规划，与跨境电子商务的网络交易方向有重合，但公开事实尚不足以证明已通过电商平台完成跨关境交易、电子支付和跨境物流闭环。",
+        "enterprise_source_ids": [
+          "E01"
+        ],
+        "catalog_source_ids": [
+          "P21"
+        ],
+        "verification_needed": "需补充海外电商平台店铺、订单、支付结算、跨境物流和境外收入证据。"
+      }
+    ]
+  }
 }
