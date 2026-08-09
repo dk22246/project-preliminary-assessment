@@ -24,12 +24,14 @@
 
 网页取证 JSON 的 `records` 使用以下 `record_type`：
 
-- `current_shareholder`：当前股东；页面显示比例时原样记录，未显示时不创建比例字段。
+- `current_shareholder`：当前股东；`shareholding_ratio` 字段必须存在，页面未显示时固定填写“页面未披露”，不得估算或补猜。
 - `actual_controller`、`beneficial_owner`：仅按页面显示记录。若来自平台穿透或算法推算，`assertion_type` 必须为 `provider_calculation`，`relationship` 必须带“推定”“疑似”或“平台穿透”。
 - `historical_shareholder`、`historical_change`：记录历史股东或变更事实及对应时点。
 - `subsidiary`：页面显示的主要子公司或对外投资主体；不能由名称相似推断控制关系。
 
-输入缺少 `page_url`、`captured_at`、`legal_entity`、非空 `records`，或网页主体与命令锚点不一致时，采集器必须失败。比例缺失时保持缺失，不得估算、倒算或填入占位百分比。
+输入缺少 `page_url`、`captured_at`、`legal_entity`、非空 `records`，或网页主体与命令锚点不一致时，采集器必须失败。`qcc_web` 只接受 `https://qcc.com` 及其子域，`tianyancha_web` 只接受 `https://tianyancha.com` 及其子域。
+
+每次网页取证必须在 `coverage_dispositions` 对 `company_identity`、`current_shareholder`、`controller_or_beneficial_owner`、`historical_change`、`major_subsidiary` 逐项写明 `captured`、`not_disclosed` 或 `inaccessible`。主体身份和当前股东必须 `captured`；其余三类未捕获时必须给出真实 `reason`，不得静默遗漏。
 
 ## 报告与台账门禁
 
@@ -37,7 +39,7 @@
 
 - 精确法律主体及统一社会信用代码；
 - `qcc_web`、`tianyancha_web` 的本轮真实尝试状态、查询时间和失败原因；
-- 每条来源的页面 URL、采集时间、记录数量和可定位位置；
+- 每条成功网页来源的页面 URL、采集时间、记录数量、可定位位置及可验证的 `artifact_path`、`artifact_sha256`、`bundle_path`、`bundle_sha256`；CLI 从 `equity-evidence.json` 目录校验 capture 与 query bundle 的文件、哈希、主体、提供方、时点、URL 和记录数一致；
 - 每个节点和连线的名称、关系、断言类型、数据时点和 `E` 类来源编号；
 - 网页之间、网页与法定披露之间的冲突及处理状态。
 
@@ -47,7 +49,7 @@
 & $py -X utf8 scripts/validate_equity_evidence.py equity-evidence.json --report-data report-data.json
 ```
 
-只有本轮网页成功回执、成功来源和非空记录三者同时存在时，报告才能写“企查查网页已核验”或“天眼查网页已核验”。没有成功回执时必须说明真实失败原因和采用的法定披露或官方登记补证，不得声称已核验。
+只有本轮网页成功回执、成功来源、非空记录和完整可验证 artifact 链同时存在时，报告才能写“企查查网页已核验”或“天眼查网页已核验”。没有成功回执或 artifact 时必须说明真实失败原因和采用的法定披露或官方登记补证，不得声称已核验。
 
 ## 断言边界
 

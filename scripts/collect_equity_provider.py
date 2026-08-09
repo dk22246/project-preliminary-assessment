@@ -3,8 +3,10 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 from pathlib import Path
+from urllib.parse import urlparse
 
 
 WEB_PROVIDERS = {"qcc_web", "tianyancha_web"}
@@ -18,6 +20,15 @@ RECORD_TYPES = {
 }
 ASSERTION_TYPES = {"registry_fact", "provider_calculation"}
 CALCULATION_QUALIFIERS = ("推定", "疑似", "平台穿透")
+COVERAGE_CATEGORIES = {
+    "company_identity": set(),
+    "current_shareholder": {"current_shareholder"},
+    "controller_or_beneficial_owner": {"actual_controller", "beneficial_owner"},
+    "historical_change": {"historical_shareholder", "historical_change"},
+    "major_subsidiary": {"subsidiary"},
+}
+COVERAGE_STATUSES = {"captured", "not_disclosed", "inaccessible"}
+PROVIDER_DOMAINS = {"qcc_web": "qcc.com", "tianyancha_web": "tianyancha.com"}
 
 
 def _text(value: object) -> str:
@@ -28,7 +39,19 @@ def _write_json(path: Path, payload: object) -> None:
     path.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8", newline="\n")
 
 
-def _validate_capture(payload: dict, legal_entity: str) -> None:
+def _sha256(path: Path) -> str:
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def _validate_provider_url(provider: str, page_url: str) -> None:
+    parsed = urlparse(page_url)
+    expected_domain = PROVIDER_DOMAINS[provider]
+    hostname = (parsed.hostname or "").lower()
+    if parsed.scheme != "https" or not hostname or (hostname != expected_domain and not hostname.endswith("." + expected_domain)):
+        raise SystemExit(f"网页取证URL必须为{provider}的HTTPS域名：{expected_domain}")
+
+
+def _validate_capture(payload: dict, legal_entity: str, provider: str) -> None:
     required = (
         "page_url",
         "captured_at",
@@ -45,6 +68,7 @@ def _validate_capture(payload: dict, legal_entity: str) -> None:
         raise SystemExit("网页取证JSON的records必须是非空数组")
     if _text(payload["legal_entity"]) != _text(legal_entity):
         raise SystemExit("网页取证主体与命令指定法律主体不一致")
+    _validate_provider_url(provider, _text(payload["page_url"]))
 
     for index, record in enumerate(payload["records"], 1):
         if not isinstance(record, dict):
@@ -62,6 +86,29 @@ def _validate_capture(payload: dict, legal_entity: str) -> None:
         if assertion_type == "provider_calculation" and not any(marker in relationship for marker in CALCULATION_QUALIFIERS):
             raise SystemExit(f"网页取证records第{index}项平台推算关系必须标明推定、疑似或平台穿透")
 
+    dispositions = payload.get("coverage_dispositions")
+    if not isinstance(dispositions, dict):
+        raise SystemExit("网页取证JSON缺少coverage_dispositions")
+    if set(dispositions) != set(COVERAGE_CATEGORIES):
+        raise SystemExit("网页取证coverage_dispositions必须逐类记录五项覆盖处置")
+    record_types = {_text(record.get("record_type")) for record in payload["records"]}
+    for category, matching_types in COVERAGE_CATEGORIES.items():
+        disposition = dispositions.get(category)
+        if not isinstance(disposition, dict):
+            raise SystemExit(f"网页取证coverage_dispositions.{category}必须是对象")
+        status = _text(disposition.get("status"))
+        if status not in COVERAGE_STATUSES:
+            raise SystemExit(f"网页取证coverage_dispositions.{category}状态无效")
+        if status != "captured" and not _text(disposition.get("reason")):
+            raise SystemExit(f"网页取证coverage_dispositions.{category}非captured时必须写reason")
+        if category in {"company_identity", "current_shareholder"} and status != "captured":
+            raise SystemExit(f"网页取证coverage_dispositions.{category}必须为captured")
+        if status == "captured" and matching_types and not (record_types & matching_types):
+            raise SystemExit(f"网页取证coverage_dispositions.{category}标记captured但没有对应记录")
+    for index, record in enumerate(payload["records"], 1):
+        if _text(record.get("record_type")) == "current_shareholder" and not _text(record.get("shareholding_ratio")):
+            raise SystemExit(f"网页取证records第{index}项current_shareholder缺少shareholding_ratio（页面未披露时填写页面未披露）")
+
 
 def _relationship(record: dict) -> tuple[str, str, str]:
     record_type = record["record_type"]
@@ -78,7 +125,7 @@ def _relationship(record: dict) -> tuple[str, str, str]:
     return "entity", "subject", relationship or defaults[record_type]
 
 
-def normalize_web_capture(payload: dict, provider: str) -> dict:
+def normalize_web_capture(payload: dict, provider: str, provenance: dict | None = None) -> dict:
     source_id = "EWEB01"
     default_as_of = _text(payload.get("data_as_of")) or _text(payload["captured_at"])
     source = {
@@ -90,6 +137,8 @@ def normalize_web_capture(payload: dict, provider: str) -> dict:
         "data_as_of": default_as_of,
         "record_count": len(payload["records"]),
     }
+    if provenance:
+        source.update(provenance)
     nodes = [{
         "id": "subject",
         "name": payload["legal_entity"],
@@ -131,9 +180,8 @@ def normalize_web_capture(payload: dict, provider: str) -> dict:
             "as_of_date": as_of_date,
             "record_locator": record["page_locator"],
         }
-        ratio = _text(record.get("shareholding_ratio"))
-        if ratio:
-            edge["shareholding_ratio"] = ratio
+        if record["record_type"] == "current_shareholder":
+            edge["shareholding_ratio"] = _text(record["shareholding_ratio"])
         edges.append(edge)
     return {
         "provider": provider,
@@ -151,26 +199,38 @@ def collect_web_capture(legal_entity: str, out_dir: Path, provider: str, input_j
     if provider not in WEB_PROVIDERS:
         raise SystemExit(f"不支持的网页取证提供方：{provider}")
     payload = json.loads(input_json.read_text(encoding="utf-8-sig"))
-    _validate_capture(payload, legal_entity)
-    fragment = normalize_web_capture(payload, provider)
+    _validate_capture(payload, legal_entity, provider)
     raw_path = out_dir / f"{provider}-capture.json"
     fragment_path = out_dir / "normalized-equity-fragment.json"
     _write_json(raw_path, payload)
-    _write_json(fragment_path, fragment)
-    _write_json(out_dir / "provider-query-bundle.json", {
+    capture_sha256 = _sha256(raw_path)
+    bundle_path = out_dir / "provider-query-bundle.json"
+    bundle = {
         "provider": provider,
         "legal_entity": legal_entity,
         "calls": [{
             "query": legal_entity,
             "queried_at": payload["captured_at"],
             "status": "success",
+            "legal_entity": legal_entity,
+            "captured_at": payload["captured_at"],
             "page_url": payload["page_url"],
             "page_locator": payload["page_locator"],
-            "raw_path": raw_path.name,
+            "capture_path": raw_path.name,
+            "capture_sha256": capture_sha256,
             "normalized_fragment_path": fragment_path.name,
             "record_count": len(payload["records"]),
         }],
+    }
+    _write_json(bundle_path, bundle)
+    fragment = normalize_web_capture(payload, provider, {
+        "capture_path": raw_path.name,
+        "capture_sha256": capture_sha256,
+        "bundle_path": bundle_path.name,
+        "bundle_sha256": _sha256(bundle_path),
+        "legal_entity": legal_entity,
     })
+    _write_json(fragment_path, fragment)
     return 0
 
 

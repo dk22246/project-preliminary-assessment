@@ -1,0 +1,21 @@
+{
+  "legal_entity": "上海飞科电器股份有限公司",
+  "unified_social_credit_code": "91310000735470911B",
+  "registration_status": "存续",
+  "page_url": "https://www.qcc.com/firm/example.html",
+  "page_locator": "企业详情页：工商信息、股东信息、实际控制人、变更记录与对外投资",
+  "captured_at": "2026-08-08T10:30:00+08:00",
+  "data_as_of": "2026-08-08",
+  "coverage_dispositions": {
+    "company_identity": {"status": "captured"},
+    "current_shareholder": {"status": "captured"},
+    "controller_or_beneficial_owner": {"status": "captured"},
+    "historical_change": {"status": "not_disclosed", "reason": "本页未展示可定位的历史变更记录"},
+    "major_subsidiary": {"status": "captured"}
+  },
+  "records": [
+    {"record_type": "current_shareholder", "entity_name": "上海飞科投资有限公司", "entity_type": "企业股东", "shareholding_ratio": "80.99%", "data_as_of": "2026-08-08", "page_locator": "股东信息第1行", "assertion_type": "registry_fact"},
+    {"record_type": "actual_controller", "entity_name": "李丐腾", "entity_type": "自然人", "relationship": "平台穿透推定实际控制人", "data_as_of": "2026-08-08", "page_locator": "实际控制人模块", "assertion_type": "provider_calculation"},
+    {"record_type": "subsidiary", "entity_name": "芜湖飞科电器有限公司", "entity_type": "主要子公司", "data_as_of": "2026-08-08", "page_locator": "对外投资第1行", "assertion_type": "registry_fact"}
+  ]
+}

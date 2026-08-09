@@ -3,8 +3,11 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
+import json
 from pathlib import Path
 import sys
+from urllib.parse import urlparse
 
 from report_core import load_data
 
@@ -16,6 +19,7 @@ PROVIDERS = {
     "official_registry",
 }
 COMMERCIAL_PROVIDERS = {"qcc_web", "tianyancha_web"}
+PROVIDER_DOMAINS = {"qcc_web": "qcc.com", "tianyancha_web": "tianyancha.com"}
 ATTEMPT_STATUSES = {"success", "unavailable", "error"}
 ASSERTION_TYPES = {"registry_fact", "legal_disclosure", "provider_calculation", "consolidation_scope"}
 CONFLICT_SEVERITIES = {"general", "material_local", "subject_critical"}
@@ -59,7 +63,94 @@ def _claims_verified_without_receipt(statement: str) -> bool:
     )
 
 
-def validate_equity_evidence(ledger: dict, report: dict) -> list[str]:
+def _sha256(path: Path) -> str:
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def _safe_artifact_path(base_dir: Path, value: object) -> Path | None:
+    raw = _text(value)
+    if not raw:
+        return None
+    candidate = Path(raw)
+    if candidate.is_absolute():
+        return None
+    resolved_base = base_dir.resolve()
+    resolved = (resolved_base / candidate).resolve()
+    try:
+        resolved.relative_to(resolved_base)
+    except ValueError:
+        return None
+    return resolved
+
+
+def _valid_provider_url(provider: str, value: object) -> bool:
+    parsed = urlparse(_text(value))
+    hostname = (parsed.hostname or "").lower()
+    domain = PROVIDER_DOMAINS[provider]
+    return parsed.scheme == "https" and (hostname == domain or hostname.endswith("." + domain))
+
+
+def _validate_web_artifact_chain(source: dict, base_dir: Path, legal_entity: str, errors: list[str]) -> None:
+    source_id = _text(source.get("id")) or "未编号"
+    for field in ("artifact_path", "artifact_sha256", "bundle_path", "bundle_sha256"):
+        if not _text(source.get(field)):
+            errors.append(f"股权网页来源{source_id}缺少可验证artifact字段：{field}")
+    artifact_path = _safe_artifact_path(base_dir, source.get("artifact_path"))
+    bundle_path = _safe_artifact_path(base_dir, source.get("bundle_path"))
+    if not artifact_path:
+        errors.append(f"股权网页来源{source_id}的artifact_path不合法")
+        return
+    if not artifact_path.is_file():
+        errors.append(f"股权网页来源{source_id}的artifact不存在")
+        return
+    if _sha256(artifact_path) != _text(source.get("artifact_sha256")):
+        errors.append(f"股权网页来源{source_id}的artifact SHA-256不匹配")
+        return
+    if not bundle_path or not bundle_path.is_file():
+        errors.append(f"股权网页来源{source_id}的bundle artifact不存在或路径不合法")
+        return
+    if _sha256(bundle_path) != _text(source.get("bundle_sha256")):
+        errors.append(f"股权网页来源{source_id}的bundle SHA-256不匹配")
+        return
+    try:
+        capture = json.loads(artifact_path.read_text(encoding="utf-8-sig"))
+        bundle = json.loads(bundle_path.read_text(encoding="utf-8-sig"))
+    except (OSError, ValueError, json.JSONDecodeError) as error:
+        errors.append(f"股权网页来源{source_id}的artifact JSON不可读取：{error}")
+        return
+    provider = _text(source.get("provider"))
+    if not isinstance(capture, dict) or not isinstance(bundle, dict):
+        errors.append(f"股权网页来源{source_id}的artifact结构无效")
+        return
+    expected = {
+        "legal_entity": legal_entity,
+        "captured_at": _text(source.get("captured_at")),
+        "page_url": _text(source.get("page_url")),
+    }
+    if not _valid_provider_url(provider, expected["page_url"]):
+        errors.append(f"股权网页来源{source_id}的provider与HTTPS页面URL不匹配")
+    if any(_text(capture.get(key)) != value for key, value in expected.items()):
+        errors.append(f"股权网页来源{source_id}与capture artifact主体、时点或URL不一致")
+    records = capture.get("records")
+    if not isinstance(records, list) or len(records) != source.get("record_count"):
+        errors.append(f"股权网页来源{source_id}与capture artifact记录数量不一致")
+    calls = bundle.get("calls")
+    matching_call = next((item for item in calls if isinstance(item, dict) and _text(item.get("capture_path")) == _text(source.get("artifact_path"))), None) if isinstance(calls, list) else None
+    if _text(bundle.get("provider")) != provider or _text(bundle.get("legal_entity")) != legal_entity or not matching_call:
+        errors.append(f"股权网页来源{source_id}与query bundle不一致")
+        return
+    for field, expected_value in {
+        "capture_sha256": _text(source.get("artifact_sha256")),
+        "record_count": source.get("record_count"),
+        "legal_entity": legal_entity,
+        "captured_at": _text(source.get("captured_at")),
+        "page_url": _text(source.get("page_url")),
+    }.items():
+        if matching_call.get(field) != expected_value:
+            errors.append(f"股权网页来源{source_id}与query bundle的{field}不一致")
+
+
+def validate_equity_evidence(ledger: dict, report: dict, base_dir: Path | None = None) -> list[str]:
     errors: list[str] = []
     subject = ledger.get("subject", {})
     legal_entity = _text(report.get("entity_resolution", {}).get("legal_entity"))
@@ -103,6 +194,11 @@ def validate_equity_evidence(ledger: dict, report: dict) -> list[str]:
                     errors.append(f"股权网页来源{source_id}缺少{field}")
             if not isinstance(source.get("record_count"), int) or source.get("record_count", 0) <= 0:
                 errors.append(f"股权网页来源{source_id}缺少非空记录")
+            if _text(source.get("status")) == "success":
+                if not _valid_provider_url(provider, source.get("page_url")):
+                    errors.append(f"股权网页来源{source_id}的provider与HTTPS页面URL不匹配")
+                if base_dir is not None:
+                    _validate_web_artifact_chain(source, base_dir, legal_entity, errors)
 
     successful_commercial = {
         _text(source.get("provider"))
@@ -288,10 +384,10 @@ def _validate_source_ids(item: dict, source_by_id: dict[str, dict], label: str, 
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Validate equity evidence and its one-to-one match with the report graph.")
-    parser.add_argument("equity_evidence")
-    parser.add_argument("--report-data", required=True)
+    parser.add_argument("equity_evidence", type=Path)
+    parser.add_argument("--report-data", required=True, type=Path)
     args = parser.parse_args()
-    errors = validate_equity_evidence(load_data(args.equity_evidence), load_data(args.report_data))
+    errors = validate_equity_evidence(load_data(args.equity_evidence), load_data(args.report_data), args.equity_evidence.resolve().parent)
     if errors:
         print("\n".join(errors), file=sys.stderr)
         return 1

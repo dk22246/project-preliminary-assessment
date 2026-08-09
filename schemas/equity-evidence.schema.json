@@ -43,11 +43,18 @@
           "record_locator": {"type": "string", "minLength": 1},
           "page_url": {"type": "string", "format": "uri"},
           "captured_at": {"type": "string", "minLength": 1},
-          "record_count": {"type": "integer", "minimum": 1}
+          "record_count": {"type": "integer", "minimum": 1},
+          "artifact_path": {"type": "string", "minLength": 1},
+          "artifact_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+          "bundle_path": {"type": "string", "minLength": 1},
+          "bundle_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
         },
         "allOf": [{
           "if": {"properties": {"provider": {"enum": ["qcc_web", "tianyancha_web"]}}},
           "then": {"required": ["page_url", "captured_at", "record_count"]}
+        }, {
+          "if": {"required": ["provider", "status"], "properties": {"provider": {"enum": ["qcc_web", "tianyancha_web"]}, "status": {"const": "success"}}},
+          "then": {"required": ["artifact_path", "artifact_sha256", "bundle_path", "bundle_sha256"]}
         }]
       }
     },

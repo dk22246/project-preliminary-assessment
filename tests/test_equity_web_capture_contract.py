@@ -1,4 +1,5 @@
 import copy
+import hashlib
 import importlib
 import json
 import subprocess
@@ -38,6 +39,7 @@ def web_capture():
                 "record_type": "current_shareholder",
                 "entity_name": "其他登记股东",
                 "entity_type": "企业股东",
+                "shareholding_ratio": "页面未披露",
                 "data_as_of": "2026-08-08",
                 "page_locator": "股东信息第2行，页面未显示持股比例",
                 "assertion_type": "registry_fact",
@@ -69,6 +71,13 @@ def web_capture():
                 "assertion_type": "registry_fact",
             },
         ],
+        "coverage_dispositions": {
+            "company_identity": {"status": "captured"},
+            "current_shareholder": {"status": "captured"},
+            "controller_or_beneficial_owner": {"status": "captured"},
+            "historical_change": {"status": "captured"},
+            "major_subsidiary": {"status": "captured"},
+        },
     }
 
 
@@ -125,8 +134,7 @@ class EquityWebCaptureContractTests(unittest.TestCase):
         self.assertTrue(any(marker in controller["relationship"] for marker in ("推定", "疑似", "平台穿透")))
 
         unknown_ratio = next(edge for edge in fragment["edges"] if edge.get("entity_name") == "其他登记股东")
-        self.assertNotIn("shareholding_ratio", unknown_ratio)
-        self.assertNotRegex(json.dumps(unknown_ratio, ensure_ascii=False), r"\d+(?:\.\d+)?%")
+        self.assertEqual(unknown_ratio["shareholding_ratio"], "页面未披露")
 
     def test_qcc_web_capture_generates_query_bundle_and_normalized_fragment(self):
         result, outputs = self.run_collector("qcc_web", web_capture())
@@ -158,6 +166,63 @@ class EquityWebCaptureContractTests(unittest.TestCase):
         result, _ = self.run_collector("qcc_web", payload)
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("records", result.stderr)
+
+    def test_capture_requires_all_coverage_dispositions(self):
+        cases = {
+            "only_historical_change": lambda payload: payload.update({
+                "records": [record for record in payload["records"] if record["record_type"] == "historical_change"],
+                "coverage_dispositions": {"historical_change": {"status": "captured"}},
+            }),
+            "missing_current_shareholder": lambda payload: payload.update({
+                "records": [record for record in payload["records"] if record["record_type"] != "current_shareholder"],
+                "coverage_dispositions": {**payload["coverage_dispositions"], "current_shareholder": {"status": "not_disclosed", "reason": "页面未披露"}},
+            }),
+            "missing_non_captured_disposition": lambda payload: payload.update({
+                "records": [record for record in payload["records"] if record["record_type"] not in {"actual_controller", "subsidiary", "historical_change"}],
+                "coverage_dispositions": {
+                    "company_identity": {"status": "captured"},
+                    "current_shareholder": {"status": "captured"},
+                },
+            }),
+        }
+        for name, mutate in cases.items():
+            with self.subTest(name=name):
+                payload = web_capture()
+                mutate(payload)
+                result, _ = self.run_collector("qcc_web", payload)
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn("coverage_dispositions", result.stderr)
+
+    def test_current_shareholder_requires_explicit_ratio_field(self):
+        payload = web_capture()
+        payload["records"][0].pop("shareholding_ratio")
+        result, _ = self.run_collector("qcc_web", payload)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("shareholding_ratio", result.stderr)
+
+    def test_provider_requires_its_own_https_domain(self):
+        cases = (("qcc_web", "https://www.tianyancha.com/company/example"), ("qcc_web", "http://www.qcc.com/firm/example"), ("qcc_web", "https://example.com/firm/example"), ("tianyancha_web", "https://www.qcc.com/firm/example"))
+        for provider, page_url in cases:
+            with self.subTest(provider=provider, page_url=page_url):
+                payload = web_capture()
+                payload["page_url"] = page_url
+                result, _ = self.run_collector(provider, payload)
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn("URL", result.stderr)
+
+    def test_outputs_bind_capture_and_bundle_hashes(self):
+        result, outputs = self.run_collector("qcc_web", web_capture())
+        self.assertEqual(result.returncode, 0, result.stderr)
+        bundle = outputs["provider-query-bundle.json"]
+        fragment = outputs["normalized-equity-fragment.json"]
+        capture = outputs["qcc_web-capture.json"]
+        capture_sha256 = hashlib.sha256(json.dumps(capture, ensure_ascii=False, indent=2).encode("utf-8") + b"\n").hexdigest()
+        call = bundle["calls"][0]
+        for field in ("capture_path", "capture_sha256", "record_count", "legal_entity", "captured_at", "page_url"):
+            self.assertIn(field, call)
+        self.assertEqual(call["capture_sha256"], capture_sha256)
+        for field in ("capture_path", "capture_sha256", "record_count", "legal_entity", "captured_at", "page_url", "bundle_path", "bundle_sha256"):
+            self.assertIn(field, fragment["source"])
 
     def test_capture_legal_entity_must_match_command_anchor(self):
         payload = web_capture()
@@ -208,6 +273,15 @@ class EquityWebCaptureContractTests(unittest.TestCase):
         self.assertTrue(schema_path.is_file())
         preflight = (ROOT / "scripts" / "preflight.py").read_text(encoding="utf-8")
         self.assertIn("schemas/equity-web-capture.schema.json", preflight)
+
+    def test_valid_web_capture_example_is_packaged_and_collectible(self):
+        example_path = ROOT / "examples" / "equity-web-capture-valid.json"
+        self.assertTrue(example_path.is_file(), "缺少合规网页取证示例")
+        payload = json.loads(example_path.read_text(encoding="utf-8"))
+        result, _ = self.run_collector("qcc_web", payload)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        preflight = (ROOT / "scripts" / "preflight.py").read_text(encoding="utf-8")
+        self.assertIn("examples/equity-web-capture-valid.json", preflight)
 
 
 if __name__ == "__main__":

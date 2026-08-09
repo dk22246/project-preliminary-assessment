@@ -1,4 +1,5 @@
 import copy
+import hashlib
 import importlib
 import json
 import subprocess
@@ -82,6 +83,52 @@ def sync_summary(ledger, report):
         "adopted_basis": "测试证据台账中的成功来源",
         "status_statement": "企查查网页已核验；天眼查网页本轮受登录状态限制，未取得成功回执。",
     }
+
+
+def write_web_artifact_chain(directory, ledger, *, corrupt_hash=False):
+    capture = {
+        "legal_entity": REPORT["entity_resolution"]["legal_entity"],
+        "unified_social_credit_code": "91310000735470911B",
+        "registration_status": "存续",
+        "page_url": "https://www.qcc.com/firm/example.html",
+        "captured_at": "2026-08-02T12:00:00+08:00",
+        "records": [{"record_type": "current_shareholder", "shareholding_ratio": "80.99%"}],
+    }
+    capture_path = directory / "qcc_web-capture.json"
+    capture_path.write_text(json.dumps(capture, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    capture_sha256 = hashlib.sha256(capture_path.read_bytes()).hexdigest()
+    bundle = {
+        "provider": "qcc_web",
+        "legal_entity": capture["legal_entity"],
+        "calls": [{
+            "capture_path": capture_path.name,
+            "capture_sha256": capture_sha256,
+            "record_count": 1,
+            "legal_entity": capture["legal_entity"],
+            "captured_at": capture["captured_at"],
+            "page_url": capture["page_url"],
+        }],
+    }
+    bundle_path = directory / "provider-query-bundle.json"
+    bundle_path.write_text(json.dumps(bundle, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    source = ledger["sources"][0]
+    source.update({
+        "artifact_path": capture_path.name,
+        "artifact_sha256": "0" * 64 if corrupt_hash else capture_sha256,
+        "bundle_path": bundle_path.name,
+        "bundle_sha256": hashlib.sha256(bundle_path.read_bytes()).hexdigest(),
+    })
+
+
+def validate_via_cli(directory, ledger, report):
+    ledger_path = directory / "equity-evidence.json"
+    report_path = directory / "report-data.json"
+    ledger_path.write_text(json.dumps(ledger, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    report_path.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    return subprocess.run(
+        [sys.executable, "-X", "utf8", str(ROOT / "scripts" / "validate_equity_evidence.py"), str(ledger_path), "--report-data", str(report_path)],
+        cwd=ROOT, capture_output=True, text=True, encoding="utf-8", errors="replace", check=False,
+    )
 
 
 def conflict(conflict_id="C01", severity="general", graph_action="keep_confirmed_part"):
@@ -239,6 +286,36 @@ class EquityEvidenceTests(unittest.TestCase):
         ledger["sources"][0]["record_count"] = 0
         errors = validator.validate_equity_evidence(ledger, report)
         self.assertTrue(any("网页已核验" in item and "非空记录" in item for item in errors), errors)
+
+    def test_cli_rejects_success_web_source_without_verifiable_artifact(self):
+        report = copy.deepcopy(REPORT)
+        ledger = evidence_ledger()
+        attach_graph(ledger, report)
+        with tempfile.TemporaryDirectory(dir=ROOT) as directory:
+            result = validate_via_cli(Path(directory), ledger, report)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("artifact", result.stderr)
+
+    def test_cli_rejects_success_web_source_with_mismatched_artifact_hash(self):
+        report = copy.deepcopy(REPORT)
+        ledger = evidence_ledger()
+        attach_graph(ledger, report)
+        with tempfile.TemporaryDirectory(dir=ROOT) as raw_directory:
+            directory = Path(raw_directory)
+            write_web_artifact_chain(directory, ledger, corrupt_hash=True)
+            result = validate_via_cli(directory, ledger, report)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("SHA-256", result.stderr)
+
+    def test_cli_accepts_complete_web_artifact_chain(self):
+        report = copy.deepcopy(REPORT)
+        ledger = evidence_ledger()
+        attach_graph(ledger, report)
+        with tempfile.TemporaryDirectory(dir=ROOT) as raw_directory:
+            directory = Path(raw_directory)
+            write_web_artifact_chain(directory, ledger)
+            result = validate_via_cli(directory, ledger, report)
+        self.assertEqual(result.returncode, 0, result.stderr)
 
     def test_explicitly_negated_web_verification_claim_is_allowed_for_fallback(self):
         validator = importlib.import_module("validate_equity_evidence")

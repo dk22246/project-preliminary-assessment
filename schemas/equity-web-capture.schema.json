@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "Authenticated commercial-platform web equity capture",
   "type": "object",
-  "required": ["legal_entity", "unified_social_credit_code", "registration_status", "page_url", "page_locator", "captured_at", "records"],
+  "required": ["legal_entity", "unified_social_credit_code", "registration_status", "page_url", "page_locator", "captured_at", "records", "coverage_dispositions"],
   "properties": {
     "legal_entity": {"type": "string", "minLength": 1},
     "unified_social_credit_code": {"type": "string", "minLength": 1},
@@ -30,8 +30,31 @@
         "allOf": [{
           "if": {"properties": {"assertion_type": {"const": "provider_calculation"}}},
           "then": {"required": ["relationship"], "properties": {"relationship": {"pattern": "推定|疑似|平台穿透"}}}
+        }, {
+          "if": {"properties": {"record_type": {"const": "current_shareholder"}}},
+          "then": {"required": ["shareholding_ratio"]}
         }]
       }
+    },
+    "coverage_dispositions": {
+      "type": "object",
+      "required": ["company_identity", "current_shareholder", "controller_or_beneficial_owner", "historical_change", "major_subsidiary"],
+      "additionalProperties": false,
+      "properties": {
+        "company_identity": {"$ref": "#/$defs/coverage_disposition"},
+        "current_shareholder": {"$ref": "#/$defs/coverage_disposition"},
+        "controller_or_beneficial_owner": {"$ref": "#/$defs/coverage_disposition"},
+        "historical_change": {"$ref": "#/$defs/coverage_disposition"},
+        "major_subsidiary": {"$ref": "#/$defs/coverage_disposition"}
+      }
+    }
+  },
+  "$defs": {
+    "coverage_disposition": {
+      "type": "object",
+      "required": ["status"],
+      "properties": {"status": {"enum": ["captured", "not_disclosed", "inaccessible"]}, "reason": {"type": "string", "minLength": 1}},
+      "allOf": [{"if": {"properties": {"status": {"enum": ["not_disclosed", "inaccessible"]}}}, "then": {"required": ["reason"]}}]
     }
   }
 }

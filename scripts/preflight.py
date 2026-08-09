@@ -32,7 +32,7 @@ REQUIRED = (
     "scripts/verify_skill.py",
     "scripts/evidence_collectors/__init__.py", "scripts/evidence_collectors/registry.py", "scripts/evidence_collectors/html_extract.py", "scripts/validate_research_ledger.py", "scripts/validate_policy_search_coverage.py",
     "scripts/validate_policy_scope.py", "scripts/validate_report_data.py", "scripts/validate_text_quality.py",
-    "tests/test_business_triggered_policy_logic.py", SAMPLE.relative_to(ROOT).as_posix(),
+    "tests/test_business_triggered_policy_logic.py", "examples/equity-web-capture-valid.json", SAMPLE.relative_to(ROOT).as_posix(),
     EVIDENCE_SAMPLE.relative_to(ROOT).as_posix(), EQUITY_SAMPLE.relative_to(ROOT).as_posix(), RESEARCH_SAMPLE.relative_to(ROOT).as_posix(), POLICY_SEARCH_SAMPLE.relative_to(ROOT).as_posix(), "examples/evidence-sample/official-policy.md",
 )
 TEXT_SUFFIXES = {".md", ".py", ".json", ".yaml", ".yml", ".mjs", ".ps1", ".html", ".css"}
