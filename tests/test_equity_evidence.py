@@ -85,15 +85,10 @@ def sync_summary(ledger, report):
     }
 
 
-def write_web_artifact_chain(directory, ledger, *, corrupt_hash=False):
-    capture = {
-        "legal_entity": REPORT["entity_resolution"]["legal_entity"],
-        "unified_social_credit_code": "91310000735470911B",
-        "registration_status": "存续",
-        "page_url": "https://www.qcc.com/firm/example.html",
-        "captured_at": "2026-08-02T12:00:00+08:00",
-        "records": [{"record_type": "current_shareholder", "shareholding_ratio": "80.99%"}],
-    }
+def write_web_artifact_chain(directory, ledger, *, corrupt_hash=False, mutate_capture=None):
+    capture = json.loads((ROOT / "examples" / "equity-web-capture-valid.json").read_text(encoding="utf-8"))
+    if mutate_capture:
+        mutate_capture(capture)
     capture_path = directory / "qcc_web-capture.json"
     capture_path.write_text(json.dumps(capture, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     capture_sha256 = hashlib.sha256(capture_path.read_bytes()).hexdigest()
@@ -103,7 +98,7 @@ def write_web_artifact_chain(directory, ledger, *, corrupt_hash=False):
         "calls": [{
             "capture_path": capture_path.name,
             "capture_sha256": capture_sha256,
-            "record_count": 1,
+            "record_count": len(capture["records"]),
             "legal_entity": capture["legal_entity"],
             "captured_at": capture["captured_at"],
             "page_url": capture["page_url"],
@@ -113,6 +108,9 @@ def write_web_artifact_chain(directory, ledger, *, corrupt_hash=False):
     bundle_path.write_text(json.dumps(bundle, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     source = ledger["sources"][0]
     source.update({
+        "page_url": capture["page_url"],
+        "captured_at": capture["captured_at"],
+        "record_count": len(capture["records"]),
         "artifact_path": capture_path.name,
         "artifact_sha256": "0" * 64 if corrupt_hash else capture_sha256,
         "bundle_path": bundle_path.name,
@@ -306,6 +304,33 @@ class EquityEvidenceTests(unittest.TestCase):
             result = validate_via_cli(directory, ledger, report)
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("SHA-256", result.stderr)
+
+    def test_cli_rejects_hash_valid_artifact_that_violates_capture_contract(self):
+        def remove_shareholder_field(field):
+            def mutate(capture):
+                shareholder = next(item for item in capture["records"] if item["record_type"] == "current_shareholder")
+                shareholder.pop(field)
+            return mutate
+
+        cases = {
+            "missing_page_locator": lambda capture: capture.pop("page_locator"),
+            "missing_coverage_dispositions": lambda capture: capture.pop("coverage_dispositions"),
+            "missing_one_coverage_category": lambda capture: capture["coverage_dispositions"].pop("major_subsidiary"),
+            "shareholder_missing_ratio": remove_shareholder_field("shareholding_ratio"),
+            "shareholder_missing_locator": remove_shareholder_field("page_locator"),
+            "provider_url_mismatch": lambda capture: capture.update({"page_url": "https://www.tianyancha.com/company/example"}),
+        }
+        for name, mutate in cases.items():
+            with self.subTest(name=name):
+                report = copy.deepcopy(REPORT)
+                ledger = evidence_ledger()
+                attach_graph(ledger, report)
+                with tempfile.TemporaryDirectory(dir=ROOT) as raw_directory:
+                    directory = Path(raw_directory)
+                    write_web_artifact_chain(directory, ledger, mutate_capture=mutate)
+                    result = validate_via_cli(directory, ledger, report)
+                self.assertNotEqual(result.returncode, 0, f"{name} unexpectedly passed")
+                self.assertIn("capture", result.stderr.lower())
 
     def test_cli_accepts_complete_web_artifact_chain(self):
         report = copy.deepcopy(REPORT)

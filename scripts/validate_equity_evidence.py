@@ -7,8 +7,8 @@ import hashlib
 import json
 from pathlib import Path
 import sys
-from urllib.parse import urlparse
 
+from collect_equity_provider import CaptureContractError, is_valid_provider_url, validate_web_capture
 from report_core import load_data
 
 
@@ -19,7 +19,6 @@ PROVIDERS = {
     "official_registry",
 }
 COMMERCIAL_PROVIDERS = {"qcc_web", "tianyancha_web"}
-PROVIDER_DOMAINS = {"qcc_web": "qcc.com", "tianyancha_web": "tianyancha.com"}
 ATTEMPT_STATUSES = {"success", "unavailable", "error"}
 ASSERTION_TYPES = {"registry_fact", "legal_disclosure", "provider_calculation", "consolidation_scope"}
 CONFLICT_SEVERITIES = {"general", "material_local", "subject_critical"}
@@ -83,13 +82,6 @@ def _safe_artifact_path(base_dir: Path, value: object) -> Path | None:
     return resolved
 
 
-def _valid_provider_url(provider: str, value: object) -> bool:
-    parsed = urlparse(_text(value))
-    hostname = (parsed.hostname or "").lower()
-    domain = PROVIDER_DOMAINS[provider]
-    return parsed.scheme == "https" and (hostname == domain or hostname.endswith("." + domain))
-
-
 def _validate_web_artifact_chain(source: dict, base_dir: Path, legal_entity: str, errors: list[str]) -> None:
     source_id = _text(source.get("id")) or "未编号"
     for field in ("artifact_path", "artifact_sha256", "bundle_path", "bundle_sha256"):
@@ -122,12 +114,16 @@ def _validate_web_artifact_chain(source: dict, base_dir: Path, legal_entity: str
     if not isinstance(capture, dict) or not isinstance(bundle, dict):
         errors.append(f"股权网页来源{source_id}的artifact结构无效")
         return
+    try:
+        validate_web_capture(capture, legal_entity, provider)
+    except CaptureContractError as error:
+        errors.append(f"股权网页来源{source_id}的capture合同无效：{error}")
     expected = {
         "legal_entity": legal_entity,
         "captured_at": _text(source.get("captured_at")),
         "page_url": _text(source.get("page_url")),
     }
-    if not _valid_provider_url(provider, expected["page_url"]):
+    if not is_valid_provider_url(provider, expected["page_url"]):
         errors.append(f"股权网页来源{source_id}的provider与HTTPS页面URL不匹配")
     if any(_text(capture.get(key)) != value for key, value in expected.items()):
         errors.append(f"股权网页来源{source_id}与capture artifact主体、时点或URL不一致")
@@ -195,7 +191,7 @@ def validate_equity_evidence(ledger: dict, report: dict, base_dir: Path | None =
             if not isinstance(source.get("record_count"), int) or source.get("record_count", 0) <= 0:
                 errors.append(f"股权网页来源{source_id}缺少非空记录")
             if _text(source.get("status")) == "success":
-                if not _valid_provider_url(provider, source.get("page_url")):
+                if not is_valid_provider_url(provider, _text(source.get("page_url"))):
                     errors.append(f"股权网页来源{source_id}的provider与HTTPS页面URL不匹配")
                 if base_dir is not None:
                     _validate_web_artifact_chain(source, base_dir, legal_entity, errors)

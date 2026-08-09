@@ -31,6 +31,10 @@ COVERAGE_STATUSES = {"captured", "not_disclosed", "inaccessible"}
 PROVIDER_DOMAINS = {"qcc_web": "qcc.com", "tianyancha_web": "tianyancha.com"}
 
 
+class CaptureContractError(ValueError):
+    """Raised when a browser capture violates the shared equity contract."""
+
+
 def _text(value: object) -> str:
     return str(value or "").strip()
 
@@ -43,15 +47,14 @@ def _sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
-def _validate_provider_url(provider: str, page_url: str) -> None:
+def is_valid_provider_url(provider: str, page_url: str) -> bool:
     parsed = urlparse(page_url)
-    expected_domain = PROVIDER_DOMAINS[provider]
+    expected_domain = PROVIDER_DOMAINS.get(provider, "")
     hostname = (parsed.hostname or "").lower()
-    if parsed.scheme != "https" or not hostname or (hostname != expected_domain and not hostname.endswith("." + expected_domain)):
-        raise SystemExit(f"网页取证URL必须为{provider}的HTTPS域名：{expected_domain}")
+    return bool(expected_domain and parsed.scheme == "https" and hostname and (hostname == expected_domain or hostname.endswith("." + expected_domain)))
 
 
-def _validate_capture(payload: dict, legal_entity: str, provider: str) -> None:
+def validate_web_capture(payload: dict, legal_entity: str, provider: str) -> None:
     required = (
         "page_url",
         "captured_at",
@@ -63,51 +66,52 @@ def _validate_capture(payload: dict, legal_entity: str, provider: str) -> None:
     )
     missing = [field for field in required if not payload.get(field)]
     if missing:
-        raise SystemExit("网页取证JSON缺少字段：" + "、".join(missing))
+        raise CaptureContractError("网页取证JSON缺少字段：" + "、".join(missing))
     if not isinstance(payload["records"], list) or not payload["records"]:
-        raise SystemExit("网页取证JSON的records必须是非空数组")
+        raise CaptureContractError("网页取证JSON的records必须是非空数组")
     if _text(payload["legal_entity"]) != _text(legal_entity):
-        raise SystemExit("网页取证主体与命令指定法律主体不一致")
-    _validate_provider_url(provider, _text(payload["page_url"]))
+        raise CaptureContractError("网页取证主体与命令指定法律主体不一致")
+    if not is_valid_provider_url(provider, _text(payload["page_url"])):
+        raise CaptureContractError(f"网页取证URL必须为{provider}的HTTPS域名：{PROVIDER_DOMAINS.get(provider, '未知')}")
 
     for index, record in enumerate(payload["records"], 1):
         if not isinstance(record, dict):
-            raise SystemExit(f"网页取证records第{index}项必须是对象")
+            raise CaptureContractError(f"网页取证records第{index}项必须是对象")
         record_type = _text(record.get("record_type"))
         if record_type not in RECORD_TYPES:
-            raise SystemExit(f"网页取证records第{index}项record_type无效：{record_type or '空'}")
+            raise CaptureContractError(f"网页取证records第{index}项record_type无效：{record_type or '空'}")
         for field in ("entity_name", "entity_type", "page_locator", "assertion_type"):
             if not _text(record.get(field)):
-                raise SystemExit(f"网页取证records第{index}项缺少{field}")
+                raise CaptureContractError(f"网页取证records第{index}项缺少{field}")
         assertion_type = _text(record.get("assertion_type"))
         if assertion_type not in ASSERTION_TYPES:
-            raise SystemExit(f"网页取证records第{index}项assertion_type无效：{assertion_type}")
+            raise CaptureContractError(f"网页取证records第{index}项assertion_type无效：{assertion_type}")
         relationship = _text(record.get("relationship"))
         if assertion_type == "provider_calculation" and not any(marker in relationship for marker in CALCULATION_QUALIFIERS):
-            raise SystemExit(f"网页取证records第{index}项平台推算关系必须标明推定、疑似或平台穿透")
+            raise CaptureContractError(f"网页取证records第{index}项平台推算关系必须标明推定、疑似或平台穿透")
 
     dispositions = payload.get("coverage_dispositions")
     if not isinstance(dispositions, dict):
-        raise SystemExit("网页取证JSON缺少coverage_dispositions")
+        raise CaptureContractError("网页取证JSON缺少coverage_dispositions")
     if set(dispositions) != set(COVERAGE_CATEGORIES):
-        raise SystemExit("网页取证coverage_dispositions必须逐类记录五项覆盖处置")
+        raise CaptureContractError("网页取证coverage_dispositions必须逐类记录五项覆盖处置")
     record_types = {_text(record.get("record_type")) for record in payload["records"]}
     for category, matching_types in COVERAGE_CATEGORIES.items():
         disposition = dispositions.get(category)
         if not isinstance(disposition, dict):
-            raise SystemExit(f"网页取证coverage_dispositions.{category}必须是对象")
+            raise CaptureContractError(f"网页取证coverage_dispositions.{category}必须是对象")
         status = _text(disposition.get("status"))
         if status not in COVERAGE_STATUSES:
-            raise SystemExit(f"网页取证coverage_dispositions.{category}状态无效")
+            raise CaptureContractError(f"网页取证coverage_dispositions.{category}状态无效")
         if status != "captured" and not _text(disposition.get("reason")):
-            raise SystemExit(f"网页取证coverage_dispositions.{category}非captured时必须写reason")
+            raise CaptureContractError(f"网页取证coverage_dispositions.{category}非captured时必须写reason")
         if category in {"company_identity", "current_shareholder"} and status != "captured":
-            raise SystemExit(f"网页取证coverage_dispositions.{category}必须为captured")
+            raise CaptureContractError(f"网页取证coverage_dispositions.{category}必须为captured")
         if status == "captured" and matching_types and not (record_types & matching_types):
-            raise SystemExit(f"网页取证coverage_dispositions.{category}标记captured但没有对应记录")
+            raise CaptureContractError(f"网页取证coverage_dispositions.{category}标记captured但没有对应记录")
     for index, record in enumerate(payload["records"], 1):
         if _text(record.get("record_type")) == "current_shareholder" and not _text(record.get("shareholding_ratio")):
-            raise SystemExit(f"网页取证records第{index}项current_shareholder缺少shareholding_ratio（页面未披露时填写页面未披露）")
+            raise CaptureContractError(f"网页取证records第{index}项current_shareholder缺少shareholding_ratio（页面未披露时填写页面未披露）")
 
 
 def _relationship(record: dict) -> tuple[str, str, str]:
@@ -199,7 +203,10 @@ def collect_web_capture(legal_entity: str, out_dir: Path, provider: str, input_j
     if provider not in WEB_PROVIDERS:
         raise SystemExit(f"不支持的网页取证提供方：{provider}")
     payload = json.loads(input_json.read_text(encoding="utf-8-sig"))
-    _validate_capture(payload, legal_entity, provider)
+    try:
+        validate_web_capture(payload, legal_entity, provider)
+    except CaptureContractError as error:
+        raise SystemExit(str(error)) from error
     raw_path = out_dir / f"{provider}-capture.json"
     fragment_path = out_dir / "normalized-equity-fragment.json"
     _write_json(raw_path, payload)
