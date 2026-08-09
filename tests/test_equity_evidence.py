@@ -25,18 +25,21 @@ def evidence_ledger():
             "unified_social_credit_code": "91310000735470911B",
         },
         "provider_attempts": [
-            {"provider": "qcc_mcp", "status": "success", "queried_at": "2026-08-02T12:00:00+08:00"},
-            {"provider": "tianyancha_api", "status": "unavailable", "queried_at": "2026-08-02T12:01:00+08:00", "reason": "未配置令牌"},
+            {"provider": "qcc_web", "status": "success", "queried_at": "2026-08-02T12:00:00+08:00"},
+            {"provider": "tianyancha_web", "status": "unavailable", "queried_at": "2026-08-02T12:01:00+08:00", "reason": "网页访问受登录状态限制"},
         ],
         "sources": [
             {
                 "id": "E01",
-                "provider": "qcc_mcp",
-                "method": "get_shareholder_info",
+                "provider": "qcc_web",
+                "method": "browser_capture",
                 "queried_at": "2026-08-02T12:00:00+08:00",
                 "query": REPORT["entity_resolution"]["legal_entity"],
                 "status": "success",
-                "record_locator": "qcc-company/get_shareholder_info",
+                "record_locator": "企查查企业详情页/股东信息",
+                "page_url": "https://www.qcc.com/firm/example.html",
+                "captured_at": "2026-08-02T12:00:00+08:00",
+                "record_count": 1,
             }
         ],
         "nodes": [],
@@ -54,6 +57,7 @@ def attach_graph(ledger, report):
             "name": node["name"],
             "entity_type": node["entity_type"],
             "assertion_type": "registry_fact",
+            "as_of_date": "2026-08-02",
             "evidence_source_ids": ["E01"],
         }
         for node in report["equity"]["nodes"]
@@ -76,7 +80,7 @@ def sync_summary(ledger, report):
         "attempted_channels": [item["provider"] for item in ledger["provider_attempts"]],
         "successful_channels": [item["provider"] for item in ledger["sources"] if item["status"] == "success"],
         "adopted_basis": "测试证据台账中的成功来源",
-        "status_statement": "企查查已取得成功回执；天眼查本轮未配置令牌。",
+        "status_statement": "企查查网页已核验；天眼查网页本轮受登录状态限制，未取得成功回执。",
     }
 
 
@@ -124,6 +128,7 @@ class EquityEvidenceTests(unittest.TestCase):
                 "name": node["name"],
                 "entity_type": node["entity_type"],
                 "assertion_type": "registry_fact",
+                "as_of_date": "2026-08-02",
                 "evidence_source_ids": ["E01"],
             }
             for node in report["equity"]["nodes"]
@@ -165,11 +170,12 @@ class EquityEvidenceTests(unittest.TestCase):
             html_path = Path(directory) / "report.html"
             report_path.write_text(json.dumps(report, ensure_ascii=False), encoding="utf-8")
             result = subprocess.run(
-                [sys.executable, str(ROOT / "scripts" / "render_report_html.py"), str(report_path), "--out", str(html_path)],
+                [sys.executable, "-X", "utf8", str(ROOT / "scripts" / "render_report_html.py"), str(report_path), "--out", str(html_path)],
                 cwd=ROOT,
                 capture_output=True,
                 text=True,
                 encoding="utf-8",
+                errors="replace",
                 check=False,
             )
             self.assertEqual(result.returncode, 0, result.stderr)
@@ -218,16 +224,49 @@ class EquityEvidenceTests(unittest.TestCase):
         errors = validator.validate_equity_evidence(ledger, report)
         self.assertTrue(any("未进入报告文字说明" in error for error in errors), errors)
 
-    def test_provider_collector_exposes_qcc_cli_and_tianyancha_routes_without_secrets(self):
+    def test_provider_collector_only_exposes_web_routes(self):
         try:
             collector = importlib.import_module("collect_equity_provider")
         except ModuleNotFoundError as error:
             self.fail(f"缺少股权平台采集器：{error}")
-        commands = collector.qcc_commands("上海飞科电器股份有限公司", "qcc")
-        self.assertIn(["qcc", "company", "get_company_by_query", "上海飞科电器股份有限公司"], commands)
-        self.assertIn(["qcc", "company", "get_shareholder_info", "上海飞科电器股份有限公司"], commands)
-        self.assertIn("equity_graph", collector.TIANYANCHA_ENDPOINTS)
-        self.assertNotIn("token", json.dumps(commands, ensure_ascii=False).lower())
+        self.assertEqual(collector.WEB_PROVIDERS, {"qcc_web", "tianyancha_web"})
+
+    def test_web_verified_claim_requires_success_receipt_with_nonempty_records(self):
+        validator = importlib.import_module("validate_equity_evidence")
+        report = copy.deepcopy(REPORT)
+        ledger = evidence_ledger()
+        attach_graph(ledger, report)
+        ledger["sources"][0]["record_count"] = 0
+        errors = validator.validate_equity_evidence(ledger, report)
+        self.assertTrue(any("网页已核验" in item and "非空记录" in item for item in errors), errors)
+
+    def test_explicitly_negated_web_verification_claim_is_allowed_for_fallback(self):
+        validator = importlib.import_module("validate_equity_evidence")
+        report = copy.deepcopy(REPORT)
+        ledger = evidence_ledger()
+        ledger["provider_attempts"] = [
+            {"provider": "qcc_web", "status": "unavailable", "queried_at": "2026-08-02T12:00:00+08:00", "reason": "登录态失效"},
+            {"provider": "tianyancha_web", "status": "unavailable", "queried_at": "2026-08-02T12:01:00+08:00", "reason": "验证码阻断"},
+        ]
+        ledger["sources"][0]["provider"] = "legal_disclosure"
+        ledger["review_status"] = "fallback_complete"
+        attach_graph(ledger, report)
+        report["equity"]["evidence_summary"] = {
+            "attempted_channels": ["qcc_web", "tianyancha_web"],
+            "successful_channels": ["legal_disclosure"],
+            "adopted_basis": "上市公司法定披露",
+            "status_statement": "本轮未取得网页成功回执，不得声称企查查网页已核验或天眼查网页已核验。",
+        }
+        self.assertEqual(validator.validate_equity_evidence(ledger, report), [])
+
+    def test_equity_nodes_require_data_timestamp(self):
+        validator = importlib.import_module("validate_equity_evidence")
+        report = copy.deepcopy(REPORT)
+        ledger = evidence_ledger()
+        attach_graph(ledger, report)
+        ledger["nodes"][0].pop("as_of_date")
+        errors = validator.validate_equity_evidence(ledger, report)
+        self.assertTrue(any("股权节点缺少数据时点" in item for item in errors), errors)
 
     def test_main_pipeline_requires_equity_evidence_before_rendering(self):
         source = (ROOT / "scripts" / "run_report_pipeline.py").read_text(encoding="utf-8")
@@ -240,7 +279,7 @@ class EquityEvidenceTests(unittest.TestCase):
         reference_path = ROOT / "references" / "equity-evidence.md"
         self.assertTrue(reference_path.is_file(), "缺少股权证据接入规则")
         reference = reference_path.read_text(encoding="utf-8")
-        self.assertIn("企查查 MCP", skill)
+        self.assertIn("企查查网页", skill)
         self.assertIn("equity-evidence.json", skill)
         self.assertIn("不得把平台计算结果直接写成已确认的实际控制人", reference)
         self.assertIn("法定披露优先", reference)

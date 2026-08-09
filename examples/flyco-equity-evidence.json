@@ -6,16 +6,16 @@
   },
   "provider_attempts": [
     {
-      "provider": "qcc_mcp",
+      "provider": "qcc_web",
       "status": "unavailable",
       "queried_at": "2026-08-02T12:00:00+08:00",
-      "reason": "可移植部署示例不携带商业平台密钥，使用法定披露进行离线门禁验证"
+      "reason": "离线部署示例没有本轮合法浏览器网页成功回执，使用法定披露进行门禁验证"
     },
     {
-      "provider": "tianyancha_api",
+      "provider": "tianyancha_web",
       "status": "unavailable",
       "queried_at": "2026-08-02T12:00:00+08:00",
-      "reason": "可移植部署示例不携带商业平台密钥，使用法定披露进行离线门禁验证"
+      "reason": "离线部署示例没有本轮合法浏览器网页成功回执，使用法定披露进行门禁验证"
     }
   ],
   "sources": [
@@ -30,12 +30,12 @@
     }
   ],
   "nodes": [
-    {"id": "controller", "name": "李丐腾", "entity_type": "实际控制人", "assertion_type": "legal_disclosure", "evidence_source_ids": ["E01"]},
-    {"id": "holding", "name": "上海飞科投资有限公司", "entity_type": "控股平台", "assertion_type": "legal_disclosure", "evidence_source_ids": ["E01"]},
-    {"id": "listed", "name": "上海飞科电器股份有限公司", "entity_type": "上市公司", "assertion_type": "legal_disclosure", "evidence_source_ids": ["E01"]},
-    {"id": "wuhu", "name": "芜湖飞科电器有限公司", "entity_type": "子公司", "assertion_type": "consolidation_scope", "evidence_source_ids": ["E01"]},
-    {"id": "poree", "name": "浙江博锐个护电器有限公司", "entity_type": "子公司", "assertion_type": "consolidation_scope", "evidence_source_ids": ["E01"]},
-    {"id": "supply", "name": "飞科供应链有限公司", "entity_type": "子公司", "assertion_type": "consolidation_scope", "evidence_source_ids": ["E01"]}
+    {"id": "controller", "name": "李丐腾", "entity_type": "实际控制人", "assertion_type": "legal_disclosure", "as_of_date": "2025-12-31", "evidence_source_ids": ["E01"]},
+    {"id": "holding", "name": "上海飞科投资有限公司", "entity_type": "控股平台", "assertion_type": "legal_disclosure", "as_of_date": "2025-12-31", "evidence_source_ids": ["E01"]},
+    {"id": "listed", "name": "上海飞科电器股份有限公司", "entity_type": "上市公司", "assertion_type": "legal_disclosure", "as_of_date": "2025-12-31", "evidence_source_ids": ["E01"]},
+    {"id": "wuhu", "name": "芜湖飞科电器有限公司", "entity_type": "子公司", "assertion_type": "consolidation_scope", "as_of_date": "2025-12-31", "evidence_source_ids": ["E01"]},
+    {"id": "poree", "name": "浙江博锐个护电器有限公司", "entity_type": "子公司", "assertion_type": "consolidation_scope", "as_of_date": "2025-12-31", "evidence_source_ids": ["E01"]},
+    {"id": "supply", "name": "飞科供应链有限公司", "entity_type": "子公司", "assertion_type": "consolidation_scope", "as_of_date": "2025-12-31", "evidence_source_ids": ["E01"]}
   ],
   "edges": [
     {"from": "controller", "to": "holding", "relationship": "实际控制", "assertion_type": "legal_disclosure", "as_of_date": "2025-12-31", "evidence_source_ids": ["E01"]},

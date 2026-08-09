@@ -10,16 +10,12 @@ from report_core import load_data
 
 
 PROVIDERS = {
-    "qcc_mcp",
-    "qcc_cli",
-    "qcc_api",
     "qcc_web",
-    "tianyancha_api",
     "tianyancha_web",
     "legal_disclosure",
     "official_registry",
 }
-COMMERCIAL_PROVIDERS = {"qcc_mcp", "qcc_cli", "qcc_api", "qcc_web", "tianyancha_api", "tianyancha_web"}
+COMMERCIAL_PROVIDERS = {"qcc_web", "tianyancha_web"}
 ATTEMPT_STATUSES = {"success", "unavailable", "error"}
 ASSERTION_TYPES = {"registry_fact", "legal_disclosure", "provider_calculation", "consolidation_scope"}
 CONFLICT_SEVERITIES = {"general", "material_local", "subject_critical"}
@@ -40,19 +36,27 @@ def _text(value: object) -> str:
     return str(value or "").strip()
 
 
+def _is_affirmative_claim(statement: str, phrase: str) -> bool:
+    """Return true when a verification phrase is not negated in its current clause."""
+    start = 0
+    delimiters = "，,；;。.!！?？\n"
+    while True:
+        index = statement.find(phrase, start)
+        if index < 0:
+            return False
+        clause_start = max((statement.rfind(delimiter, 0, index) for delimiter in delimiters), default=-1) + 1
+        prefix = statement[clause_start:index]
+        if not any(marker in prefix for marker in ("未", "不", "无", "尚未", "不得", "不能")):
+            return True
+        start = index + len(phrase)
+
+
 def _claims_verified_without_receipt(statement: str) -> bool:
     """Reject affirmative verification claims, without flagging explicit negations."""
-    for phrase in ("企查查已核验", "天眼查已核验", "商业平台已核验"):
-        start = 0
-        while True:
-            index = statement.find(phrase, start)
-            if index < 0:
-                break
-            prefix = statement[max(0, index - 12):index]
-            if not any(marker in prefix for marker in ("未", "不", "无", "尚未", "不得", "不能")):
-                return True
-            start = index + len(phrase)
-    return False
+    return any(
+        _is_affirmative_claim(statement, phrase)
+        for phrase in ("企查查网页已核验", "天眼查网页已核验", "商业平台网页已核验")
+    )
 
 
 def validate_equity_evidence(ledger: dict, report: dict) -> list[str]:
@@ -93,11 +97,20 @@ def validate_equity_evidence(ledger: dict, report: dict) -> list[str]:
         for field in ("method", "queried_at", "query", "status", "record_locator"):
             if not _text(source.get(field)):
                 errors.append(f"股权证据来源{source_id}缺少{field}")
+        if provider in COMMERCIAL_PROVIDERS:
+            for field in ("page_url", "captured_at"):
+                if not _text(source.get(field)):
+                    errors.append(f"股权网页来源{source_id}缺少{field}")
+            if not isinstance(source.get("record_count"), int) or source.get("record_count", 0) <= 0:
+                errors.append(f"股权网页来源{source_id}缺少非空记录")
 
     successful_commercial = {
         _text(source.get("provider"))
         for source in sources
-        if _text(source.get("provider")) in COMMERCIAL_PROVIDERS and _text(source.get("status")) == "success"
+        if _text(source.get("provider")) in COMMERCIAL_PROVIDERS
+        and _text(source.get("status")) == "success"
+        and isinstance(source.get("record_count"), int)
+        and source.get("record_count", 0) > 0
     }
     successful_attempts = {
         _text(item.get("provider")) for item in commercial_attempts if _text(item.get("status")) == "success"
@@ -124,7 +137,14 @@ def validate_equity_evidence(ledger: dict, report: dict) -> list[str]:
                 errors.append(f"报告股权取证口径缺少{field}")
         statement = _text(summary.get("status_statement"))
         if not successful_commercial and _claims_verified_without_receipt(statement):
-            errors.append("没有商业平台成功回执时不得声称平台已核验")
+            errors.append("没有网页成功回执及非空记录时不得声称网页已核验")
+        claims = {
+            "qcc_web": "企查查网页已核验",
+            "tianyancha_web": "天眼查网页已核验",
+        }
+        for provider, phrase in claims.items():
+            if _is_affirmative_claim(statement, phrase) and provider not in successful_commercial:
+                errors.append(f"{phrase}必须有本轮成功回执及非空记录")
     if not successful_commercial:
         if not all(_text(item.get("status")) in {"unavailable", "error"} for item in commercial_attempts):
             errors.append("商业股权平台无成功来源且降级状态不完整")
@@ -143,6 +163,8 @@ def validate_equity_evidence(ledger: dict, report: dict) -> list[str]:
         label = _text(item.get("name")) or _text(item.get("id")) or "未命名节点"
         if _text(item.get("assertion_type")) not in ASSERTION_TYPES:
             errors.append(f"股权节点断言类型无效：{label}")
+        if not _text(item.get("as_of_date")):
+            errors.append(f"股权节点缺少数据时点：{label}")
         _validate_source_ids(item, source_by_id, f"股权节点{label}", errors)
     for item in ledger.get("edges", []):
         label = f"{_text(item.get('from'))}->{_text(item.get('to'))}"

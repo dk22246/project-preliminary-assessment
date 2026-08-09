@@ -25,7 +25,7 @@ POLICY_SEARCH_SAMPLE = ROOT / "examples" / "flyco-policy-search-ledger.json"
 REQUIRED = (
     "SKILL.md", "agents/openai.yaml", ".editorconfig", ".gitattributes",
     "references/policy-scope.md", "references/report-template.md", "references/html-delivery.md",
-    "references/source-registry.md", "references/equity-evidence.md", "schemas/report.schema.json", "schemas/evidence.schema.json", "schemas/equity-evidence.schema.json",
+    "references/source-registry.md", "references/equity-evidence.md", "schemas/report.schema.json", "schemas/evidence.schema.json", "schemas/equity-evidence.schema.json", "schemas/equity-web-capture.schema.json",
     "references/encouraged-industry-assessment.md", "references/module-contract.json", "references/catalogs/source-metadata.json", "references/catalogs/hainan-encouraged-industries-2024-guide.xlsx", "references/catalogs/hainan-encouraged-industries-2024.json",
     "references/business-discovery.md", "references/policy-discovery.md", "references/policy-search-coverage.md", "references/department-routing.json", "schemas/research-ledger.schema.json", "schemas/policy-search-ledger.schema.json",
     "scripts/run_report_pipeline.py", "scripts/render_report_html.py", "scripts/verify_html_layout.mjs", "scripts/collect_web_evidence.py", "scripts/validate_evidence.py", "scripts/collect_equity_provider.py", "scripts/validate_equity_evidence.py", "scripts/search_industry_catalog.py", "scripts/validate_encouraged_industry_assessment.py",

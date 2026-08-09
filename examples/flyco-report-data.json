@@ -155,14 +155,14 @@
     "conflict_disclosures": [],
     "evidence_summary": {
       "attempted_channels": [
-        "qcc_mcp",
-        "tianyancha_api"
+        "qcc_web",
+        "tianyancha_web"
       ],
       "successful_channels": [
         "legal_disclosure"
       ],
       "adopted_basis": "上市公司2025年年度报告法定披露",
-      "status_statement": "部署示例未携带商业平台授权，因此未取得企查查或天眼查成功回执；本示例只验证法定披露降级门禁，不声称商业平台已核验。"
+      "status_statement": "离线部署示例没有本轮企查查网页或天眼查网页成功回执；本示例只验证法定披露降级门禁，不声称商业平台网页已核验。"
     }
   },
   "businesses": [

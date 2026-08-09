@@ -21,8 +21,8 @@ description: 对拟招引企业开展三亚中央商务区招商前期尽调、�
 
 ## 核心运行顺序
 
-1. **确认主体。** 用户只给企业名称时，先判断名称是集团、上市公司、品牌还是经营主体。唯一可识别时直接研究；存在同名、集团与上市主体混淆、品牌与主体混淆时，列出 2—4 个明确选项，请用户确认。运行环境有企查查 MCP 时，可用 `get_company_by_query` 返回候选并以法律全称、统一社会信用代码锚定；确认前不得混用信息。
-2. **研究企业并核验股权。** 建立企业主体、股权结构、主要业务与产品、行业竞争位置、代表性上下游、国内外业务、近三年经营数据、政府补助和重大风险的事实卡。股权查询优先使用企查查 MCP/CLI 获取工商股东并逐层穿透，天眼查 API 复核当前股东、受益人和历史股东；上市公司以法定披露定案。全部结果统一写入 `equity-evidence.json`，每个股权节点和连接线绑定来源与数据时点；平台不可用时保留失败回执并用法定来源降级，不得补猜。规则见 `references/entity-resolution.md`、`references/equity-evidence.md`。年报不是能力发现的唯一来源；将官网发展历程、新闻、产品服务、品牌/IP、赛事活动、平台生态、供应链、投资和管理职能写入 `research-ledger.json` 的事实台账与业务候选池。每个候选必须纳入、合并或排除，确认候选完整后再压缩为正式业务。需要提高网页取证效率时，可先生成 `evidence.json`；采集结果只是事实证据，不是政策资格。
+1. **确认主体。** 用户只给企业名称时，先判断名称是集团、上市公司、品牌还是经营主体。唯一可识别时直接研究；存在同名、集团与上市主体混淆、品牌与主体混淆时，列出 2—4 个明确选项，请用户确认。Agent 可使用已有合法浏览器登录态访问企查查网页或天眼查网页，以页面显示的法律全称和统一社会信用代码锚定主体；确认前不得混用信息，不得绕过登录、验证码、付费墙或访问控制。
+2. **研究企业并核验股权。** 建立企业主体、股权结构、主要业务与产品、行业竞争位置、代表性上下游、国内外业务、近三年经营数据、政府补助和重大风险的事实卡。企查查网页和天眼查网页用于实时核验工商股东、持股比例、实际控制人或受益人页面标记、历史变化和主要子公司；上市公司始终以交易所、年报等法定披露定案。网页可见结果先写入符合 `schemas/equity-web-capture.schema.json` 的标准化取证 JSON，再由 `scripts/collect_equity_provider.py` 同时生成 `provider-query-bundle.json` 和 `normalized-equity-fragment.json`，合并后形成 `equity-evidence.json`。每个股权节点和连接线绑定来源、断言类型与数据时点；平台推算必须标为 `provider_calculation` 并带“推定/疑似/平台穿透”限定，缺失比例不得补猜。网页不可访问时保留真实失败原因并用法定披露或官方登记补证。规则见 `references/entity-resolution.md`、`references/equity-evidence.md`。年报不是能力发现的唯一来源；将官网发展历程、新闻、产品服务、品牌/IP、赛事活动、平台生态、供应链、投资和管理职能写入 `research-ledger.json` 的事实台账与业务候选池。每个候选必须纳入、合并或排除，确认候选完整后再压缩为正式业务。需要提高网页取证效率时，可先生成 `evidence.json`；采集结果只是事实证据，不是政策资格。
 3. **强制判断鼓励类产业目录。** 为 `businesses` 每项核心现有业务分配唯一 `B` 类编号，使用随 Skill 打包的海南新增目录界定指引和现行国家目录逐项判断。输出只能为“明确符合”“存在相近可能”“暂未发现明确匹配”；没有明确匹配项正常交付，AI仍须主动判断并列出有实质重合的相近条目及缺失条件。只有目录版本、来源、检索或业务覆盖未完成时才阻断。规则见 `references/encouraged-industry-assessment.md`。
 4. **拆解招商价值。** 从已处置候选中识别可在三亚中央商务区实质运营的业务与管理职能；不得由政策反向虚构业务。
 5. **设计落地路径并路由主管部门。** 对每项业务写清三亚承接主体、职能、人员、合同、收入、利润、结算或投资路径，以及可形成的税收、贸易、投资、就业、品牌和产业带动。将经营动作拆成政府管理事项，按 `references/department-routing.json` 或经职责依据核验的动态路由，逐项对应主管部门。
@@ -66,7 +66,7 @@ description: 对拟招引企业开展三亚中央商务区招商前期尽调、�
 ## 文件与执行入口
 
 - `references/entity-resolution.md`：主体确认与股权核验。
-- `references/equity-evidence.md`：企查查 MCP/CLI、天眼查 API、法定披露的股权接入顺序、归一化和冲突处理。
+- `references/equity-evidence.md`：企查查网页、天眼查网页、法定披露的股权取证顺序、归一化和冲突处理。
 - `references/evidence-intake.md`：企业、财务、风险公开信息来源和禁用来源。
 - `references/source-registry.md`：网页取证的允许来源、企业官网显式登记与禁止范围。
 - `references/business-decomposition.md`：业务拆分和落地业务筛选。
@@ -78,7 +78,7 @@ description: 对拟招引企业开展三亚中央商务区招商前期尽调、�
 - `references/html-delivery.md`：HTML/PDF 与 Word 的同源交付、排版和质检。
 - `references/word-delivery.md`：仅在用户要求可编辑 Word 时读取的 Word 原生结构与页面复核规则。
 - `scripts/run_report_pipeline.py`：`数据及股权证据 validate → SVG → HTML → 浏览器全页版式门禁` 主入口，必须提供 `--equity-evidence` 和 `--node`；`--pdf` 和 `--word` 为预置的可选转换。
-- `scripts/collect_equity_provider.py`、`scripts/validate_equity_evidence.py`：商业平台原始股权数据采集与逐节点、逐连线证据门禁；密钥只由运行环境提供。
+- `scripts/collect_equity_provider.py`、`scripts/validate_equity_evidence.py`：商业平台网页标准化取证、确定性 fragment 输出与逐节点、逐连线证据门禁；浏览器登录态由 Agent 合法持有且不得写入 Skill 或证据文件。
 - `scripts/collect_web_evidence.py`、`scripts/validate_evidence.py`：可选的公开网页证据采集与台账门禁；只增强取证，不改变政策卡校验。
 - `scripts/validate_research_ledger.py`：强制校验企业事实—业务候选—主管部门—候选政策—正式政策卡的完整追溯链。
 - `scripts/validate_policy_search_coverage.py`：强制校验业务语义、部门角色、七条检索路径、附件状态和报告结论边界；任一 `research_incomplete` 都阻断交付。
