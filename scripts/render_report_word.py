@@ -39,9 +39,7 @@ def add_equity_conflict_disclosures(doc, items):
 
 def add_equity_evidence_summary(doc, equity):
     summary = equity.get("evidence_summary", {})
-    attempted = "、".join(str(item) for item in summary.get("attempted_channels", [])) or "未记录"
-    successful = "、".join(str(item) for item in summary.get("successful_channels", [])) or "未取得商业平台成功回执"
-    add_body(doc, f"股权取证渠道与采用口径：已尝试：{attempted}；成功来源：{successful}；采用口径：{summary.get('adopted_basis', '需补充')}。{summary.get('status_statement', '需补充股权取证状态')}")
+    add_body(doc, f"股权来源：{summary.get('display_source_title', '需补充股权来源')}（{summary.get('display_source_id', 'E?')}），数据时点{summary.get('as_of_date', '需补充')}。")
 
 
 def encouraged_industry_rows(assessment):
@@ -67,11 +65,8 @@ def policy_match_rows(policies):
         item = group[0]
         references = "；".join(f"{policy.get('document_number', '未公开披露')}（{policy.get('source_id', 'P')}）" for policy in group)
         rendered.append([
-            str(item.get("report_business") or item.get("enterprise_business", "未公开披露")),
             f"{item.get('report_title') or item.get('name', '未命名政策')}\n政策依据：{references}",
-            str(item.get("report_value") or item.get("policy_value", "未公开披露")),
-            f"享受前提：{item.get('report_conditions') or item.get('conditions', '未公开披露')}\n三亚承接：{item.get('report_landing_action') or item.get('landing_action', '未公开披露')}",
-            str(item.get("report_judgment") or "整体落地情景下重点政策"),
+            str(item.get("report_reason", "未公开披露")),
         ])
     return rendered
 
@@ -106,7 +101,7 @@ def main() -> int:
     add_heading(doc, "（二）股权架构拆解", 2); doc.add_picture(str(image), width=Cm(15)); add_body(doc, entity.get("equity_summary", "需企业补充")); add_equity_evidence_summary(doc, data["equity"]); add_equity_conflict_disclosures(doc, data["equity"].get("conflict_disclosures", []))
     add_heading(doc, "（三）主要业务及产品拆解", 2); add_standard_table(doc, ["业务板块", "主要产品或服务", "主要承载主体", "客户及收入来源", "国内外业务布局", "与三亚的潜在结合点"], rows(data["businesses"], ("segment", "products", "entity", "revenue_model", "footprint", "sanya_fit")), [2.2, 2.6, 2.2, 2.6, 2.5, 3.8])
     add_heading(doc, "（四）海南自由贸易港鼓励类产业目录匹配", 2); add_body(doc, "总体判断：" + data["encouraged_industry_assessment"].get("summary", "未说明")); add_standard_table(doc, ["企业业务", "匹配结论", "对应目录条目", "判断依据", "相近可能或待核事项"], encouraged_industry_rows(data["encouraged_industry_assessment"]), [2.5, 1.7, 4.0, 4.8, 3.0])
-    add_heading(doc, "（五）行业地位及竞争位置", 2); add_body(doc, data.get("industry_position", "需企业补充"))
+    add_heading(doc, "（五）行业地位及竞争位置", 2); add_body(doc, data.get("industry_position", {}).get("statement", "需企业补充") if isinstance(data.get("industry_position"), dict) else data.get("industry_position", "需企业补充"))
     add_heading(doc, "（六）上下游及国内外业务", 2); add_body(doc, data.get("upstream_downstream", "需企业补充"))
     h1(doc, "三、近三年经营数据")
     headers = financial_headers(data["meta"])
@@ -121,8 +116,8 @@ def main() -> int:
     h1(doc, "五、三亚落地业务及落地方式"); add_standard_table(doc, ["建议落地业务", "企业现有事实基础", "三亚具体承接方式", "可形成的业务及价值", "可行性"], rows(data["landing_businesses"], ("business", "fact_basis", "sanya_path", "value", "feasibility")), [3.0, 4.0, 4.0, 4.0, 1.0])
     h1(doc, "六、企业政策匹配")
     add_heading(doc, "（一）重点政策匹配清单", 2)
-    add_body(doc, "本节按企业在三亚设立并实质运营主体、承接总部管理、品牌电商、贸易结算和海外运营功能的整体落地情景呈现。仅保留直接影响招商谈判的重点政策；同一项优惠的政策原文与执行公告合并展示，具体资格以正式申报材料为准。")
-    add_standard_table(doc, ["拟落地业务", "重点政策", "企业能获得什么", "享受前提及三亚承接", "适用定位"], policy_match_rows(data["policies"]), [2.6, 3.0, 3.0, 5.8, 2.1])
+    add_body(doc, "本节依据企业已公开的业务、组织和境内外布局，展示在三亚承接相邻经营活动时可重点沟通的现行政策或办理工具。完整检索、失效政策及排除理由保留在后台台账。")
+    add_standard_table(doc, ["匹配政策或工具", "匹配原因"], policy_match_rows(data["policies"]), [5.2, 10.7])
     h1(doc, "七、综合评估"); add_body(doc, data.get("comprehensive_assessment", "需企业补充"))
     h1(doc, "八、参考资料"); add_standard_table(doc, ["编号", "类型", "资料名称", "发布主体", "日期", "网址或文件定位", "使用位置"], rows(data["sources"], ("id", "type", "name", "issuer", "date", "location", "used_in")), [1.0, 1.1, 3.0, 2.3, 1.4, 5.0, 2.0])
     out = Path(args.out); out.parent.mkdir(parents=True, exist_ok=True); doc.save(out)

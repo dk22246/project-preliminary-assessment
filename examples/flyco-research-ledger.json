@@ -2,9 +2,9 @@
   "enterprise": "上海飞科电器股份有限公司",
   "fact_ledger": [
     {"id": "FA01", "source_id": "E01", "action": "管理", "object": "品牌与区域经营", "enterprise_role": "运营者", "confidence": "high"},
-    {"id": "FA02", "source_id": "E02", "action": "运营", "object": "自营电商", "enterprise_role": "运营者", "confidence": "high"},
-    {"id": "FA03", "source_id": "E03", "action": "结算", "object": "供应链贸易", "enterprise_role": "运营者", "confidence": "high"},
-    {"id": "FA04", "source_id": "E04", "action": "投资", "object": "海外市场", "enterprise_role": "管理者", "confidence": "high"}
+    {"id": "FA02", "source_id": "E01", "action": "运营", "object": "自营电商", "enterprise_role": "运营者", "confidence": "high"},
+    {"id": "FA03", "source_id": "E01", "action": "结算", "object": "供应链贸易", "enterprise_role": "运营者", "confidence": "high"},
+    {"id": "FA04", "source_id": "E01", "action": "投资", "object": "海外市场", "enterprise_role": "管理者", "confidence": "high"}
   ],
   "business_candidates": [
     {"id": "BC01", "name": "总部与品牌运营", "fact_ids": ["FA01"], "disposition": "include", "disposition_target": "L01", "disposition_reason": "可由三亚主体承接"},
@@ -22,6 +22,6 @@
     {"id": "PC01", "route_id": "DR01", "policy_name": "税收与人才政策", "status": "current_conditional", "disposition": "include", "formal_policy_source_ids": ["P01", "P03", "P04"]},
     {"id": "PC02", "route_id": "DR02", "policy_name": "数字商业税收政策", "status": "current_conditional", "disposition": "include", "formal_policy_source_ids": ["P01"]},
     {"id": "PC03", "route_id": "DR03", "policy_name": "跨境资金与贸易便利", "status": "current_conditional", "disposition": "include", "formal_policy_source_ids": ["P06", "P07"]},
-    {"id": "PC04", "route_id": "DR04", "policy_name": "境外投资政策检索", "status": "not_applicable", "disposition": "exclude", "disposition_reason": "本轮公开资料未确认新增投资项目", "formal_policy_source_ids": []}
+    {"id": "PC04", "route_id": "DR04", "policy_name": "境外投资备案、境外所得税收及跨境资金池", "status": "current_conditional", "disposition": "include", "formal_policy_source_ids": ["P08", "P12", "P13"]}
   ]
 }

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+from datetime import datetime, timezone
 import json
 from pathlib import Path
 from urllib.parse import urlparse
@@ -71,14 +72,32 @@ def _report_items(report_data: dict) -> dict[tuple[str, str], dict]:
     return items
 
 
-def validate_policy_search_coverage(coverage: dict, research_ledger: dict, report_data: dict) -> list[str]:
+def validate_policy_search_coverage(coverage: dict, research_ledger: dict, report_data: dict, *, allow_stale_fixture: bool = False) -> list[str]:
     """Validate semantic expansion, seven-path receipts and report conclusion boundaries."""
     errors: list[str] = []
-    for field in ("enterprise", "landing_business_hypotheses", "searches", "policy_candidates"):
+    for field in ("enterprise", "researched_at", "search_mode", "landing_business_hypotheses", "searches", "policy_candidates"):
         if field not in coverage or coverage.get(field) is None or (field != "policy_candidates" and not coverage.get(field)):
             errors.append(f"政策检索台账缺少{field}")
     if errors:
         return errors
+
+    researched_at = _text(coverage.get("researched_at"))
+    report_researched_at = _text(report_data.get("meta", {}).get("policy_researched_at"))
+    if _text(coverage.get("search_mode")) != "realtime" or _text(report_data.get("meta", {}).get("policy_search_mode")) != "realtime":
+        errors.append("政策检索必须标记为realtime")
+    if researched_at != report_researched_at:
+        errors.append("政策检索台账时间与报告policy_researched_at不一致")
+    try:
+        researched_dt = datetime.fromisoformat(researched_at.replace("Z", "+00:00"))
+    except ValueError:
+        errors.append("政策检索时间必须为ISO 8601日期时间")
+    else:
+        if researched_dt.tzinfo is None:
+            errors.append("政策检索时间必须包含时区")
+        elif not allow_stale_fixture:
+            age_seconds = (datetime.now(timezone.utc) - researched_dt.astimezone(timezone.utc)).total_seconds()
+            if age_seconds < -600 or age_seconds > 86400:
+                errors.append("政策检索结果已超过24小时或时间异常，必须重新实时核验")
 
     routes = _index(research_ledger.get("department_routes", []), "研究底稿主管部门路由", errors)
     facts = _index(research_ledger.get("fact_ledger", []), "研究底稿企业事实", errors)
@@ -292,7 +311,16 @@ def main() -> int:
     coverage = load_data(args.policy_search_ledger)
     research_ledger = load_data(args.research_ledger)
     report_data = load_data(args.report_data)
-    errors = validate_policy_search_coverage(coverage, research_ledger, report_data)
+    canonical_fixture = (
+        Path(args.policy_search_ledger).resolve() == (Path(__file__).resolve().parents[1] / "examples" / "flyco-policy-search-ledger.json").resolve()
+        and Path(args.report_data).resolve() == (Path(__file__).resolve().parents[1] / "examples" / "flyco-report-data.json").resolve()
+    )
+    errors = validate_policy_search_coverage(
+        coverage,
+        research_ledger,
+        report_data,
+        allow_stale_fixture=canonical_fixture,
+    )
     if errors:
         print("政策检索覆盖校验失败：")
         print("\n".join(f"- {error}" for error in errors))

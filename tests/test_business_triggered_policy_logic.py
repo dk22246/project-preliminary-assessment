@@ -42,7 +42,7 @@ class BusinessTriggeredPolicyLogicTests(unittest.TestCase):
 
     def test_template_has_required_business_policy_and_source_tables(self):
         template = (ROOT / "references" / "report-template.md").read_text(encoding="utf-8")
-        for phrase in ("\u80a1\u6743\u67b6\u6784\u62c6\u89e3", "\u5efa\u8bae\u843d\u5730\u4e1a\u52a1", "\u91cd\u70b9\u653f\u7b56", "\u4f01\u4e1a\u80fd\u83b7\u5f97\u4ec0\u4e48", "\u53c2\u8003\u8d44\u6599"):
+        for phrase in ("\u80a1\u6743\u67b6\u6784\u62c6\u89e3", "\u5efa\u8bae\u843d\u5730\u4e1a\u52a1", "\u91cd\u70b9\u653f\u7b56", "\u5339\u914d\u653f\u7b56\u6216\u5de5\u5177", "\u5339\u914d\u539f\u56e0", "\u53c2\u8003\u8d44\u6599"):
             self.assertIn(phrase, template)
 
     def test_html_delivery_is_template_driven(self):
@@ -63,7 +63,7 @@ class BusinessTriggeredPolicyLogicTests(unittest.TestCase):
         self.assertIn("if args.pdf:", pipeline)
         self.assertIn("if args.word:", pipeline)
         self.assertIn("默认只生成", skill)
-        self.assertIn("verified HTML report", agent_metadata)
+        self.assertIn("validated HTML report", agent_metadata)
         self.assertNotIn("deliver a verified Word report", agent_metadata)
         self.assertIn("默认只交付 HTML", word_rules)
 

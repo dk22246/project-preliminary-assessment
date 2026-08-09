@@ -1,0 +1,9 @@
+{
+  "name": "project-preliminary-assessment-runtime",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Optional local browser runtime for HTML layout verification and PDF conversion.",
+  "dependencies": {
+    "playwright": "1.55.0"
+  }
+}

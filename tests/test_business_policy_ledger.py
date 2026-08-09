@@ -120,13 +120,17 @@ class BusinessPolicyLedgerTests(unittest.TestCase):
             html = output.read_text(encoding="utf-8")
             policy_section = html.split('<section id="s六"', 1)[1].split("</section>", 1)[0]
             self.assertIn("重点政策匹配清单", policy_section)
-            self.assertIn("整体落地情景", policy_section)
+            self.assertIn("相邻经营活动", policy_section)
+            self.assertIn("<th>匹配政策或工具</th><th>匹配原因</th>", policy_section)
             self.assertIn("实际税负15%封顶", policy_section)
             self.assertIn("EF账户（多功能自由贸易账户）", policy_section)
+            self.assertIn("ODI境外投资备案与外汇登记", policy_section)
+            self.assertIn("新增境外直接投资所得企业所得税免征", policy_section)
             self.assertNotIn("待核政策事项", policy_section)
             self.assertNotIn("海南省财政厅等五部门关于落实", policy_section)
             table_body = policy_section.split("<tbody>", 1)[1].split("</tbody>", 1)[0]
-            self.assertEqual(table_body.count("<tr>"), 4)
+            expected_groups = {item.get("report_group") or item["source_id"] for item in FLYCO["policies"]}
+            self.assertEqual(table_body.count("<tr>"), len(expected_groups))
             self.assertIn("官方原文", html)
 
     def test_pdf_renderer_uses_only_one_page_number_mechanism(self):
@@ -187,7 +191,8 @@ class BusinessPolicyLedgerTests(unittest.TestCase):
         source = (ROOT / "scripts" / "render_report_word.py").read_text(encoding="utf-8")
         self.assertIn("重点政策匹配清单", source)
         self.assertNotIn("待核政策事项", source)
-        self.assertIn("企业能获得什么", source)
+        self.assertIn("匹配政策或工具", source)
+        self.assertIn("匹配原因", source)
 
 
 if __name__ == "__main__":

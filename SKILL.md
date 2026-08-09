@@ -1,11 +1,11 @@
 ---
 name: project-preliminary-assessment
-description: 对拟招引企业开展三亚中央商务区招商前期尽调、整体落地推演与海南岛内正式政策检索，默认交付 HTML《招商项目整体落地研判报告》，可按需从同源数据转换 PDF 或可编辑 Word。
+description: Use when 招商人员只提供企业名称或基础资料，需要完成三亚中央商务区企业尽调、股权与财务核验、海南岛内实时政策机会发现和整体落地研判，并交付 HTML、可选 PDF 或 Word 报告。
 ---
 
 # 项目前期评估
 
-本 Skill 面向三亚中央商务区招商前期决策。它不是固定政策清单工具：先把企业、业务与落地路径研究清楚，再以实际拟落地业务触发海南岛内政策检索。所有结论均区分公开事实、政策条件与招商推演；“整体迁入”仅是推演情景，不得写成既成事实。
+本 Skill 面向三亚中央商务区招商前期决策。它不是固定政策清单工具：先确认企业事实，再把已存在的业务、组织能力和境内外布局展开为可在三亚承接的相邻经营活动，由这些事实信号触发海南岛内实时政策和办理工具检索。所有结论均区分公开事实、政策条件与招商推演；“整体迁入”仅是推演情景，不得写成既成事实。
 
 ## 默认交付
 
@@ -15,20 +15,21 @@ description: 对拟招引企业开展三亚中央商务区招商前期尽调、�
 
 - 仅通过 Git 仓库完整克隆或复制整个 Skill 目录，不得只复制 `SKILL.md`、聊天文本或单个脚本。
 - 所有文本和结构化数据均为 UTF-8；读入 JSON 时兼容 UTF-8 BOM，写入时明确指定 UTF-8。跨 Agent 不依赖 PowerShell 编码或参数转发；Python 子进程统一使用 `-X utf8`。
-- 新 Agent 首次使用前，必须在 Skill 根目录只运行一条部署门禁命令：`python -X utf8 scripts/verify_skill.py --smoke`。该命令会由 Python 自身执行预检、完整测试、HTML 冒烟和浏览器全页版式验收；不得在 PowerShell 中手工转发 `-m unittest` 参数。若 `python` 不在 PATH，直接用该 Agent 已知的 Python 可执行文件替换 `python`。任一失败时不得生成正式报告。
+- 新设备完整克隆后只运行一次 `python -X utf8 scripts/bootstrap.py --node <Node路径>`。启动器自动探测运行能力、执行版本级部署验证并写入本地 `.runtime/verification.json`；同一版本再次运行只执行秒级 doctor，不重复跑完整测试。Git commit 或关键文件指纹变化时必须重新验证。若裸 `python` 不可用，使用 Agent 已知的真实 Python 可执行文件；不得把 Windows 商店占位符当作运行时。
 - 必须先形成 `report-data.json` 和 `equity-evidence.json`，再以 `--equity-evidence <股权台账> --node <Node路径>` 运行 `scripts/run_report_pipeline.py`；不得绕过结构化数据、股权证据校验、浏览器版式门禁或 HTML 渲染器直接手写报告。
 - 以固定 Git commit 部署并记录 commit SHA；升级时重新执行上述部署门禁。PDF 和 Word 继续仅按用户要求生成。
 
 ## 核心运行顺序
 
 1. **确认主体。** 用户只给企业名称时，先判断名称是集团、上市公司、品牌还是经营主体。唯一可识别时直接研究；存在同名、集团与上市主体混淆、品牌与主体混淆时，列出 2—4 个明确选项，请用户确认。Agent 可使用已有合法浏览器登录态访问企查查网页或天眼查网页，以页面显示的法律全称和统一社会信用代码锚定主体；确认前不得混用信息，不得绕过登录、验证码、付费墙或访问控制。
-2. **研究企业并核验股权。** 建立企业主体、股权结构、主要业务与产品、行业竞争位置、代表性上下游、国内外业务、近三年经营数据、政府补助和重大风险的事实卡。企查查网页和天眼查网页用于实时核验工商股东、持股比例、实际控制人或受益人页面标记、历史变化和主要子公司；上市公司始终以交易所、年报等法定披露定案。网页可见结果先写入符合 `schemas/equity-web-capture.schema.json` 的标准化取证 JSON，必须逐项记录五类覆盖处置；再由 `scripts/collect_equity_provider.py` 同时生成带 capture SHA-256 的 `provider-query-bundle.json` 和带 capture/bundle 哈希的 `normalized-equity-fragment.json`，合并后形成 `equity-evidence.json`。成功网页来源只有附带可定位 artifact 与哈希并经 CLI 校验后才可写“网页已核验”。每个股权节点和连接线绑定来源、断言类型与数据时点；平台推算必须标为 `provider_calculation` 并带“推定/疑似/平台穿透”限定，缺失比例不得补猜。网页不可访问时保留真实失败原因并用法定披露或官方登记补证。规则见 `references/entity-resolution.md`、`references/equity-evidence.md`。年报不是能力发现的唯一来源；将官网发展历程、新闻、产品服务、品牌/IP、赛事活动、平台生态、供应链、投资和管理职能写入 `research-ledger.json` 的事实台账与业务候选池。每个候选必须纳入、合并或排除，确认候选完整后再压缩为正式业务。需要提高网页取证效率时，可先生成 `evidence.json`；采集结果只是事实证据，不是政策资格。
+2. **研究企业并核验股权。** 建立企业主体、股权结构、主要业务与产品、行业竞争位置、代表性上下游、国内外业务、近三年经营数据、政府补助和重大风险的事实卡。行业位置必须写明具体品类、排名/份额或第一梯队、统计时点和来源；没有排名证据时只能写“头部企业/第一梯队”，不得只写“知名品牌”或臆测 Top1。企查查网页和天眼查网页用于实时核验工商股东、持股比例、实际控制人或受益人页面标记、历史变化和主要子公司；上市公司始终以交易所、年报等法定披露定案。网页可见结果先写入符合 `schemas/equity-web-capture.schema.json` 的标准化取证 JSON，必须逐项记录五类覆盖处置；再由 `scripts/collect_equity_provider.py` 生成可校验取证链并形成 `equity-evidence.json`。每个股权节点和连接线绑定来源、断言类型与数据时点；直接股东比例必须闭合到100%，不能拆到具体股东时以“其他股东合计”补足并绑定同一法定披露来源，禁止重复计算。网页失败详情留在后台台账；报告只显示最终采用来源、编号和数据时点，只有实质冲突才显示差异说明。规则见 `references/entity-resolution.md`、`references/equity-evidence.md`。
 3. **强制判断鼓励类产业目录。** 为 `businesses` 每项核心现有业务分配唯一 `B` 类编号，使用随 Skill 打包的海南新增目录界定指引和现行国家目录逐项判断。输出只能为“明确符合”“存在相近可能”“暂未发现明确匹配”；没有明确匹配项正常交付，AI仍须主动判断并列出有实质重合的相近条目及缺失条件。只有目录版本、来源、检索或业务覆盖未完成时才阻断。规则见 `references/encouraged-industry-assessment.md`。
-4. **拆解招商价值。** 从已处置候选中识别可在三亚中央商务区实质运营的业务与管理职能；不得由政策反向虚构业务。
-5. **设计落地路径并路由主管部门。** 对每项业务写清三亚承接主体、职能、人员、合同、收入、利润、结算或投资路径，以及可形成的税收、贸易、投资、就业、品牌和产业带动。将经营动作拆成政府管理事项，按 `references/department-routing.json` 或经职责依据核验的动态路由，逐项对应主管部门。
-6. **检索、核验并提炼重点政策。** 先按事实层、上位事项层、相邻事项层展开业务语义，再为每个主管部门建立角色和七路径检索回执。主题检索、目录扫描、申报/兑现、失效目录、文件关联和附件取证任一失败或未完成，必须写为 `research_incomplete` 并停止交付；不得写成“无政策”。发现现行政策而企业资格未明时，必须写为 `conditional_opportunity`。只有现行、已纳入且通过正式性、地域、条件、办理方式和企业承接路径核验的候选政策，才能成为重点政策。规则见 `references/policy-scope.md`、`references/policy-discovery.md`、`references/policy-search-coverage.md`。
-7. **汇总成唯一事实源。** 将报告结论写入符合 `schemas/report.schema.json` 的 `report-data.json`，股权证据写入符合 `schemas/equity-evidence.schema.json` 的 `equity-evidence.json`，业务链路写入 `research-ledger.json`，动态检索回执写入 `policy-search-ledger.json`。主流水线必须传入 `--equity-evidence`、`--research-ledger` 和 `--policy-search-ledger`；如使用网页采集，同时传入已校验的 `--evidence`。数据、鼓励类目录、股权、文本、研究底稿、动态检索覆盖和政策范围校验全部通过后才渲染输出。
-8. **生成并复核交付物。** 运行 `scripts/run_report_pipeline.py --equity-evidence <股权台账> --node <Node路径>` 默认生成 HTML；仅在用户要求时附加 `--pdf` 或 `--word`。所有表格行数、列宽和表头必须先通过结构校验；财务数据必须声明成对的 `meta.financial_currency` 与 `meta.financial_unit`，营业收入、净利润单元格只写数值，同比单元格只能写百分比或短状态，说明移至 `change_note` 表下注释。HTML 经 `scripts/verify_html_layout.mjs` 检查整页横向越界、全部报告表格、SVG 图表元素与 SVG 文本重叠；任一失败都禁止生成或交付 HTML、PDF、Word。PDF 和 Word 均须复核文件结构、文字、目录、图表、表格和来源。
+4. **拆解招商价值。** 从已处置候选中识别可在三亚中央商务区实质运营的业务、管理职能和相邻经营活动；不得由政策反向虚构业务。
+5. **建立政策机会雷达。** 将每条企业事实信号展开为可能在三亚承接的贸易、结算、投资、人员、管理或行业活动，逐项记录 `surfaced / merged / excluded / expired / not_current / pending_evidence / research_incomplete` 处置。海外产品、渠道或境外投资信号必须动态研判外贸、EF账户、跨境结算、ODI、境外直接投资所得税收、跨境资金池和离岸贸易等相邻主题；这是防遗漏路由，不是固定可享受政策清单。规则见 `references/policy-opportunity-radar.md`。
+6. **设计落地路径并路由主管部门。** 对可承接活动写清三亚主体、职能、人员、合同、收入、利润、结算或投资路径，以及可形成的税收、贸易、投资、就业、品牌和产业带动。将经营动作拆成政府管理事项，按 `references/department-routing.json` 或经职责依据核验的动态路由，逐项对应主管部门。
+7. **实时检索、核验并提炼重点政策。** 每次报告重新核验官方原文、现行状态和申报状态，`report-data.json.meta.policy_researched_at` 必须与 `policy-search-ledger.json.researched_at` 一致且标记 `realtime`；正式报告超过24小时未完成交付时重新检索。为每个机会主题和主管部门建立角色及七路径回执。任一路径或附件未完成，写为 `research_incomplete` 并停止交付；过期或非现行文件只留后台处置。只有现行、已纳入且通过正式性、地域、条件、办理方式和企业承接路径核验的正向机会，才能进入报告。
+8. **汇总成唯一事实源。** 将报告结论和 `policy_opportunity_radar` 写入符合 `schemas/report.schema.json` 的 `report-data.json`，股权证据写入 `equity-evidence.json`，业务链路写入 `research-ledger.json`，实时检索回执写入 `policy-search-ledger.json`。全部门禁通过后才渲染。
+9. **生成并复核交付物。** 先运行 `scripts/doctor.py --node <Node路径>`；再运行 `scripts/run_report_pipeline.py` 默认生成 HTML，仅在用户要求时附加 `--pdf` 或 `--word`。HTML 必须通过整页、表格和SVG版式验收；任一失败都禁止交付。
 
 ## 企业与落地业务判断
 
@@ -41,10 +42,10 @@ description: 对拟招引企业开展三亚中央商务区招商前期尽调、�
 ## 政策硬规则
 
 - 可享受政策仅限海南全省、三亚市或三亚中央商务区的正式、现行文件；国家政策仅作制度背景。外省、海南省内非三亚区域专属、征求意见稿、过期文件和新闻解读不得写成可享受权益。
-- 不设企业所得税、个人所得税、EF 账户、ODI、总部认定等固定覆盖清单。仅当企业的拟落地业务触发相应主题时检索；例如迁入总部与人员才检索总部、企业所得税与人才个税，跨境贸易才检索 EF 账户、跨境人民币和外贸，境外投资才检索 ODI 与境外所得政策。
-- 不得因业务事实不足而静默省略政策主题。每项拟落地业务的检索结果必须归入“可适用（条件待核）”“条件型政策机会”“暂未触发”“现有条件不适用”“未发现现行政策”或“检索未完成（禁止交付）”之一；后四类必须写明原因和下一步需向企业核实的事实。`no_current_policy` 仅在所有相关部门七路径完成且未发现现行候选政策时可用。该结论留在后台台账和招商工作底稿，不默认作为报告中的“待核政策事项”展示。
+- 不设企业所得税、个人所得税、EF账户、ODI、总部认定等固定覆盖清单。政策检索由企业事实信号及其合理相邻经营活动触发，不要求企业事先明确三亚意图，也不得因海南有政策而虚构企业业务。
+- 不得因企业尚未表达三亚意向而静默省略政策主题。每条企业事实信号及其合理相邻经营活动都必须形成机会处置；进入具体检索的主题必须归入“可适用（条件待核）”“条件型政策机会”“暂未触发”“现有条件不适用”“未发现现行政策”或“检索未完成（禁止交付）”之一。非正向结论必须写明原因和下一步需核实的事实。`no_current_policy` 仅在所有相关部门七路径完成且未发现现行候选政策时可用，并只留后台台账。
 - 每条政策先用一句话说明“企业开展什么业务或达到什么条件后，可以获得什么税收优惠、资金支持、办理便利或账户功能”，再写匹配逻辑、条件、办理方式和实际价值。
-- 正式报告默认采用整体落地情景：企业在三亚设立并实质运营主体，承接报告已确定的总部管理、品牌、贸易、结算、投资或行业功能。报告聚焦对招商谈判有直接价值的重点政策，不把“条件型政策机会”作为表格中的结论标签；改为在“享受前提及三亚承接”列写清条件。
+- 正式报告的政策表只保留“匹配政策或工具、匹配原因”两列。政策名称直接说明优惠或功能；匹配原因用一句话合并企业事实、三亚承接活动和触发条件。完整条件、办理方式、现行状态、失效政策及排除理由只留后台台账和参考资料，不堆入前台表格。
 - 同一项优惠的基础政策、实施细则、认定公告或申报口径不得拆成重复行；合并为一行并在政策依据中并列官方原文。政策名称须先说清企业能得到什么：例如“高端紧缺人才个人所得税优惠（实际税负15%封顶）”“EF账户（多功能自由贸易账户）”，不得只堆砌文件标题。
 - 拟写入报告的政策卡必须通过 `scripts/validate_policy_scope.py`；全部业务检索结论必须先通过 `scripts/validate_policy_search_coverage.py`，再通过 `scripts/validate_business_policy_ledger.py`。前者是政策正式性、地域、状态与企业承接路径门槛；动态检索校验防止把缺检索、网页失败或附件失败误写为无政策；业务台账校验防止业务或政策主题遗漏。三者均不代表企业已取得资格。
 
@@ -71,7 +72,7 @@ description: 对拟招引企业开展三亚中央商务区招商前期尽调、�
 - `references/source-registry.md`：网页取证的允许来源、企业官网显式登记与禁止范围。
 - `references/business-decomposition.md`：业务拆分和落地业务筛选。
 - `references/encouraged-industry-assessment.md`、`references/catalogs/*`：鼓励类产业目录逐业务三档判断、内置数据和正式来源版本。
-- `references/business-discovery.md`、`references/department-routing.json`、`references/policy-discovery.md`、`references/policy-search-coverage.md`：业务能力候选、通用主管部门路由、候选政策发现和动态检索覆盖；不得只靠文字提示跳过。
+- `references/business-discovery.md`、`references/policy-opportunity-radar.md`、`references/department-routing.json`、`references/policy-discovery.md`、`references/policy-search-coverage.md`：企业事实信号、相邻经营活动、主管部门路由、候选政策发现和动态检索覆盖；不得只靠文字提示跳过。
 - `references/policy-scope.md`：官方政策来源、搜索顺序、政策卡与地域/状态门禁。
 - `references/park-policy.md`：用户提供园区正式政策时的使用边界；未提供前不得虚构园区奖励。
 - `references/report-template.md`：八部分报告内容与表格。
@@ -82,7 +83,8 @@ description: 对拟招引企业开展三亚中央商务区招商前期尽调、�
 - `scripts/collect_web_evidence.py`、`scripts/validate_evidence.py`：可选的公开网页证据采集与台账门禁；只增强取证，不改变政策卡校验。
 - `scripts/validate_research_ledger.py`：强制校验企业事实—业务候选—主管部门—候选政策—正式政策卡的完整追溯链。
 - `scripts/validate_policy_search_coverage.py`：强制校验业务语义、部门角色、七条检索路径、附件状态和报告结论边界；任一 `research_incomplete` 都阻断交付。
-- `scripts/verify_skill.py`：跨 Agent 唯一部署门禁；以当前 Python 解释器依次运行预检、完整测试和可选 HTML 冒烟，不依赖 PowerShell。
+- `scripts/bootstrap.py`、`scripts/doctor.py`：跨 Agent 安装与秒级运行前自检；只有首次安装或版本指纹变化时执行完整部署验证。
+- `scripts/verify_skill.py`：维护者发布门禁；`--release` 运行预检和完整测试，`--smoke` 额外运行示例HTML，不得在每份报告前调用。
 - `scripts/preflight.py`：由部署门禁调用的目录、UTF-8、示例数据和政策预检；`--smoke` 同时生成示例 HTML 并进行浏览器全页版式验收。
 - `scripts/run_utf8.ps1`：仅供本机 PowerShell 需要改善终端显示时可选使用，不是跨 Agent 门禁。
 - `scripts/validate_report_data.py`、`scripts/validate_text_quality.py`：唯一事实源和文字质量校验。

@@ -32,6 +32,7 @@
   "nodes": [
     {"id": "controller", "name": "李丐腾", "entity_type": "实际控制人", "assertion_type": "legal_disclosure", "as_of_date": "2025-12-31", "evidence_source_ids": ["E01"]},
     {"id": "holding", "name": "上海飞科投资有限公司", "entity_type": "控股平台", "assertion_type": "legal_disclosure", "as_of_date": "2025-12-31", "evidence_source_ids": ["E01"]},
+    {"id": "other_shareholders", "name": "其他股东合计", "entity_type": "其他股东", "assertion_type": "legal_disclosure", "as_of_date": "2025-12-31", "evidence_source_ids": ["E01"]},
     {"id": "listed", "name": "上海飞科电器股份有限公司", "entity_type": "上市公司", "assertion_type": "legal_disclosure", "as_of_date": "2025-12-31", "evidence_source_ids": ["E01"]},
     {"id": "wuhu", "name": "芜湖飞科电器有限公司", "entity_type": "子公司", "assertion_type": "consolidation_scope", "as_of_date": "2025-12-31", "evidence_source_ids": ["E01"]},
     {"id": "poree", "name": "浙江博锐个护电器有限公司", "entity_type": "子公司", "assertion_type": "consolidation_scope", "as_of_date": "2025-12-31", "evidence_source_ids": ["E01"]},
@@ -39,7 +40,8 @@
   ],
   "edges": [
     {"from": "controller", "to": "holding", "relationship": "实际控制", "assertion_type": "legal_disclosure", "as_of_date": "2025-12-31", "evidence_source_ids": ["E01"]},
-    {"from": "holding", "to": "listed", "relationship": "持股80.99%", "assertion_type": "legal_disclosure", "as_of_date": "2025-12-31", "evidence_source_ids": ["E01"]},
+    {"from": "holding", "to": "listed", "relationship": "持股80.99%", "ownership_percent": 80.99, "assertion_type": "legal_disclosure", "as_of_date": "2025-12-31", "evidence_source_ids": ["E01"]},
+    {"from": "other_shareholders", "to": "listed", "relationship": "合计持股19.01%", "ownership_percent": 19.01, "is_remainder": true, "assertion_type": "legal_disclosure", "as_of_date": "2025-12-31", "evidence_source_ids": ["E01"]},
     {"from": "listed", "to": "wuhu", "relationship": "直接控制", "assertion_type": "consolidation_scope", "as_of_date": "2025-12-31", "evidence_source_ids": ["E01"]},
     {"from": "listed", "to": "poree", "relationship": "直接控制", "assertion_type": "consolidation_scope", "as_of_date": "2025-12-31", "evidence_source_ids": ["E01"]},
     {"from": "listed", "to": "supply", "relationship": "直接控制", "assertion_type": "consolidation_scope", "as_of_date": "2025-12-31", "evidence_source_ids": ["E01"]}

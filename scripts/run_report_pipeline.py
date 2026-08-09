@@ -6,6 +6,8 @@ from pathlib import Path
 import subprocess
 import sys
 
+from doctor import check as check_runtime
+
 
 ROOT = Path(__file__).parents[1]
 SCRIPTS = ROOT / "scripts"
@@ -22,7 +24,7 @@ def python_command(script: Path, *args: str) -> list[str]:
     return [sys.executable, "-X", "utf8", str(script), *args]
 
 
-def main() -> int:
+def main(argv: list[str] | None = None, *, release_validation: bool = False) -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("report_data")
     parser.add_argument("--out-dir", required=True)
@@ -33,7 +35,20 @@ def main() -> int:
     parser.add_argument("--equity-evidence", required=True, help="validated provider-backed equity evidence ledger")
     parser.add_argument("--research-ledger", required=True, help="validated business discovery and policy routing ledger")
     parser.add_argument("--policy-search-ledger", required=True, help="validated dynamic policy-search coverage ledger")
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
+    runtime, runtime_errors = check_runtime(
+        node=args.node,
+        need_word=args.word,
+        require_verified=not release_validation,
+    )
+    if runtime_errors:
+        raise SystemExit("运行环境自检失败：\n" + "\n".join(f"- {error}" for error in runtime_errors))
+    if not args.node:
+        args.node = runtime["node"]["path"]
+    if runtime.get("node_modules"):
+        os.environ["REPORT_NODE_MODULES"] = runtime["node_modules"]
+    if runtime.get("chrome", {}).get("path"):
+        os.environ["REPORT_CHROME_EXECUTABLE"] = runtime["chrome"]["path"]
     out = Path(args.out_dir)
     out.mkdir(parents=True, exist_ok=True)
     data = Path(args.report_data)

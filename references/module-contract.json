@@ -22,7 +22,17 @@
       "scripts/validate_equity_evidence.py"
     ],
     "pipeline_validator": "validate_equity_evidence.py",
-    "html_marker": "股权取证渠道与采用口径",
-    "word_marker": "股权取证渠道与采用口径"
+    "html_marker": "股权来源",
+    "word_marker": "股权来源"
+  },
+  "policy_opportunity_radar": {
+    "required_files": [
+      "references/policy-opportunity-radar.md",
+      "tests/test_portable_policy_radar_contract.py"
+    ],
+    "schema_required_field": "policy_opportunity_radar",
+    "pipeline_validator": "validate_report_data.py",
+    "html_marker": "匹配政策或工具",
+    "word_marker": "匹配政策或工具"
   }
 }

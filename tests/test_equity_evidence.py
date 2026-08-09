@@ -77,11 +77,11 @@ def attach_graph(ledger, report):
 
 
 def sync_summary(ledger, report):
+    source = next(item for item in ledger["sources"] if item["status"] == "success")
     report["equity"]["evidence_summary"] = {
-        "attempted_channels": [item["provider"] for item in ledger["provider_attempts"]],
-        "successful_channels": [item["provider"] for item in ledger["sources"] if item["status"] == "success"],
-        "adopted_basis": "测试证据台账中的成功来源",
-        "status_statement": "企查查网页已核验；天眼查网页本轮受登录状态限制，未取得成功回执。",
+        "display_source_id": source["id"],
+        "display_source_title": "测试证据台账中的成功来源",
+        "as_of_date": "2026-08-02",
     }
 
 
@@ -283,7 +283,7 @@ class EquityEvidenceTests(unittest.TestCase):
         attach_graph(ledger, report)
         ledger["sources"][0]["record_count"] = 0
         errors = validator.validate_equity_evidence(ledger, report)
-        self.assertTrue(any("网页已核验" in item and "非空记录" in item for item in errors), errors)
+        self.assertTrue(any("股权网页来源" in item and "非空记录" in item for item in errors), errors)
 
     def test_cli_rejects_success_web_source_without_verifiable_artifact(self):
         report = copy.deepcopy(REPORT)
@@ -354,10 +354,9 @@ class EquityEvidenceTests(unittest.TestCase):
         ledger["review_status"] = "fallback_complete"
         attach_graph(ledger, report)
         report["equity"]["evidence_summary"] = {
-            "attempted_channels": ["qcc_web", "tianyancha_web"],
-            "successful_channels": ["legal_disclosure"],
-            "adopted_basis": "上市公司法定披露",
-            "status_statement": "本轮未取得网页成功回执，不得声称企查查网页已核验或天眼查网页已核验。",
+            "display_source_id": "E01",
+            "display_source_title": "上市公司法定披露",
+            "as_of_date": "2026-08-02",
         }
         self.assertEqual(validator.validate_equity_evidence(ledger, report), [])
 

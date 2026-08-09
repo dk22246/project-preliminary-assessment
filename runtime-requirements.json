@@ -1,0 +1,30 @@
+{
+  "schema_version": "1.0",
+  "python": ">=3.10",
+  "node": ">=18",
+  "default_output": ["python", "node", "playwright", "chrome"],
+  "word_output": ["python-docx"],
+  "fingerprint_roots": ["agents", "examples", "references", "schemas", "scripts", "tests"],
+  "fingerprint_files": [
+    "SKILL.md",
+    "AGENTS.md",
+    "runtime-requirements.json",
+    "package.json",
+    "schemas/report.schema.json",
+    "schemas/policy-search-ledger.schema.json",
+    "references/module-contract.json",
+    "references/policy-opportunity-radar.md",
+    "references/policy-search-coverage.md",
+    "references/report-template.md",
+    "scripts/report_core.py",
+    "scripts/run_report_pipeline.py",
+    "scripts/render_report_html.py",
+    "scripts/render_report_word.py",
+    "scripts/validate_policy_search_coverage.py",
+    "scripts/validate_policy_scope.py",
+    "scripts/verify_html_layout.mjs",
+    "scripts/bootstrap.py",
+    "scripts/doctor.py",
+    "scripts/runtime_state.py"
+  ]
+}

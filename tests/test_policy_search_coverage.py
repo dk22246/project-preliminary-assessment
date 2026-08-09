@@ -1,4 +1,5 @@
 import copy
+from datetime import datetime, timedelta, timezone
 import json
 import subprocess
 import sys
@@ -21,7 +22,9 @@ PATHS = (
 
 
 def report(outcome="conditional_opportunity"):
+    researched_at = datetime.now(timezone.utc).isoformat()
     return {
+        "meta": {"policy_researched_at": researched_at, "policy_search_mode": "realtime"},
         "landing_businesses": [{"id": "L01", "business": "赛事活动运营"}],
         "policy_research": [{
             "landing_business_id": "L01",
@@ -46,7 +49,7 @@ def research_ledger():
     }
 
 
-def coverage_ledger():
+def coverage_ledger(researched_at=None):
     runs = [
         {
             "path": name,
@@ -60,6 +63,8 @@ def coverage_ledger():
     return {
         "version": "1.0",
         "enterprise": "测试企业",
+        "researched_at": researched_at or datetime.now(timezone.utc).isoformat(),
+        "search_mode": "realtime",
         "landing_business_hypotheses": [{
             "id": "PH01",
             "landing_business_id": "L01",
@@ -104,6 +109,9 @@ def coverage_ledger():
 
 
 def run_validation(report_data, research, coverage):
+    report_data = copy.deepcopy(report_data)
+    report_data.setdefault("meta", {})["policy_researched_at"] = coverage["researched_at"]
+    report_data["meta"]["policy_search_mode"] = "realtime"
     with tempfile.TemporaryDirectory() as directory:
         directory = Path(directory)
         report_path = directory / "report.json"
@@ -122,6 +130,21 @@ class PolicySearchCoverageTests(unittest.TestCase):
     def test_accepts_complete_dynamic_search_and_conditional_opportunity(self):
         result = run_validation(report(), research_ledger(), coverage_ledger())
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+
+    def test_rejects_policy_research_older_than_24_hours(self):
+        stale = (datetime.now(timezone.utc) - timedelta(hours=25)).isoformat()
+        ledger = coverage_ledger(stale)
+        result = run_validation(report(), research_ledger(), ledger)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("超过24小时", result.stdout)
+
+    def test_report_data_cannot_self_declare_a_fixture_to_bypass_freshness(self):
+        stale = (datetime.now(timezone.utc) - timedelta(hours=25)).isoformat()
+        report_data = report()
+        report_data["meta"]["sample_fixture"] = True
+        result = run_validation(report_data, research_ledger(), coverage_ledger(stale))
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("超过24小时", result.stdout)
 
     def test_rejects_homepage_as_department_document_scan(self):
         ledger = coverage_ledger()
@@ -182,15 +205,21 @@ class PolicySearchCoverageTests(unittest.TestCase):
             ledger_path = directory / "incomplete-policy-search.json"
             output_dir = directory / "output"
             ledger_path.write_text(json.dumps(ledger, ensure_ascii=False), encoding="utf-8")
+            pipeline_args = [
+                str(ROOT / "examples" / "flyco-report-data.json"),
+                "--equity-evidence", str(ROOT / "examples" / "flyco-equity-evidence.json"),
+                "--research-ledger", str(ROOT / "examples" / "flyco-research-ledger.json"),
+                "--policy-search-ledger", str(ledger_path),
+                "--out-dir", str(output_dir),
+            ]
+            entrypoint = (
+                "import json,sys;"
+                "sys.path.insert(0,sys.argv[1]);"
+                "from run_report_pipeline import main;"
+                "raise SystemExit(main(json.loads(sys.argv[2]),release_validation=True))"
+            )
             result = subprocess.run(
-                [
-                    sys.executable, "-X", "utf8", str(ROOT / "scripts" / "run_report_pipeline.py"),
-                    str(ROOT / "examples" / "flyco-report-data.json"),
-                    "--equity-evidence", str(ROOT / "examples" / "flyco-equity-evidence.json"),
-                    "--research-ledger", str(ROOT / "examples" / "flyco-research-ledger.json"),
-                    "--policy-search-ledger", str(ledger_path),
-                    "--out-dir", str(output_dir),
-                ],
+                [sys.executable, "-X", "utf8", "-c", entrypoint, str(ROOT / "scripts"), json.dumps(pipeline_args)],
                 text=True,
                 capture_output=True,
             )

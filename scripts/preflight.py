@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import os
 from pathlib import Path
 import subprocess
 import sys
@@ -29,7 +30,7 @@ REQUIRED = (
     "references/encouraged-industry-assessment.md", "references/module-contract.json", "references/catalogs/source-metadata.json", "references/catalogs/hainan-encouraged-industries-2024-guide.xlsx", "references/catalogs/hainan-encouraged-industries-2024.json",
     "references/business-discovery.md", "references/policy-discovery.md", "references/policy-search-coverage.md", "references/department-routing.json", "schemas/research-ledger.schema.json", "schemas/policy-search-ledger.schema.json",
     "scripts/run_report_pipeline.py", "scripts/render_report_html.py", "scripts/verify_html_layout.mjs", "scripts/collect_web_evidence.py", "scripts/validate_evidence.py", "scripts/collect_equity_provider.py", "scripts/validate_equity_evidence.py", "scripts/search_industry_catalog.py", "scripts/validate_encouraged_industry_assessment.py",
-    "scripts/verify_skill.py",
+    "scripts/verify_skill.py", "scripts/bootstrap.py", "scripts/doctor.py", "scripts/runtime_state.py", "runtime-requirements.json", "AGENTS.md",
     "scripts/evidence_collectors/__init__.py", "scripts/evidence_collectors/registry.py", "scripts/evidence_collectors/html_extract.py", "scripts/validate_research_ledger.py", "scripts/validate_policy_search_coverage.py",
     "scripts/validate_policy_scope.py", "scripts/validate_report_data.py", "scripts/validate_text_quality.py",
     "tests/test_business_triggered_policy_logic.py", "examples/equity-web-capture-valid.json", SAMPLE.relative_to(ROOT).as_posix(),
@@ -107,7 +108,7 @@ def static_errors() -> list[str]:
                         except (OSError, ValueError) as error:
                             errors.append(f"政策检索覆盖台账示例无法按UTF-8读取：{error}")
                         else:
-                            errors.extend(validate_policy_search_coverage(policy_search, research, data))
+                            errors.extend(validate_policy_search_coverage(policy_search, research, data, allow_stale_fixture=True))
     if EVIDENCE_SAMPLE.is_file():
         try:
             evidence = load_data(EVIDENCE_SAMPLE)
@@ -119,12 +120,18 @@ def static_errors() -> list[str]:
 
 
 def smoke(out_dir: Path) -> int:
-    node = Path(sys.executable).parents[1] / "node" / "bin" / "node.exe"
+    configured = os.environ.get("REPORT_NODE_EXECUTABLE")
+    node = Path(configured) if configured else Path(sys.executable).parents[1] / "node" / "bin" / "node.exe"
     if not node.is_file():
         print(f"未找到随附 Node，无法执行浏览器版式验收：{node}", file=sys.stderr)
         return 1
-    command = [sys.executable, "-X", "utf8", str(ROOT / "scripts" / "run_report_pipeline.py"), str(SAMPLE), "--equity-evidence", str(EQUITY_SAMPLE), "--research-ledger", str(RESEARCH_SAMPLE), "--policy-search-ledger", str(POLICY_SEARCH_SAMPLE), "--out-dir", str(out_dir), "--node", str(node)]
-    return subprocess.run(command, cwd=ROOT, check=False).returncode
+    from run_report_pipeline import main as run_report_pipeline
+    return run_report_pipeline([
+        str(SAMPLE), "--equity-evidence", str(EQUITY_SAMPLE),
+        "--research-ledger", str(RESEARCH_SAMPLE),
+        "--policy-search-ledger", str(POLICY_SEARCH_SAMPLE),
+        "--out-dir", str(out_dir), "--node", str(node),
+    ], release_validation=True)
 
 
 def main() -> int:

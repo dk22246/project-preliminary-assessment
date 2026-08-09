@@ -49,7 +49,9 @@
 & $py -X utf8 scripts/validate_equity_evidence.py equity-evidence.json --report-data report-data.json
 ```
 
-只有本轮网页成功回执、成功来源、非空记录和完整可验证 artifact 链同时存在时，报告才能写“企查查网页已核验”或“天眼查网页已核验”。没有成功回执或 artifact 时必须说明真实失败原因和采用的法定披露或官方登记补证，不得声称已核验。
+凡连接线展示持股比例，必须同时写入数值型 `ownership_percent`。同一被投资主体已展示的直接股东比例必须合计100%；无法可靠拆分剩余股东时，使用“其他股东合计”节点和 `is_remainder: true` 的连接线补足，仍绑定同一法定披露来源，禁止与已单列股东重复计算。
+
+报告正文只显示“股权来源：资料名称（E编号），数据时点YYYY-MM-DD”。企查查、天眼查的尝试、失败原因、artifact和哈希全部保留在 `equity-evidence.json`，不在报告堆叠。只有存在实质来源差异时，才在图下显示“股权数据差异说明”。
 
 ## 断言边界
 

@@ -2,10 +2,12 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "Dynamic policy-search coverage ledger",
   "type": "object",
-  "required": ["version", "enterprise", "landing_business_hypotheses", "searches", "policy_candidates"],
+  "required": ["version", "enterprise", "researched_at", "search_mode", "landing_business_hypotheses", "searches", "policy_candidates"],
   "properties": {
     "version": {"type": "string"},
     "enterprise": {"type": "string", "minLength": 1},
+    "researched_at": {"type": "string", "format": "date-time"},
+    "search_mode": {"const": "realtime"},
     "landing_business_hypotheses": {"type": "array", "minItems": 1},
     "searches": {"type": "array", "minItems": 1},
     "policy_candidates": {"type": "array"}

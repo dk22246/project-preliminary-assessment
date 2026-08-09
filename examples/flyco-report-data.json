@@ -3,6 +3,8 @@
     "report_title": "飞科电器招商项目整体落地研判报告",
     "generated_at": "2026年7月27日",
     "reporting_entity": "上海飞科电器股份有限公司",
+    "policy_researched_at": "2026-08-10T10:00:00+08:00",
+    "policy_search_mode": "realtime",
     "unit": "三亚中央商务区招商研判组",
     "html_template": "sanya-cbd-editorial",
     "financial_currency": "CNY",
@@ -28,7 +30,7 @@
     ],
     [
       "行业地位",
-      "国内个护电器知名品牌，核心品类为电动剃须刀和电吹风。"
+      "中国个人护理电器头部企业；据中国商业联合会统计口径，飞科电动剃须刀多年保持全国市场销量和综合占有率第一。"
     ],
     [
       "建议落地业务",
@@ -36,7 +38,7 @@
     ],
     [
       "主要政策匹配",
-      "企业所得税15%、高端紧缺人才个人所得税优惠、EF账户等须由真实三亚业务触发。"
+      "企业所得税15%、高端紧缺人才个人所得税优惠、EF账户、ODI、境外投资所得免税、跨国公司本外币资金池及离岸贸易印花税等，均由飞科现有业务信号及三亚承接条件触发。"
     ],
     [
       "主要风险",
@@ -64,6 +66,16 @@
         "name": "上海飞科投资有限公司",
         "entity_type": "控股平台",
         "role": "无主要实体经营",
+        "level": 1,
+        "evidence_source_ids": [
+          "E01"
+        ]
+      },
+      {
+        "id": "other_shareholders",
+        "name": "其他股东合计",
+        "entity_type": "其他股东",
+        "role": "合计持股19.01%",
         "level": 1,
         "evidence_source_ids": [
           "E01"
@@ -123,6 +135,17 @@
         "from": "holding",
         "to": "listed",
         "relationship": "持股80.99%",
+        "ownership_percent": 80.99,
+        "evidence_source_ids": [
+          "E01"
+        ]
+      },
+      {
+        "from": "other_shareholders",
+        "to": "listed",
+        "relationship": "合计持股19.01%",
+        "ownership_percent": 19.01,
+        "is_remainder": true,
         "evidence_source_ids": [
           "E01"
         ]
@@ -154,15 +177,9 @@
     ],
     "conflict_disclosures": [],
     "evidence_summary": {
-      "attempted_channels": [
-        "qcc_web",
-        "tianyancha_web"
-      ],
-      "successful_channels": [
-        "legal_disclosure"
-      ],
-      "adopted_basis": "上市公司2025年年度报告法定披露",
-      "status_statement": "离线部署示例没有本轮企查查网页或天眼查网页成功回执；本示例只验证法定披露降级门禁，不声称商业平台网页已核验。"
+      "display_source_id": "E01",
+      "display_source_title": "上海飞科电器股份有限公司2025年年度报告",
+      "as_of_date": "2025-12-31"
     }
   },
   "businesses": [
@@ -203,7 +220,15 @@
       "id": "B04"
     }
   ],
-  "industry_position": "公司年报将飞科定位为国内个护电器行业著名品牌。公开资料未发现可直接用于本轮报告的权威市场份额数据，因此不作市场份额推算。",
+  "industry_position": {
+    "statement": "飞科属于中国个人护理电器头部企业。飞科在2024年度暨2025年第一季度业绩说明会上披露：根据中国商业联合会统计，飞科电动剃须刀多年蝉联全国市场销量第一、市场综合占有率第一；该结论限定于电动剃须刀品类，不外推为全部小家电市场第一。［E02］",
+    "category": "中国电动剃须刀",
+    "position": "全国市场销量第一、市场综合占有率第一（多年）",
+    "period": "截至2025年业绩说明会披露时点",
+    "source_ids": [
+      "E02"
+    ]
+  },
   "upstream_downstream": "上游由飞科供应链有限公司实施集中采购，年报未披露可确认的核心外部供应商名称；下游包含淘宝天猫、京东、拼多多、唯品会及内容平台的自营或合作运营。海外业务已有产品、渠道、认证及合作方规划，但2025年境外收入规模较小。",
   "financials": [
     {
@@ -457,13 +482,16 @@
         "海南省商务厅",
         "国家外汇管理局海南省分局"
       ],
-      "outcome": "not_triggered",
-      "conclusion": "海南商务部门已发布境外投资合规管理指引，但飞科公开资料尚不足以确认由三亚主体实施的新增ODI项目，暂不写作已可办理或可享受的招商权益。",
+      "outcome": "conditional_opportunity",
+      "conclusion": "飞科已形成海外市场拓展与投资管理信号；如由三亚主体新设、并购或增资境外企业，可从海南办理ODI备案及后续外汇登记。该项是合规办理路径，不是财政奖励。",
       "next_evidence": "需企业提供拟投国别、境外主体、项目、投资金额、资金来源、董事会决议和收益安排后，再核验备案及外汇登记路径。",
       "evidence_source_ids": [
-        "P08"
+        "P08",
+        "P14"
       ],
-      "policy_ids": []
+      "policy_ids": [
+        "P08"
+      ]
     },
     {
       "landing_business_id": "L04",
@@ -472,15 +500,75 @@
         "国家税务总局海南省税务局",
         "海南省商务厅"
       ],
-      "outcome": "not_triggered",
-      "conclusion": "公开官方说明显示该项免税针对2025年前新增境外直接投资取得的所得；飞科尚无三亚主体在该期间形成新增投资的公开事实，不能按现行招商权益承诺。",
-      "next_evidence": "如企业主张历史项目适用，需提供海南主体设立时间、投资完成时间、被投企业税率、境外所得及完税资料，由税务部门核验。",
+      "outcome": "conditional_opportunity",
+      "conclusion": "财税〔2025〕3号已将财税〔2020〕31号规定的企业所得税优惠整体延续至2027年末；三亚主体如属于旅游业、现代服务业或高新技术产业，并取得符合条件的新增境外直接投资所得，可申请免征企业所得税。",
+      "next_evidence": "需确认三亚主体产业属性、新增境外投资时点、持股比例、所得类型及被投资国法定企业所得税率。",
       "evidence_source_ids": [
-        "P09"
+        "P01",
+        "P12"
       ],
-      "policy_ids": []
+      "policy_ids": [
+        "P12"
+      ]
+    },
+    {
+      "landing_business_id": "L04",
+      "topic": "跨国公司本外币一体化资金池",
+      "searched_departments": [
+        "国家外汇管理局海南省分局",
+        "中国人民银行海南省分行"
+      ],
+      "outcome": "conditional_opportunity",
+      "conclusion": "如飞科在三亚设主办企业并形成符合门槛的境内外成员企业体系，可申请本外币一体化资金池，集中办理境内外资金归集、余缺调剂和经常项目集中收付。",
+      "next_evidence": "需核验境内外成员企业、营业收入、跨境收支规模、所有者权益、主办企业和合作银行等准入条件。",
+      "evidence_source_ids": [
+        "P13"
+      ],
+      "policy_ids": [
+        "P13"
+      ]
     }
   ],
+  "policy_opportunity_radar": {
+    "signals": [
+      {
+        "id": "S01",
+        "signal_type": "headquarters_and_talent",
+        "fact": "企业具备上市公司管理、品牌运营和核心团队配置能力。",
+        "source_ids": ["E01"],
+        "opportunities": [
+          {"topic": "corporate_income_tax", "disposition": "surfaced", "reason": "三亚主体承接符合鼓励类目录的主营业务并实质运营时可研判15%税率。", "policy_source_ids": ["P01"]},
+          {"topic": "talent_income_tax", "disposition": "surfaced", "reason": "核心管理及专业人员实际在海南任职并满足清单条件时可研判个税优惠。", "policy_source_ids": ["P03", "P04"]},
+          {"topic": "headquarters_recognition", "disposition": "pending_evidence", "reason": "本轮未取得三亚现行总部认定及兑现文件，不进入前台政策表。", "policy_source_ids": ["P10"]}
+        ]
+      },
+      {
+        "id": "S02",
+        "signal_type": "overseas_business",
+        "fact": "企业公开披露海外产品、渠道拓展和境外投资运营方向。",
+        "source_ids": ["E01"],
+        "opportunities": [
+          {"topic": "foreign_trade", "disposition": "merged", "reason": "海外销售与采购机会并入EF账户和跨境结算工具展示。", "policy_source_ids": ["P06"]},
+          {"topic": "ef_account", "disposition": "surfaced", "reason": "真实跨境贸易、投资或资金结算可触发EF账户办理。", "policy_source_ids": ["P06"]},
+          {"topic": "cross_border_settlement", "disposition": "merged", "reason": "跨境人民币及外汇便利与EF账户同属跨境结算工具，合并展示。", "policy_source_ids": ["P06"]},
+          {"topic": "odi", "disposition": "surfaced", "reason": "新增境外设立、并购或增资项目可触发海南ODI备案与外汇登记。", "policy_source_ids": ["P08", "P14"]},
+          {"topic": "overseas_income_tax", "disposition": "surfaced", "reason": "符合产业和新增境外直接投资所得条件时，可研判企业所得税免征。", "policy_source_ids": ["P01", "P12"]},
+          {"topic": "cross_border_fund_pool", "disposition": "surfaced", "reason": "形成符合门槛的境内外成员企业体系后，可研判本外币一体化资金池。", "policy_source_ids": ["P13"]},
+          {"topic": "offshore_trade_stamp_duty", "disposition": "surfaced", "reason": "若三亚主体形成货物不入境的非居民间离岸转手买卖，可免征相关合同印花税。", "policy_source_ids": ["P07"]}
+        ]
+      },
+      {
+        "id": "S03",
+        "signal_type": "import_and_processing",
+        "fact": "企业存在供应链采购能力，但本轮未发现海南岛内进口自用或加工生产安排。",
+        "source_ids": ["E01"],
+        "opportunities": [
+          {"topic": "zero_tariff", "disposition": "pending_evidence", "reason": "只有形成海南主体进口征税目录外货物等真实路径后再纳入。", "policy_source_ids": ["P11"]},
+          {"topic": "processing_value_added", "disposition": "excluded", "reason": "本轮没有海南加工环节，不能由现有供应链事实反向虚构加工业务。", "policy_source_ids": ["P11"]}
+        ]
+      }
+    ]
+  },
   "policies": [
     {
       "name": "海南自由贸易港鼓励类产业企业所得税15%优惠",
@@ -504,6 +592,7 @@
       "judgment": "条件型政策机会",
       "source_id": "P01",
       "report_title": "企业所得税15%优惠",
+      "report_reason": "飞科已有自营电商、数字营销和销售结算能力；如由三亚主体承接可归入鼓励类产业目录的主营业务，相关主营收入达到规定比例并形成实质运营，可按15%税率缴纳企业所得税。",
       "report_business": "自营电商、数字营销及销售结算",
       "report_value": "三亚主体经营符合鼓励类目录业务并满足实质运营条件后，企业所得税按15%征收。",
       "report_conditions": "主营业务属于鼓励类目录，主营业务收入占比达标，并在三亚形成管理、人员、账务及资产的实质运营。",
@@ -533,6 +622,7 @@
       "source_id": "P03",
       "report_group": "talent-iit",
       "report_title": "高端紧缺人才个人所得税优惠（实际税负15%封顶）",
+      "report_reason": "飞科具备总部管理、品牌、电商和海外运营等核心岗位；相关人员在三亚主体实际任职、取得海南来源所得并满足高端紧缺人才清单及居住等条件时，个人所得税实际税负超过15%的部分免征。",
       "report_business": "区域总部及核心管理、品牌、电商和海外运营团队",
       "report_value": "符合条件的高端和紧缺人才，实际个人所得税负超过15%的部分免征。",
       "report_conditions": "人才符合高端或紧缺人才条件；在海南的居住、劳动关系、海南来源所得及所属单位实质运营等要求满足。",
@@ -584,6 +674,7 @@
       "judgment": "条件型政策机会",
       "source_id": "P06",
       "report_title": "EF账户（多功能自由贸易账户）",
+      "report_reason": "飞科已有海外销售、采购和跨境运营信号；三亚主体形成真实跨境贸易、投融资或结算需求并通过银行真实性、反洗钱审查后，可使用EF账户办理跨境资金收付与账户管理。",
       "report_business": "海外销售、采购、投融资及跨境资金结算",
       "report_value": "三亚主体可开立EF账户，用于跨境贸易、投融资和资金结算的便利化管理；该项为账户与资金便利，不是税收减免。",
       "report_conditions": "存在真实跨境贸易、投资或资金结算需求，并通过经办银行尽调、反洗钱和真实性审核。",
@@ -612,11 +703,84 @@
       "judgment": "条件型政策机会",
       "source_id": "P07",
       "report_title": "离岸贸易印花税优惠",
+      "report_reason": "飞科具有海外渠道和供应链管理基础；如三亚主体从非居民企业购货后转售给另一非居民企业，且货物始终不实际进出我国关境，相关买卖合同可免征印花税。",
       "report_business": "境外采购、境外销售及贸易合同结算",
       "report_value": "符合离岸转手买卖定义的合同，可免征印花税。",
       "report_conditions": "买卖双方均为非居民企业，货物始终未实际进出我国关境。",
       "report_landing_action": "由三亚主体承接符合条件的非居民间离岸转手买卖合同和结算。",
       "report_judgment": "离岸贸易模式下的专项税收优惠"
+    },
+    {
+      "name": "海南企业境外投资备案与外汇登记办理路径",
+      "region": "海南省",
+      "region_evidence": "海南省商务厅发布企业境外投资合规管理指引，国家外汇管理局海南省分局提供资本项目办理渠道，适用于海南企业境外投资事项。",
+      "source_type": "official",
+      "source_url": "https://dofcom.hainan.gov.cn/dofcom/zwdt/202311/a2d8baa540b642eea9b94b70d2378652/files/8432d09ab5fd443293cfa4c7546d105a.pdf",
+      "status": "current",
+      "issuer": "海南省商务厅",
+      "document_number": "海南自由贸易港企业境外投资合规管理指引（2023年版）",
+      "published_at": "2023-11-01",
+      "validity_evidence": "海南省商务厅官网现行公开，且海南外汇资本项目办事指南持续提供对应办理渠道。",
+      "applicable_object": "拟通过海南境内主体新设、并购或增资境外企业的境内投资者。",
+      "enterprise_business": "海外市场投资与运营",
+      "landing_action": "由三亚主体形成明确境外投资项目、决策、资金来源和投后管理安排。",
+      "plain_language": "三亚主体实施境外设立、并购或增资时，可按项目情况办理ODI备案及银行外汇登记。",
+      "policy_value": "明确境外投资的合规办理路径和资金汇出前置手续；该项不是财政补贴。",
+      "match_logic": "飞科已披露海外市场拓展与投资运营方向。",
+      "conditions": "存在真实境外投资项目，并完成发改、商务及外汇等适用手续。",
+      "handling_route": "向发展改革、商务主管部门办理核准或备案，并按外汇规定在银行办理境外直接投资外汇登记。",
+      "judgment": "条件型政策机会",
+      "source_id": "P08",
+      "report_title": "ODI境外投资备案与外汇登记",
+      "report_reason": "飞科已形成海外市场拓展和投资运营方向；如由三亚主体新设、并购或增资境外企业，可在项目、决策和资金来源明确后办理ODI备案及外汇登记，将境外投资管理职能落在三亚。"
+    },
+    {
+      "name": "海南自由贸易港新增境外直接投资所得企业所得税优惠",
+      "region": "海南省",
+      "region_evidence": "财税〔2020〕31号规定海南相关企业新增境外直接投资所得免征企业所得税，财税〔2025〕3号将其执行期限延长至2027年12月31日。",
+      "source_type": "official",
+      "source_url": "https://jx.mof.gov.cn/xxgk/zhengcefagui/202006/t20200630_3541194.htm",
+      "status": "current",
+      "issuer": "财政部、税务总局",
+      "document_number": "财税〔2020〕31号（经财税〔2025〕3号延续）",
+      "published_at": "2020-06-23",
+      "validity_evidence": "财税〔2025〕3号明确将财税〔2020〕31号规定的税收优惠延长至2027-12-31。",
+      "applicable_object": "在海南自由贸易港设立的旅游业、现代服务业或高新技术产业企业。",
+      "enterprise_business": "由三亚主体实施的新增境外直接投资及所得归集",
+      "landing_action": "由三亚主体实施新增境外投资，并形成符合条件的境外分支机构营业利润或境外子公司股息所得。",
+      "plain_language": "符合产业和投资所得条件的三亚主体，其新增境外直接投资取得的特定所得可免征企业所得税。",
+      "policy_value": "对符合条件的新增境外直接投资所得免征企业所得税。",
+      "match_logic": "飞科已有海外市场和投资运营方向，可进一步从三亚实施新增境外投资。",
+      "conditions": "符合旅游业、现代服务业或高新技术产业范围；所得来自新设境外分支机构营业利润，或持股20%以上境外子公司分回的相应股息；被投资国法定企业所得税率不低于5%。",
+      "handling_route": "在企业所得税申报中按规定享受并留存新增投资、境外所得、持股比例和被投国税率等资料。",
+      "judgment": "条件型政策机会",
+      "source_id": "P12",
+      "report_title": "新增境外直接投资所得企业所得税免征",
+      "report_reason": "飞科已有海外市场拓展和投资运营方向；如三亚主体属于旅游业、现代服务业或高新技术产业，并取得符合持股、所得类型和被投国税率条件的新增境外直接投资所得，该部分所得可免征企业所得税。"
+    },
+    {
+      "name": "海南跨国公司本外币一体化资金池业务",
+      "region": "海南省",
+      "region_evidence": "琼汇发〔2025〕3号适用于国家外汇管理局海南省分局辖内符合条件的跨国公司。",
+      "source_type": "official",
+      "source_url": "https://www.safe.gov.cn/hainan/2025/0123/2130.html",
+      "status": "current",
+      "issuer": "国家外汇管理局海南省分局",
+      "document_number": "琼汇发〔2025〕3号",
+      "published_at": "2025-01-22",
+      "validity_evidence": "文件自发布之日起实施，海南省分局官网现行公开。",
+      "applicable_object": "在海南省分局辖内符合备案条件的跨国公司集团及其主办企业。",
+      "enterprise_business": "境内外成员企业资金归集与跨境集中收付",
+      "landing_action": "在三亚设立主办企业并纳入符合条件的境内外成员企业。",
+      "plain_language": "符合条件的跨国公司可由海南主办企业集中管理境内外本外币资金并办理集中收付。",
+      "policy_value": "提高境内外资金归集、余缺调剂、集中收付和跨境资金运营效率。",
+      "match_logic": "飞科已开展海外市场拓展，未来形成境内外成员企业体系后可研判资金池。",
+      "conditions": "集团成员关系、主办企业、营业收入、跨境收支及所有者权益等条件须满足备案规定。",
+      "handling_route": "由三亚主办企业选择合作银行并向国家外汇管理局海南省分局办理备案。",
+      "judgment": "条件型政策机会",
+      "source_id": "P13",
+      "report_title": "跨国公司本外币一体化资金池",
+      "report_reason": "飞科已形成海外市场拓展方向；如后续建立符合门槛的境内外成员企业体系，并以三亚主体作为主办企业，可集中开展境内外本外币资金归集、余缺调剂和经常项目集中收付。"
     }
   ],
   "comprehensive_assessment": "飞科电器具备上市公司主体、品牌渠道和现金创造能力，适合以区域总部、数字营销、贸易结算和海外运营支持功能在三亚中央商务区推进。项目现实性取决于管理人员、合同、收入、利润和跨境结算是否真实进入三亚主体；制造产线不作为本轮迁入假设。",
@@ -627,8 +791,17 @@
       "name": "上海飞科电器股份有限公司2025年年度报告",
       "issuer": "上海飞科电器股份有限公司／上交所法定披露",
       "date": "2026-04-29",
-      "location": "https://money.finance.sina.com.cn/corp/view/vCB_AllBulletinDetail.php?id=12246280&stockid=603868",
+      "location": "https://static.sse.com.cn/disclosure/listedinfo/announcement/c/new/2026-04-29/603868_20260429_HKU6.pdf",
       "used_in": "第二、五、七部分"
+    },
+    {
+      "id": "E02",
+      "type": "企业信息",
+      "name": "飞科电器2024年度暨2025年第一季度业绩说明会",
+      "issuer": "上海飞科电器股份有限公司／上海证券报·中国证券网",
+      "date": "2025-05-20",
+      "location": "https://roadshow.cnstock.com/fbh/fkdq2024",
+      "used_in": "第二部分行业地位"
     },
     {
       "id": "F01",
@@ -746,6 +919,33 @@
       "date": "2025-09-29",
       "location": "https://hq.mof.gov.cn/tongzhitonggao/202509/t20250929_3973443.htm",
       "used_in": "第六部分"
+    },
+    {
+      "id": "P12",
+      "type": "政策原文",
+      "name": "财政部 税务总局关于海南自由贸易港企业所得税优惠政策的通知",
+      "issuer": "财政部、税务总局",
+      "date": "2020-06-23",
+      "location": "https://jx.mof.gov.cn/xxgk/zhengcefagui/202006/t20200630_3541194.htm",
+      "used_in": "第六部分新增境外直接投资所得企业所得税优惠"
+    },
+    {
+      "id": "P13",
+      "type": "政策原文",
+      "name": "国家外汇管理局海南省分局关于印发《跨国公司本外币一体化资金池业务试点管理规定》的通知",
+      "issuer": "国家外汇管理局海南省分局",
+      "date": "2025-01-22",
+      "location": "https://www.safe.gov.cn/hainan/2025/0123/2130.html",
+      "used_in": "第六部分跨境资金运营"
+    },
+    {
+      "id": "P14",
+      "type": "办理指南",
+      "name": "国家外汇管理局海南省分局行政许可办事指南（资本项目）",
+      "issuer": "国家外汇管理局海南省分局",
+      "date": "2025-02-12",
+      "location": "https://www.safe.gov.cn/hainan/ywzn/index.html",
+      "used_in": "第六部分ODI外汇登记办理"
     },
     {
       "id": "P21",

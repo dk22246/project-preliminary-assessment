@@ -8,7 +8,7 @@ import re
 from urllib.parse import urlparse
 
 
-REQUIRED_TOP = ("meta", "entity_resolution", "equity", "businesses", "encouraged_industry_assessment", "financials", "risks", "landing_businesses", "policy_research", "policies", "sources")
+REQUIRED_TOP = ("meta", "entity_resolution", "equity", "businesses", "encouraged_industry_assessment", "industry_position", "financials", "risks", "landing_businesses", "policy_research", "policy_opportunity_radar", "policies", "sources")
 REQUIRED_ENTITY = ("user_input", "name_type", "legal_entity", "analysis_entity", "financial_scope", "risk_scope")
 REQUIRED_POLICY = ("name", "region", "region_evidence", "source_type", "source_url", "status", "enterprise_business", "landing_action")
 POLICY_EVIDENCE_FIELDS = ("source_id", "issuer", "document_number", "published_at", "validity_evidence", "applicable_object", "plain_language", "conditions", "policy_value", "handling_route")
@@ -34,6 +34,16 @@ EQUITY_CONFLICT_FIELDS = (
 EQUITY_CONFLICT_SEVERITIES = {"general", "material_local", "subject_critical"}
 EQUITY_CONFLICT_STATUSES = {"resolved", "unresolved"}
 EQUITY_GRAPH_ACTIONS = {"keep_confirmed_part", "omit_disputed_part"}
+OPPORTUNITY_DISPOSITIONS = {"surfaced", "merged", "excluded", "expired", "not_current", "pending_evidence", "research_incomplete"}
+OVERSEAS_OPPORTUNITY_TOPICS = {
+    "foreign_trade",
+    "ef_account",
+    "cross_border_settlement",
+    "odi",
+    "overseas_income_tax",
+    "cross_border_fund_pool",
+    "offshore_trade_stamp_duty",
+}
 
 
 def load_data(path: str | Path) -> dict:
@@ -82,6 +92,29 @@ def validate_report_data(data: dict) -> list[str]:
             errors.append(f"股权连接缺少relationship：{edge}")
         if not edge.get("evidence_source_ids"):
             errors.append(f"股权连接缺少evidence_source_ids：{edge}")
+        relationship = str(edge.get("relationship", ""))
+        if any(marker in relationship.lower() for marker in ("持股", "股东", "shareholder", "ownership")) and "ownership_percent" not in edge:
+            errors.append(f"直接股东或持股连接必须提供ownership_percent：{edge}")
+        if "ownership_percent" in edge:
+            try:
+                percentage = float(edge["ownership_percent"])
+            except (TypeError, ValueError):
+                errors.append(f"股权连接ownership_percent必须为数值：{edge}")
+            else:
+                if percentage <= 0 or percentage > 100:
+                    errors.append(f"股权连接ownership_percent必须大于0且不超过100：{edge}")
+    ownership_by_target: dict[str, list[dict]] = {}
+    for edge in edges:
+        if "ownership_percent" in edge:
+            ownership_by_target.setdefault(str(edge.get("to", "")), []).append(edge)
+    for target, ownership_edges in ownership_by_target.items():
+        try:
+            total = sum(float(edge["ownership_percent"]) for edge in ownership_edges)
+        except (TypeError, ValueError):
+            continue
+        if abs(total - 100.0) > 0.02:
+            target_name = next((str(node.get("name")) for node in nodes if node.get("id") == target), target)
+            errors.append(f"股权比例未闭合：{target_name}已展示直接股东合计{total:.2f}%，必须补充其他股东合计或修正重复计算")
     report_source_ids = {str(item.get("id", "")).strip() for item in data.get("sources", [])}
     for item in [*nodes, *edges]:
         for source_id in item.get("evidence_source_ids", []):
@@ -91,11 +124,14 @@ def validate_report_data(data: dict) -> list[str]:
         errors.append("股权数据必须包含conflict_disclosures数组；无差异时填写空数组")
     evidence_summary = equity.get("evidence_summary")
     if not isinstance(evidence_summary, dict):
-        errors.append("股权数据必须包含evidence_summary并公开实际取证渠道")
+        errors.append("股权数据必须包含evidence_summary并显示采用来源")
     else:
-        for field in ("attempted_channels", "successful_channels", "adopted_basis", "status_statement"):
-            if field not in evidence_summary or (field in {"adopted_basis", "status_statement"} and not str(evidence_summary.get(field, "")).strip()):
+        for field in ("display_source_id", "display_source_title", "as_of_date"):
+            if not str(evidence_summary.get(field, "")).strip():
                 errors.append(f"股权取证口径缺少{field}")
+        display_source_id = str(evidence_summary.get("display_source_id", "")).strip()
+        if display_source_id and (display_source_id not in report_source_ids or not display_source_id.startswith("E")):
+            errors.append(f"股权显示来源不是有效E类参考资料：{display_source_id}")
     disclosure_ids: set[str] = set()
     for item in equity.get("conflict_disclosures", []):
         conflict_id = str(item.get("id", "")).strip()
@@ -128,9 +164,26 @@ def validate_report_data(data: dict) -> list[str]:
         for field in ("segment", "products", "entity", "revenue_model", "footprint", "sanya_fit"):
             if not str(item.get(field, "")).strip():
                 errors.append(f"业务拆解缺少{field}：{item.get('segment', '未命名业务')}")
+    industry = data.get("industry_position", {})
+    if not isinstance(industry, dict):
+        errors.append("行业地位必须使用结构化对象，包含结论、品类、位置、时点和来源")
+    else:
+        for field in ("statement", "category", "position", "period", "source_ids"):
+            if not industry.get(field):
+                errors.append(f"行业地位缺少{field}")
+        position = str(industry.get("position", "")).strip()
+        if position and not re.search(r"(?:第\s*1|第一|头部|第一梯队|TOP\s*1|Top\s*1|top\s*1|市场份额|排名)", position):
+            errors.append("行业地位必须写明经证据支持的排名、份额或第一梯队定位，不得只写知名品牌")
+        for source_id in industry.get("source_ids", []):
+            if source_id not in report_source_ids or not str(source_id).startswith("E"):
+                errors.append(f"行业地位引用无效E类来源：{source_id}")
     if len(data.get("financials", [])) != 3:
         errors.append("财务数据必须恰好包含最近三个完整年度")
     meta = data.get("meta", {})
+    if str(meta.get("policy_search_mode", "")).strip() != "realtime":
+        errors.append("政策检索模式必须为realtime")
+    if not str(meta.get("policy_researched_at", "")).strip():
+        errors.append("报告缺少policy_researched_at实时检索时间")
     currency = str(meta.get("financial_currency", "")).strip()
     unit = str(meta.get("financial_unit", "")).strip()
     if bool(currency) != bool(unit):
@@ -165,7 +218,75 @@ def validate_report_data(data: dict) -> list[str]:
         errors.extend(f"政策卡缺少{field}：{policy.get('name', '未命名政策')}" for field in REQUIRED_POLICY if not str(policy.get(field, "")).strip())
         if policy.get("source_type") != "official" or policy.get("status") != "current":
             errors.append(f"政策卡未满足正式现行条件：{policy.get('name')}")
+    policy_groups: dict[str, list[dict]] = {}
+    for policy in data.get("policies", []):
+        group = str(policy.get("report_group") or policy.get("source_id") or policy.get("name", "")).strip()
+        policy_groups.setdefault(group, []).append(policy)
+    for group, policies in policy_groups.items():
+        lead = policies[0]
+        if not str(lead.get("report_title", "")).strip():
+            errors.append(f"政策展示组{group}缺少利益可读的report_title")
+        if not str(lead.get("report_reason", "")).strip():
+            errors.append(f"政策展示组{group}缺少事实与条件合并后的report_reason")
+    errors.extend(validate_policy_opportunity_radar(data, report_source_ids))
     errors.extend(validate_business_policy_ledger(data))
+    return errors
+
+
+def validate_policy_opportunity_radar(data: dict, report_source_ids: set[str] | None = None) -> list[str]:
+    """Require every observed signal to receive an auditable policy-opportunity disposition."""
+    errors: list[str] = []
+    radar = data.get("policy_opportunity_radar", {})
+    signals = radar.get("signals", []) if isinstance(radar, dict) else []
+    if not signals:
+        return ["政策机会雷达缺少企业事实信号"]
+    seen_ids: set[str] = set()
+    visible_policy_ids = {str(item.get("source_id", "")).strip() for item in data.get("policies", []) if str(item.get("source_id", "")).strip()}
+    radar_positive_ids: set[str] = set()
+    for signal in signals:
+        signal_id = str(signal.get("id", "")).strip()
+        label = signal_id or "未编号信号"
+        if not signal_id or signal_id in seen_ids:
+            errors.append(f"政策机会雷达信号编号为空或重复：{label}")
+        seen_ids.add(signal_id)
+        for field in ("signal_type", "fact", "source_ids", "opportunities"):
+            if not signal.get(field):
+                errors.append(f"政策机会雷达{label}缺少{field}")
+        if report_source_ids is not None:
+            for source_id in signal.get("source_ids", []):
+                if source_id not in report_source_ids or not str(source_id).startswith(("E", "F")):
+                    errors.append(f"政策机会雷达{label}引用无效企业事实来源：{source_id}")
+        topics: set[str] = set()
+        for opportunity in signal.get("opportunities", []):
+            topic = str(opportunity.get("topic", "")).strip()
+            disposition = str(opportunity.get("disposition", "")).strip()
+            if not topic or topic in topics:
+                errors.append(f"政策机会雷达{label}的机会主题为空或重复：{topic or '空'}")
+            topics.add(topic)
+            if disposition not in OPPORTUNITY_DISPOSITIONS:
+                errors.append(f"政策机会雷达{label}/{topic or '未命名主题'}的disposition无效")
+            if not str(opportunity.get("reason", "")).strip():
+                errors.append(f"政策机会雷达{label}/{topic or '未命名主题'}缺少处置原因")
+            if disposition == "research_incomplete":
+                errors.append(f"政策机会雷达{label}/{topic or '未命名主题'}检索未完成，禁止交付")
+            policy_source_ids = {str(value).strip() for value in opportunity.get("policy_source_ids", []) if str(value).strip()}
+            if disposition in {"surfaced", "merged"}:
+                radar_positive_ids.update(policy_source_ids)
+            if disposition == "surfaced" and not (policy_source_ids & visible_policy_ids):
+                errors.append(f"政策机会雷达{label}/{topic or '未命名主题'}标记surfaced但没有进入正式政策表")
+        signal_type = str(signal.get("signal_type", "")).strip().lower()
+        signal_fact = str(signal.get("fact", ""))
+        is_overseas_signal = (
+            any(marker in signal_type for marker in ("overseas", "foreign_trade", "cross_border", "global"))
+            or any(marker in signal_fact for marker in ("海外", "境外", "跨境", "出口", "国际市场", "境外投资"))
+        )
+        if is_overseas_signal:
+            missing = sorted(OVERSEAS_OPPORTUNITY_TOPICS - topics)
+            if missing:
+                errors.append(f"海外业务信号缺少机会处置：{', '.join(missing)}")
+    missing_from_radar = sorted(visible_policy_ids - radar_positive_ids)
+    if missing_from_radar:
+        errors.append(f"正式政策表存在未由企业事实信号触发的政策：{', '.join(missing_from_radar)}")
     return errors
 
 

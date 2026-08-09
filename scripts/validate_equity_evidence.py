@@ -212,31 +212,17 @@ def validate_equity_evidence(ledger: dict, report: dict, base_dir: Path | None =
 
     summary = report.get("equity", {}).get("evidence_summary", {})
     if not isinstance(summary, dict):
-        errors.append("报告缺少股权取证渠道与采用口径")
+        errors.append("报告缺少股权采用来源摘要")
     else:
-        attempted_channels = {_text(item) for item in summary.get("attempted_channels", [])}
-        successful_channels = {_text(item) for item in summary.get("successful_channels", [])}
-        expected_attempted = {_text(item.get("provider")) for item in commercial_attempts}
-        expected_successful = {
-            _text(source.get("provider")) for source in sources if _text(source.get("status")) == "success"
-        }
-        if attempted_channels != expected_attempted:
-            errors.append("报告显示的股权尝试渠道与证据台账不一致")
-        if successful_channels != expected_successful:
-            errors.append("报告显示的股权成功来源与证据台账不一致")
-        for field in ("adopted_basis", "status_statement"):
+        for field in ("display_source_id", "display_source_title", "as_of_date"):
             if not _text(summary.get(field)):
-                errors.append(f"报告股权取证口径缺少{field}")
-        statement = _text(summary.get("status_statement"))
-        if not successful_commercial and _claims_verified_without_receipt(statement):
-            errors.append("没有网页成功回执及非空记录时不得声称网页已核验")
-        claims = {
-            "qcc_web": "企查查网页已核验",
-            "tianyancha_web": "天眼查网页已核验",
+                errors.append(f"报告股权采用来源摘要缺少{field}")
+        display_source_id = _text(summary.get("display_source_id"))
+        successful_source_ids = {
+            _text(source.get("id")) for source in sources if _text(source.get("status")) == "success"
         }
-        for provider, phrase in claims.items():
-            if _is_affirmative_claim(statement, phrase) and provider not in successful_commercial:
-                errors.append(f"{phrase}必须有本轮成功回执及非空记录")
+        if display_source_id and display_source_id not in successful_source_ids:
+            errors.append("报告显示的股权来源不是证据台账中的成功来源")
     if not successful_commercial:
         if not all(_text(item.get("status")) in {"unavailable", "error"} for item in commercial_attempts):
             errors.append("商业股权平台无成功来源且降级状态不完整")
@@ -250,6 +236,11 @@ def validate_equity_evidence(ledger: dict, report: dict, base_dir: Path | None =
 
     ledger_nodes = {_text(item.get("id")): item for item in ledger.get("nodes", []) if _text(item.get("id"))}
     ledger_edges = {(_text(item.get("from")), _text(item.get("to"))): item for item in ledger.get("edges", [])}
+
+    summary_date = _text(report.get("equity", {}).get("evidence_summary", {}).get("as_of_date"))
+    graph_dates = {_text(item.get("as_of_date")) for item in [*ledger.get("nodes", []), *ledger.get("edges", [])] if _text(item.get("as_of_date"))}
+    if summary_date and graph_dates and summary_date not in graph_dates:
+        errors.append("报告显示的股权数据时点与证据台账不一致")
 
     for item in ledger.get("nodes", []):
         label = _text(item.get("name")) or _text(item.get("id")) or "未命名节点"

@@ -40,7 +40,7 @@ def valid_ledger():
             {"id": "PC01", "route_id": "DR01", "policy_name": "税收与人才政策", "status": "current_conditional", "disposition": "include", "formal_policy_source_ids": ["P01", "P03", "P04"]},
             {"id": "PC02", "route_id": "DR02", "policy_name": "数字商业税收政策", "status": "current_conditional", "disposition": "include", "formal_policy_source_ids": ["P01"]},
             {"id": "PC03", "route_id": "DR03", "policy_name": "跨境资金与贸易便利", "status": "current_conditional", "disposition": "include", "formal_policy_source_ids": ["P06", "P07"]},
-            {"id": "PC04", "route_id": "DR04", "policy_name": "境外投资政策检索", "status": "not_applicable", "disposition": "exclude", "disposition_reason": "本轮公开资料未确认新增投资项目", "formal_policy_source_ids": []},
+            {"id": "PC04", "route_id": "DR04", "policy_name": "境外投资、境外所得与资金池政策", "status": "current_conditional", "disposition": "include", "formal_policy_source_ids": ["P08", "P12", "P13"]},
         ],
     }
 
