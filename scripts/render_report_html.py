@@ -130,7 +130,11 @@ def equity_evidence_summary(equity: dict) -> str:
 
 def industry_position_text(value: object) -> str:
     if isinstance(value, dict):
-        return str(value.get("statement", "本轮公开检索未发现可靠行业地位数据，需企业补充。"))
+        category = str(value.get("category", "相关行业")).strip()
+        position = str(value.get("position", "未取得可靠排名")).strip()
+        period = str(value.get("period", "未注明时点")).strip()
+        statement = str(value.get("statement", "本轮公开检索未发现可靠行业地位数据，需企业补充。")).strip()
+        return f"{category}品类定位：{position}；统计时点：{period}。{statement}"
     return str(value)
 
 
@@ -185,32 +189,41 @@ def main() -> int:
         raise SystemExit(f"不支持的 HTML 模板：{template}")
 
     entity = data["entity_resolution"]
-    toc = [("一、项目整体判断", "一"), ("二、企业基本情况", "二"), ("三、近三年经营数据", "三"), ("四、风险与合规情况", "四"), ("五、三亚落地业务及落地方式", "五"), ("六、企业政策匹配", "六"), ("七、综合评估", "七"), ("八、参考资料", "八")]
-    sections = [section("一、项目整体判断", report_table(["研判事项", "初步结论"], data["overall_judgment"], "judgment-table", [16, 84]))]
-    entity_rows = [[label, entity.get(key, "未公开披露")] for label, key in [("用户输入名称", "user_input"), ("名称性质", "name_type"), ("对应法律主体", "legal_entity"), ("证券简称及代码", "security"), ("直接控股股东", "direct_shareholder"), ("最终控制方", "ultimate_controller"), ("核心经营主体", "core_operators"), ("本报告分析主体", "analysis_entity"), ("财务数据口径", "financial_scope"), ("风险检索范围", "risk_scope")]]
-    business_rows = [[item[key] for key in ("segment", "products", "entity", "revenue_model", "footprint", "sanya_fit")] for item in data["businesses"]]
-    basic = "<h2>（一）企业主体认定</h2>" + report_table(["认定事项", "认定结果"], entity_rows, "entity-table", [16, 84]) + "<h2>（二）股权架构拆解</h2><div class=\"svg-wrap\">" + equity_svg(data["equity"]) + "</div>" + paragraph(entity.get("equity_summary", "需企业补充")) + equity_evidence_summary(data["equity"]) + equity_conflict_disclosures(data["equity"].get("conflict_disclosures", [])) + "<h2>（三）主要业务及产品拆解</h2>" + report_table(["业务板块", "主要产品或服务", "主要承载主体", "客户及收入来源", "国内外业务布局", "与三亚的潜在结合点"], business_rows, "wide business-table", [12, 22, 16, 18, 14, 18]) + "<h2>（四）海南自由贸易港鼓励类产业目录匹配</h2>" + encouraged_industry_table(data["encouraged_industry_assessment"]) + "<h2>（五）行业地位及竞争位置</h2>" + paragraph(industry_position_text(data.get("industry_position", {}))) + "<h2>（六）上下游及国内外业务</h2>" + paragraph(data.get("upstream_downstream", "本轮公开检索未发现可靠数据，需企业补充。"))
-    sections.append(section("二、企业基本情况", basic))
+    overview = data["enterprise_overview"]
+    toc = [("一、企业基本情况", "一"), ("二、近三年经营数据", "二"), ("三、风险与合规情况", "三"), ("四、三亚落地业务及落地方式", "四"), ("五、企业政策匹配", "五"), ("六、综合评估", "六"), ("七、参考资料", "七")]
+    sections = []
+    entity_rows = [
+        ["企业主体", entity.get("legal_entity", "未公开披露")],
+        ["成立时间", overview["established_at"]],
+        ["注册地", overview["registered_location"]],
+        ["企业性质", overview["listing_status"]],
+        ["主营业务", overview["main_business"]],
+        ["分析口径", entity.get("financial_scope", "未公开披露")],
+    ]
+    overview_text = '<div class="summary-note"><p><strong>企业概况：</strong>' + escape(overview["profile"]) + '</p><p><strong>经营表现：</strong>' + escape(overview["operating_summary"]) + '</p><p><strong>员工规模：</strong>' + escape(overview["employee_scale"]) + '</p><p><strong>行业地位：</strong>' + escape(industry_position_text(data.get("industry_position", {}))) + "</p></div>"
+    business_rows = [[item[key] for key in ("segment", "products", "entity", "revenue_model", "footprint")] for item in data["businesses"]]
+    basic = "<h2>（一）企业主体认定与企业概况</h2>" + report_table(["基本事项", "企业情况"], entity_rows, "entity-table", [18, 82]) + overview_text + "<h2>（二）股权架构拆解</h2><div class=\"svg-wrap\">" + equity_svg(data["equity"]) + "</div>" + paragraph(entity.get("equity_summary", "需企业补充")) + equity_evidence_summary(data["equity"]) + equity_conflict_disclosures(data["equity"].get("conflict_disclosures", [])) + "<h2>（三）主要业务及产品拆解</h2>" + report_table(["业务板块", "主要产品或服务", "主要承载主体", "客户及收入来源", "国内外业务布局"], business_rows, "wide business-table", [14, 25, 20, 23, 18]) + "<h2>（四）海南自由贸易港鼓励类产业目录匹配</h2>" + encouraged_industry_table(data["encouraged_industry_assessment"]) + "<h2>（五）上下游及国内外业务</h2>" + paragraph(data.get("upstream_downstream", "本轮公开检索未发现可靠数据，需企业补充。"))
+    sections.append(section("一、企业基本情况", basic))
     financial_rows = [[item.get(key, "未公开披露") for key in ("year", "revenue", "revenue_change", "profit", "profit_change", "tax_value", "tax_basis", "government_support", "source")] for item in data["financials"]]
     support_rows = [[item.get(key, "未公开披露") for key in ("year", "name", "department", "amount", "purpose", "conditions", "source")] for item in data.get("government_support", [])] or [["—", "本轮公开检索未发现可确认的政府补助明细", "—", "—", "需企业补充", "需企业补充", "—"]]
     notes = financial_change_notes(data["financials"])
     note_html = "" if not notes else '<p class="table-note">注：' + escape("；".join(notes)) + "</p>"
     finance = "<h2>（一）营业收入、利润、纳税及政府补助情况</h2>" + report_table(financial_headers(data["meta"]), financial_rows, "wide financial-table", [10, 11, 11, 11, 11, 9, 10, 20, 7]) + note_html + "<h3>政府补助及财政支持明细表</h3>" + report_table(["年度", "补助或支持名称", "发放部门", "金额", "对应项目或用途", "附带条件或履约要求", "来源编号"], support_rows, "wide support-table", [8, 16, 12, 12, 16, 28, 8]) + "<h2>（二）经营数据分析</h2>" + paragraph(data.get("financial_analysis", "需企业补充"))
-    sections.append(section("三、近三年经营数据", finance))
+    sections.append(section("二、近三年经营数据", finance))
     risk = data["risks"]
     risk_body = "<h2>（一）行政处罚及监管风险</h2>" + report_table(["时间", "风险类型", "具体事项", "处理结果", "是否已整改", "对招商的影响", "来源编号"], risk.get("regulatory", []), "wide risk-table", [6, 12, 33, 10, 10, 21, 8]) + "<h2>（二）诉讼、执行及失信情况</h2>" + report_table(["时间", "事项类型", "涉及对象或金额", "当前状态", "对招商的影响", "来源编号"], risk.get("litigation", []), "wide risk-table", [9, 18, 32, 16, 17, 8]) + "<h2>（三）风险综合判断</h2>" + paragraph(risk.get("summary", "需企业补充"))
-    sections.append(section("四、风险与合规情况", risk_body))
+    sections.append(section("三、风险与合规情况", risk_body))
     landing_rows = [[item[key] for key in ("business", "fact_basis", "sanya_path", "value", "feasibility")] for item in data["landing_businesses"]]
-    sections.append(section("五、三亚落地业务及落地方式", report_table(["建议落地业务", "企业现有事实基础", "三亚具体承接方式", "可形成的业务及价值", "可行性"], landing_rows, "wide landing-table", [14, 25, 29, 24, 8])))
+    sections.append(section("四、三亚落地业务及落地方式", report_table(["建议落地业务", "企业现有事实基础", "三亚具体承接方式", "可形成的业务及价值", "可行性"], landing_rows, "wide landing-table", [14, 25, 29, 24, 8])))
     policy_body = '<h2>（一）重点政策匹配清单</h2><p class="policy-note">本节依据企业已公开的业务、组织和境内外布局，展示在三亚承接相邻经营活动时可重点沟通的现行政策或办理工具。政策名称直接说明利益或功能，匹配原因同时交代企业事实和触发条件；完整检索、失效政策及排除理由保留在后台台账。</p>' + policy_match_table(data["policies"])
-    sections.append(section("六、企业政策匹配", policy_body))
-    sections.append(section("七、综合评估", '<div class="summary-note">' + escape(data.get("comprehensive_assessment", "需企业补充")) + "</div>"))
+    sections.append(section("五、企业政策匹配", policy_body))
+    sections.append(section("六、综合评估", '<div class="summary-note">' + escape(data.get("comprehensive_assessment", "需企业补充")) + "</div>"))
     visible_policy_sources = {str(item.get("source_id", "")) for item in data["policies"]}
     visible_policy_sources.update(str(item.get("source_id", "")) for item in data["encouraged_industry_assessment"].get("catalogs_checked", []))
     for item in data["encouraged_industry_assessment"].get("business_assessments", []):
         visible_policy_sources.update(str(source_id) for source_id in item.get("catalog_source_ids", []))
     visible_sources = [item for item in data["sources"] if not str(item.get("id", "")).startswith("P") or str(item.get("id", "")) in visible_policy_sources]
-    sections.append(section("八、参考资料", source_table(visible_sources)))
+    sections.append(section("七、参考资料", source_table(visible_sources)))
     toc_html = "".join(f'<a href="#s{anchor}"><span class="toc-index">{anchor}</span><span>{escape(title.split("、", 1)[1])}</span><span class="toc-arrow">→</span></a>' for title, anchor in toc)
     cover = '<section class="cover"><div class="cover-inner"><p class="cover-kicker">三亚中央商务区 · 招商前期研判</p><h1>' + escape(data["meta"]["report_title"]) + '</h1><div class="cover-meta"><p><strong>编制单位：</strong>' + escape(data["meta"].get("unit", "三亚中央商务区招商研判组")) + '</p><p><strong>报告性质：</strong>内部招商前期研判</p><p><strong>编制日期：</strong>' + escape(data["meta"]["generated_at"]) + '</p></div><span class="cover-stamp">内部使用</span></div></section>'
     toc_block = '<nav class="toc" aria-label="报告目录"><p class="cover-kicker">报告目录</p><h1>目录</h1><p class="toc-intro">点击章节名称可跳转至对应内容。</p><div class="toc-grid">' + toc_html + "</div></nav>"

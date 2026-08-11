@@ -1,19 +1,31 @@
 {
+  "library": {
+    "canonical_workbook": "hainan-ftz-encouraged-industry-complete-library.xlsx",
+    "structured_data": "complete-industry-catalog-library.json",
+    "builder": "../../scripts/build_industry_catalog_library.py",
+    "validator": "../../scripts/validate_industry_catalog_library.py"
+  },
   "hainan_added_2024": {
     "name": "海南自由贸易港鼓励类产业目录（2024年本）",
     "effective_date": "2024-03-01",
-    "source_url": "https://www.ndrc.gov.cn/xxgk/zcfb/ghxwj/202403/t20240301_1364306_ext.html",
-    "local_data": "hainan-encouraged-industries-2024.json",
-    "local_source": "hainan-encouraged-industries-2024-guide.xlsx"
+    "source_url": "https://www.ndrc.gov.cn/xxgk/zcfb/ghxwj/202403/P020240301316685271399.pdf",
+    "guide_url": "https://www.ndrc.gov.cn/xxgk/zcfb/ghxwj/202403/t20240301_1364306_ext.html",
+    "workbook_sheets": ["海南新增2024", "海南新增界定指引"]
   },
   "industrial_restructuring_current": {
     "name": "产业结构调整指导目录（2024年本）",
     "effective_date": "2024-02-01",
-    "source_url": "https://www.ndrc.gov.cn/xxgk/zcfb/fzggwl/202312/P020231229700886191069.pdf"
+    "source_url": "https://www.ndrc.gov.cn/xxgk/zcfb/fzggwl/202312/P020231229700886191069.pdf",
+    "workbook_sheet": "产业结构2024",
+    "positive_category": "鼓励类",
+    "conflict_categories": ["限制类", "淘汰类"]
   },
   "foreign_investment_current": {
     "name": "鼓励外商投资产业目录（2025年版）",
     "effective_date": "2026-02-01",
-    "source_url": "https://www.ndrc.gov.cn/xxgk/zcfb/fzggwl/202512/P020251224301773999332.pdf"
+    "source_url": "https://www.ndrc.gov.cn/xxgk/zcfb/fzggwl/202512/P020251224301773999332.pdf",
+    "workbook_sheets": ["外商投资全国2025", "外商投资地区2025"],
+    "hainan_view_sheet": "海南外资2025",
+    "hainan_region": "海南省"
   }
 }

@@ -3,8 +3,10 @@
     "required_files": [
       "references/encouraged-industry-assessment.md",
       "references/catalogs/source-metadata.json",
-      "references/catalogs/hainan-encouraged-industries-2024-guide.xlsx",
-      "references/catalogs/hainan-encouraged-industries-2024.json",
+      "references/catalogs/hainan-ftz-encouraged-industry-complete-library.xlsx",
+      "references/catalogs/complete-industry-catalog-library.json",
+      "scripts/build_industry_catalog_library.py",
+      "scripts/validate_industry_catalog_library.py",
       "scripts/search_industry_catalog.py",
       "scripts/validate_encouraged_industry_assessment.py",
       "tests/test_encouraged_industry_contract.py"

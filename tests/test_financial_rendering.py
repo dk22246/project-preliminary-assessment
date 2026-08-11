@@ -56,7 +56,7 @@ class FinancialRenderingTests(unittest.TestCase):
             )
             self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
             html = output.read_text(encoding="utf-8")
-            financial_section = html.split('<section id="s三"', 1)[1].split("</section>", 1)[0]
+            financial_section = html.split('<section id="s二"', 1)[1].split("</section>", 1)[0]
             self.assertIn("营业收入（亿美元）", financial_section)
             self.assertIn("净利润（亿美元）", financial_section)
             self.assertIn("FY2024未纳入FY2023基数，未计算同比。", financial_section)

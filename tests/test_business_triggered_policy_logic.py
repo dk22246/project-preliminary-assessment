@@ -31,11 +31,13 @@ class BusinessTriggeredPolicyLogicTests(unittest.TestCase):
         self.assertIn('validate_policy_search_coverage.py', pipeline)
         self.assertLess(pipeline.index('validate_policy_search_coverage.py'), pipeline.index('render_report_html.py'))
 
-    def test_eight_sections_and_data_delivery(self):
+    def test_seven_sections_and_data_delivery(self):
         template = (ROOT / "references" / "report-template.md").read_text(encoding="utf-8")
         skill = (ROOT / "SKILL.md").read_text(encoding="utf-8")
-        for numeral in "\u4e00\u4e8c\u4e09\u56db\u4e94\u516d\u4e03\u516b":
+        for numeral in "\u4e00\u4e8c\u4e09\u56db\u4e94\u516d\u4e03":
             self.assertIn(f"## {numeral}\u3001", template)
+        self.assertNotIn("## 八、", template)
+        self.assertNotIn("项目整体判断", template)
         self.assertIn("report-data.json", skill)
         self.assertIn("HTML", skill)
         self.assertIn("PDF", skill)

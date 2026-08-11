@@ -8,7 +8,7 @@ import re
 from urllib.parse import urlparse
 
 
-REQUIRED_TOP = ("meta", "entity_resolution", "equity", "businesses", "encouraged_industry_assessment", "industry_position", "financials", "risks", "landing_businesses", "policy_research", "policy_opportunity_radar", "policies", "sources")
+REQUIRED_TOP = ("meta", "entity_resolution", "enterprise_overview", "equity", "businesses", "encouraged_industry_assessment", "industry_position", "financials", "risks", "landing_businesses", "policy_research", "policy_opportunity_radar", "policies", "sources")
 REQUIRED_ENTITY = ("user_input", "name_type", "legal_entity", "analysis_entity", "financial_scope", "risk_scope")
 REQUIRED_POLICY = ("name", "region", "region_evidence", "source_type", "source_url", "status", "enterprise_business", "landing_action")
 POLICY_EVIDENCE_FIELDS = ("source_id", "issuer", "document_number", "published_at", "validity_evidence", "applicable_object", "plain_language", "conditions", "policy_value", "handling_route")
@@ -71,8 +71,14 @@ def financial_change_notes(financials: list[dict]) -> list[str]:
 
 def validate_report_data(data: dict) -> list[str]:
     errors = [f"缺少顶层字段：{name}" for name in REQUIRED_TOP if not data.get(name)]
+    if "overall_judgment" in data:
+        errors.append("已停用顶层字段overall_judgment：报告不得恢复项目整体判断章节")
     entity = data.get("entity_resolution", {})
     errors.extend(f"主体认定缺少字段：{name}" for name in REQUIRED_ENTITY if not str(entity.get(name, "")).strip())
+    overview = data.get("enterprise_overview", {})
+    for field in ("established_at", "registered_location", "listing_status", "main_business", "employee_scale", "profile", "operating_summary"):
+        if not str(overview.get(field, "")).strip():
+            errors.append(f"企业概况缺少{field}")
     equity = data.get("equity", {})
     nodes = equity.get("nodes", [])
     edges = equity.get("edges", [])
@@ -160,8 +166,15 @@ def validate_report_data(data: dict) -> list[str]:
     business_ids = [str(item.get("id", "")).strip() for item in data.get("businesses", [])]
     if any(not item for item in business_ids) or len(set(business_ids)) != len(business_ids):
         errors.append("主要业务必须具有唯一且非空的B类id")
+    for source_id in overview.get("source_ids", []):
+        if source_id not in report_source_ids or not str(source_id).startswith(("E", "F")):
+            errors.append(f"企业概况引用无效E/F类来源：{source_id}")
+    if not overview.get("source_ids"):
+        errors.append("企业概况缺少source_ids")
     for item in data.get("businesses", []):
-        for field in ("segment", "products", "entity", "revenue_model", "footprint", "sanya_fit"):
+        if "sanya_fit" in item:
+            errors.append(f"已停用业务字段sanya_fit：{item.get('segment', '未命名业务')}")
+        for field in ("segment", "products", "entity", "revenue_model", "footprint"):
             if not str(item.get(field, "")).strip():
                 errors.append(f"业务拆解缺少{field}：{item.get('segment', '未命名业务')}")
     industry = data.get("industry_position", {})

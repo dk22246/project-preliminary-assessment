@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "Sanya CBD Preliminary Assessment Report Data",
   "type": "object",
-  "required": ["meta", "entity_resolution", "equity", "businesses", "encouraged_industry_assessment", "industry_position", "financials", "risks", "landing_businesses", "policy_research", "policy_opportunity_radar", "policies", "sources"],
+  "required": ["meta", "entity_resolution", "enterprise_overview", "equity", "businesses", "encouraged_industry_assessment", "industry_position", "financials", "risks", "landing_businesses", "policy_research", "policy_opportunity_radar", "policies", "sources"],
   "properties": {
     "meta": {
       "type": "object",
@@ -15,6 +15,20 @@
       }
     },
     "entity_resolution": {"type": "object", "required": ["user_input", "name_type", "legal_entity", "analysis_entity", "financial_scope", "risk_scope"]},
+    "enterprise_overview": {
+      "type": "object",
+      "required": ["established_at", "registered_location", "listing_status", "main_business", "employee_scale", "profile", "operating_summary", "source_ids"],
+      "properties": {
+        "established_at": {"type": "string", "minLength": 1},
+        "registered_location": {"type": "string", "minLength": 1},
+        "listing_status": {"type": "string", "minLength": 1},
+        "main_business": {"type": "string", "minLength": 1},
+        "employee_scale": {"type": "string", "minLength": 1},
+        "profile": {"type": "string", "minLength": 1},
+        "operating_summary": {"type": "string", "minLength": 1},
+        "source_ids": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "pattern": "^[EF]"}}
+      }
+    },
     "equity": {
       "type": "object",
       "required": ["nodes", "edges", "conflict_disclosures", "evidence_summary"],
@@ -73,7 +87,7 @@
       "minItems": 1,
       "items": {
         "type": "object",
-        "required": ["id", "segment", "products", "entity", "revenue_model", "footprint", "sanya_fit"],
+        "required": ["id", "segment", "products", "entity", "revenue_model", "footprint"],
         "properties": {"id": {"type": "string", "pattern": "^B[0-9]+$"}}
       }
     },

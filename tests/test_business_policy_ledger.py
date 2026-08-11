@@ -118,7 +118,7 @@ class BusinessPolicyLedgerTests(unittest.TestCase):
             )
             self.assertEqual(result.returncode, 0, result.stderr)
             html = output.read_text(encoding="utf-8")
-            policy_section = html.split('<section id="s六"', 1)[1].split("</section>", 1)[0]
+            policy_section = html.split('<section id="s五"', 1)[1].split("</section>", 1)[0]
             self.assertIn("重点政策匹配清单", policy_section)
             self.assertIn("相邻经营活动", policy_section)
             self.assertIn("<th>匹配政策或工具</th><th>匹配原因</th>", policy_section)

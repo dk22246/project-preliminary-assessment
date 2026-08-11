@@ -12,6 +12,7 @@ from report_core import load_data, validate_business_policy_ledger, validate_rep
 from validate_evidence import validate_ledger
 from validate_equity_evidence import validate_equity_evidence
 from validate_encouraged_industry_assessment import validate_assessment
+from validate_industry_catalog_library import validate as validate_industry_catalog_library
 from validate_policy_scope import validate_policy
 from validate_research_ledger import validate_research_ledger
 from validate_policy_search_coverage import validate_policy_search_coverage
@@ -27,9 +28,9 @@ REQUIRED = (
     "SKILL.md", "agents/openai.yaml", ".editorconfig", ".gitattributes",
     "references/policy-scope.md", "references/report-template.md", "references/html-delivery.md",
     "references/source-registry.md", "references/equity-evidence.md", "schemas/report.schema.json", "schemas/evidence.schema.json", "schemas/equity-evidence.schema.json", "schemas/equity-web-capture.schema.json",
-    "references/encouraged-industry-assessment.md", "references/module-contract.json", "references/catalogs/source-metadata.json", "references/catalogs/hainan-encouraged-industries-2024-guide.xlsx", "references/catalogs/hainan-encouraged-industries-2024.json",
+    "references/encouraged-industry-assessment.md", "references/module-contract.json", "references/catalogs/source-metadata.json", "references/catalogs/hainan-ftz-encouraged-industry-complete-library.xlsx", "references/catalogs/complete-industry-catalog-library.json",
     "references/business-discovery.md", "references/policy-discovery.md", "references/policy-search-coverage.md", "references/department-routing.json", "schemas/research-ledger.schema.json", "schemas/policy-search-ledger.schema.json",
-    "scripts/run_report_pipeline.py", "scripts/render_report_html.py", "scripts/verify_html_layout.mjs", "scripts/collect_web_evidence.py", "scripts/validate_evidence.py", "scripts/collect_equity_provider.py", "scripts/validate_equity_evidence.py", "scripts/search_industry_catalog.py", "scripts/validate_encouraged_industry_assessment.py",
+    "scripts/run_report_pipeline.py", "scripts/render_report_html.py", "scripts/verify_html_layout.mjs", "scripts/collect_web_evidence.py", "scripts/validate_evidence.py", "scripts/collect_equity_provider.py", "scripts/validate_equity_evidence.py", "scripts/search_industry_catalog.py", "scripts/build_industry_catalog_library.py", "scripts/validate_industry_catalog_library.py", "scripts/validate_encouraged_industry_assessment.py",
     "scripts/verify_skill.py", "scripts/bootstrap.py", "scripts/doctor.py", "scripts/runtime_state.py", "runtime-requirements.json", "AGENTS.md",
     "scripts/evidence_collectors/__init__.py", "scripts/evidence_collectors/registry.py", "scripts/evidence_collectors/html_extract.py", "scripts/validate_research_ledger.py", "scripts/validate_policy_search_coverage.py",
     "scripts/validate_policy_scope.py", "scripts/validate_report_data.py", "scripts/validate_text_quality.py",
@@ -46,6 +47,7 @@ def text_files() -> list[Path]:
 
 def static_errors() -> list[str]:
     errors = [f"缺少部署文件：{path}" for path in REQUIRED if not (ROOT / path).is_file()]
+    errors.extend(validate_industry_catalog_library())
     contract_path = ROOT / "references" / "module-contract.json"
     if contract_path.is_file():
         import json

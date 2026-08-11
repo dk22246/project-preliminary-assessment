@@ -23,32 +23,20 @@
     "risk_scope": "上市公司及控股股东、实际控制人公开披露范围",
     "equity_summary": "上海飞科电器股份有限公司为本轮分析主体；生产、供应链和电商销售功能由相关子公司承担。上海飞科投资有限公司主要为控股平台，不以其单体数据判断经营实力。"
   },
-  "overall_judgment": [
-    [
-      "企业综合实力",
-      "较强。A股上市小家电企业，2025年合并营业收入38.61亿元、归母净利润5.12亿元。"
-    ],
-    [
-      "行业地位",
-      "中国个人护理电器头部企业；据中国商业联合会统计口径，飞科电动剃须刀多年保持全国市场销量和综合占有率第一。"
-    ],
-    [
-      "建议落地业务",
-      "总部及品牌运营、自营电商与数字营销、供应链贸易结算、海外运营支持。"
-    ],
-    [
-      "主要政策匹配",
-      "企业所得税15%、高端紧缺人才个人所得税优惠、EF账户、ODI、境外投资所得免税、跨国公司本外币资金池及离岸贸易印花税等，均由飞科现有业务信号及三亚承接条件触发。"
-    ],
-    [
-      "主要风险",
-      "收入连续回落、产品集中及海外业务尚处起步；制造产线不宜机械迁入。"
-    ],
-    [
-      "招商建议",
-      "重点推进，先锁定三亚主体承接的人员、合同、收入、利润和完税路径。"
+  "enterprise_overview": {
+    "established_at": "2011年2月18日",
+    "registered_location": "上海市松江区广富林东路555号",
+    "listing_status": "上交所主板上市公司（证券简称：飞科电器，代码：603868）",
+    "main_business": "个人护理电器及生活电器的研发、设计、生产和销售，核心产品包括电动剃须刀、电吹风、电动牙刷、理发器等",
+    "employee_scale": "截至2025年末，母公司及主要子公司在职员工合计3,794人，其中母公司850人、主要子公司2,944人。［E01］",
+    "profile": "上海飞科电器股份有限公司是一家以个人护理电器为核心、兼营生活电器的品牌型制造企业，形成了研发设计、生产制造、供应链管理、经销渠道和自营电商相结合的经营体系。［E01］",
+    "operating_summary": "2025年公司实现营业收入38.61亿元，同比下降6.90%；归母净利润5.12亿元，同比增长11.84%。收入仍处调整期，但利润同比回升，经营规模和盈利能力仍具备较强招商基础。［F01］",
+    "source_ids": [
+      "E01",
+      "E02",
+      "F01"
     ]
-  ],
+  },
   "equity": {
     "nodes": [
       {
@@ -189,7 +177,6 @@
       "entity": "上市公司及制造子公司",
       "revenue_model": "经销与自营电商销售",
       "footprint": "以国内为主",
-      "sanya_fit": "品牌运营、电商运营和数据营销可研判承接",
       "id": "B01"
     },
     {
@@ -198,7 +185,6 @@
       "entity": "上市公司及相关子公司",
       "revenue_model": "经销与线上销售",
       "footprint": "国内渠道为主",
-      "sanya_fit": "渠道管理、品牌与贸易职能可研判承接",
       "id": "B02"
     },
     {
@@ -207,7 +193,6 @@
       "entity": "飞科供应链有限公司",
       "revenue_model": "集团供应链协同",
       "footprint": "服务现有生产和销售网络",
-      "sanya_fit": "采购协调、贸易合同和结算可研判承接",
       "id": "B03"
     },
     {
@@ -216,7 +201,6 @@
       "entity": "上市公司及相关业务主体",
       "revenue_model": "海外销售和投资机会",
       "footprint": "东南亚、非洲、中东等规划方向",
-      "sanya_fit": "海外运营支持、投资管理和跨境结算可研判承接",
       "id": "B04"
     }
   ],
@@ -792,7 +776,7 @@
       "issuer": "上海飞科电器股份有限公司／上交所法定披露",
       "date": "2026-04-29",
       "location": "https://static.sse.com.cn/disclosure/listedinfo/announcement/c/new/2026-04-29/603868_20260429_HKU6.pdf",
-      "used_in": "第二、五、七部分"
+      "used_in": "第一、四、六部分"
     },
     {
       "id": "E02",
@@ -801,7 +785,7 @@
       "issuer": "上海飞科电器股份有限公司／上海证券报·中国证券网",
       "date": "2025-05-20",
       "location": "https://roadshow.cnstock.com/fbh/fkdq2024",
-      "used_in": "第二部分行业地位"
+      "used_in": "第一部分企业概况"
     },
     {
       "id": "F01",
@@ -810,7 +794,7 @@
       "issuer": "上海飞科电器股份有限公司／上交所法定披露",
       "date": "2026-04-29",
       "location": "同E01，近三年主要会计数据及财务报表附注",
-      "used_in": "第三部分"
+      "used_in": "第二部分"
     },
     {
       "id": "F02",
@@ -819,7 +803,7 @@
       "issuer": "上海飞科电器股份有限公司／上交所法定披露",
       "date": "2025-04-30",
       "location": "https://static.cninfo.com.cn/finalpage/2025-04-30/1223423209.PDF",
-      "used_in": "第三部分"
+      "used_in": "第二部分"
     },
     {
       "id": "R01",
@@ -828,7 +812,7 @@
       "issuer": "上海飞科电器股份有限公司／上交所法定披露",
       "date": "2026-04-29",
       "location": "同E01，重大诉讼、仲裁及风险因素",
-      "used_in": "第四部分"
+      "used_in": "第三部分"
     },
     {
       "id": "R02",
@@ -837,7 +821,7 @@
       "issuer": "杭州市市场监督管理局",
       "date": "2026-04-10",
       "location": "https://z.hangzhou.com.cn/2015/hzspaqkp/2026-04/10/9a0a5461-2fef-47f5-96d5-19334eeb7d69.pdf",
-      "used_in": "第四部分"
+      "used_in": "第三部分"
     },
     {
       "id": "P01",
@@ -846,7 +830,7 @@
       "issuer": "财政部、税务总局",
       "date": "2025-01-24",
       "location": "https://dofcom.hainan.gov.cn/dofcom/Policys/202506/b200f0e7989e47198ad69f6ed11b4b0b.shtml?ddtab=true",
-      "used_in": "第六部分"
+      "used_in": "第五部分"
     },
     {
       "id": "P03",
@@ -855,7 +839,7 @@
       "issuer": "财政部、税务总局",
       "date": "2025-01-24",
       "location": "https://mof.hainan.gov.cn/sczt/zcfg/202502/28bd363fc59d4779a0752b535ba457cb/files/25a735d4dac34e43b28d1f77257b188a.pdf",
-      "used_in": "第六部分"
+      "used_in": "第五部分"
     },
     {
       "id": "P04",
@@ -864,7 +848,7 @@
       "issuer": "海南省财政厅等五部门",
       "date": "2025-09-01",
       "location": "https://mof.hainan.gov.cn/sczt/0503/202509/035b9fef33be404492e9cd6877b84363.shtml?ddtab=true",
-      "used_in": "第六部分"
+      "used_in": "第五部分"
     },
     {
       "id": "P06",
@@ -873,7 +857,7 @@
       "issuer": "中国人民银行海南省分行",
       "date": "2024-04-03",
       "location": "https://haikou.pbc.gov.cn/haikou/fileDir/resource/cms/2025/07/2025072316565467907.pdf",
-      "used_in": "第六部分"
+      "used_in": "第五部分"
     },
     {
       "id": "P07",
@@ -882,7 +866,7 @@
       "issuer": "财政部、税务总局",
       "date": "2025-03-24",
       "location": "https://www.mof.gov.cn/gkml/caizhengwengao/wg2025/wg202503/202505/P020250513318507070749.pdf",
-      "used_in": "第六部分"
+      "used_in": "第五部分"
     },
     {
       "id": "P08",
@@ -891,7 +875,7 @@
       "issuer": "海南省商务厅",
       "date": "2023-11-01",
       "location": "https://dofcom.hainan.gov.cn/dofcom/zwdt/202311/a2d8baa540b642eea9b94b70d2378652/files/8432d09ab5fd443293cfa4c7546d105a.pdf",
-      "used_in": "第六部分"
+      "used_in": "第五部分"
     },
     {
       "id": "P09",
@@ -900,7 +884,7 @@
       "issuer": "国家税务总局",
       "date": "2020-06-08",
       "location": "https://www.chinatax.gov.cn/chinatax/n810351/n810906/c5153897/content.html",
-      "used_in": "第六部分"
+      "used_in": "第五部分"
     },
     {
       "id": "P10",
@@ -909,7 +893,7 @@
       "issuer": "三亚市投资促进局",
       "date": "2020-06-01",
       "location": "https://syipb.sanya.gov.cn/tzcjjsite/index.shtml",
-      "used_in": "第六部分；仅作现行状态待核依据"
+      "used_in": "第五部分；仅作现行状态待核依据"
     },
     {
       "id": "P11",
@@ -918,7 +902,7 @@
       "issuer": "财政部、海关总署、税务总局",
       "date": "2025-09-29",
       "location": "https://hq.mof.gov.cn/tongzhitonggao/202509/t20250929_3973443.htm",
-      "used_in": "第六部分"
+      "used_in": "第五部分"
     },
     {
       "id": "P12",
@@ -927,7 +911,7 @@
       "issuer": "财政部、税务总局",
       "date": "2020-06-23",
       "location": "https://jx.mof.gov.cn/xxgk/zhengcefagui/202006/t20200630_3541194.htm",
-      "used_in": "第六部分新增境外直接投资所得企业所得税优惠"
+      "used_in": "第五部分新增境外直接投资所得企业所得税优惠"
     },
     {
       "id": "P13",
@@ -936,7 +920,7 @@
       "issuer": "国家外汇管理局海南省分局",
       "date": "2025-01-22",
       "location": "https://www.safe.gov.cn/hainan/2025/0123/2130.html",
-      "used_in": "第六部分跨境资金运营"
+      "used_in": "第五部分跨境资金运营"
     },
     {
       "id": "P14",
@@ -945,7 +929,7 @@
       "issuer": "国家外汇管理局海南省分局",
       "date": "2025-02-12",
       "location": "https://www.safe.gov.cn/hainan/ywzn/index.html",
-      "used_in": "第六部分ODI外汇登记办理"
+      "used_in": "第五部分ODI外汇登记办理"
     },
     {
       "id": "P21",
@@ -954,7 +938,7 @@
       "issuer": "国家发展改革委、财政部、税务总局；海南省发展改革委",
       "date": "2024-03-01",
       "location": "https://www.ndrc.gov.cn/xxgk/zcfb/ghxwj/202403/t20240301_1364306_ext.html",
-      "used_in": "第二部分鼓励类产业目录匹配"
+      "used_in": "第一部分鼓励类产业目录匹配"
     },
     {
       "id": "P22",
@@ -963,7 +947,7 @@
       "issuer": "国家发展和改革委员会",
       "date": "2024-02-01",
       "location": "https://www.ndrc.gov.cn/xxgk/zcfb/fzggwl/202312/P020231229700886191069.pdf",
-      "used_in": "第二部分鼓励类产业目录匹配"
+      "used_in": "第一部分鼓励类产业目录匹配"
     }
   ],
   "encouraged_industry_assessment": {

@@ -11,7 +11,7 @@ from report_core import load_data
 
 
 ROOT = Path(__file__).resolve().parents[1]
-CATALOG_PATH = ROOT / "references" / "catalogs" / "hainan-encouraged-industries-2024.json"
+CATALOG_PATH = ROOT / "references" / "catalogs" / "complete-industry-catalog-library.json"
 JUDGMENTS = {"direct_match", "potential_match", "no_match", "research_incomplete"}
 OVERALL = {"direct_match", "potential_match_only", "no_match", "research_incomplete"}
 SCOPES = {"hainan_added_2024", "industrial_restructuring_current", "foreign_investment_current"}
@@ -67,8 +67,10 @@ def validate_assessment(data: dict) -> list[str]:
 
     catalog = json.loads(CATALOG_PATH.read_text(encoding="utf-8-sig"))
     hainan_keys = {
-        (_text(item.get("item_no")), _text(item.get("item_title")), _text(item.get("detail_title")))
+        (_text(item.get("item_no")), _text(item.get("item_title")), _text(detail.get("detail_title")))
         for item in catalog.get("entries", [])
+        if item.get("catalog_scope") == "hainan_added_2024"
+        for detail in item.get("detail_entries", [])
     }
     rows = assessment.get("business_assessments", [])
     row_ids = [_text(item.get("business_id")) for item in rows]
