@@ -382,7 +382,28 @@ def validate_text(data: dict) -> list[str]:
     return errors
 
 
-def _svg_text_lines(value: str, limit: float) -> list[str]:
+def _svg_text_lines(value: str, limit: float, max_lines: int = 0) -> list[str]:
+    """Wrap mixed Chinese/Latin labels before emitting SVG text nodes.
+
+    When ``max_lines`` is positive the wrapped output is truncated to that many
+    visual lines and an ellipsis is appended to the final line so callers can
+    guarantee that long labels never inflate node heights or overlap neighbours.
+    """
+    raw_lines = _wrap_svg_text_lines(value, limit)
+    if max_lines <= 0 or len(raw_lines) <= max_lines:
+        return raw_lines
+    truncated = raw_lines[:max_lines]
+    last = truncated[-1]
+    if last.endswith("…"):
+        pass  # already truncated marker
+    elif len(last) > 1:
+        truncated[-1] = last[:-1] + "…"
+    else:
+        truncated[-1] = "…"
+    return truncated
+
+
+def _wrap_svg_text_lines(value: str, limit: float) -> list[str]:
     """Wrap mixed Chinese/Latin labels before emitting SVG text nodes."""
     lines: list[str] = []
     current = ""
@@ -421,8 +442,8 @@ def equity_svg(equity: dict) -> str:
     node_layout: dict[str, dict] = {}
     for node in nodes:
         levels.setdefault(int(node.get("level", 0)), []).append(node)
-        name_lines = _svg_text_lines(node["name"], 22)
-        detail_lines = _svg_text_lines(f'{node["entity_type"]}｜{node["role"]}', 18)
+        name_lines = _svg_text_lines(node["name"], 22, max_lines=2)
+        detail_lines = _svg_text_lines(f'{node["entity_type"]}｜{node["role"]}', 18, max_lines=2)
         node_layout[node["id"]] = {
             "name_lines": name_lines,
             "detail_lines": detail_lines,
@@ -462,7 +483,7 @@ def equity_svg(equity: dict) -> str:
             x2, y2 = positions[edge["to"]]
             label_x = (x1 + x2) // 2
             label_y = (y1 + source_height // 2 + y2 - node_layout[edge["to"]]["height"] // 2) // 2
-        label_lines = _svg_text_lines(relationship, 18)
+        label_lines = _svg_text_lines(relationship, 18, max_lines=2)
         parts.append(_svg_text("l", label_x, label_y - (len(label_lines) - 1) * 7, label_lines, 14))
     for node in nodes:
         x, y = positions[node["id"]]
