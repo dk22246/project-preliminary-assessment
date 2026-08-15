@@ -175,7 +175,7 @@
       "segment": "个人护理电器",
       "products": "电动剃须刀、电吹风、电动牙刷、冲牙器、理发器",
       "entity": "上市公司及制造子公司",
-      "revenue_model": "经销与自营电商销售",
+      "sales_channels": "经销商、淘宝天猫、京东等自营及合作电商渠道",
       "footprint": "以国内为主",
       "id": "B01"
     },
@@ -183,7 +183,7 @@
       "segment": "生活及厨房电器",
       "products": "挂烫机等生活电器与厨房电器",
       "entity": "上市公司及相关子公司",
-      "revenue_model": "经销与线上销售",
+      "sales_channels": "经销渠道及线上零售渠道",
       "footprint": "国内渠道为主",
       "id": "B02"
     },
@@ -191,7 +191,7 @@
       "segment": "供应链管理",
       "products": "零部件、原材料集中采购与供应商管理",
       "entity": "飞科供应链有限公司",
-      "revenue_model": "集团供应链协同",
+      "sales_channels": "集团内部协同（不适用外部销售渠道）",
       "footprint": "服务现有生产和销售网络",
       "id": "B03"
     },
@@ -199,7 +199,7 @@
       "segment": "海外市场运营",
       "products": "海外渠道、认证、合作方及品牌推广",
       "entity": "上市公司及相关业务主体",
-      "revenue_model": "海外销售和投资机会",
+      "sales_channels": "境外经销、线上平台及合作渠道（规划方向）",
       "footprint": "东南亚、非洲、中东等规划方向",
       "id": "B04"
     }
@@ -213,7 +213,15 @@
       "E02"
     ]
   },
-  "upstream_downstream": "上游由飞科供应链有限公司实施集中采购，年报未披露可确认的核心外部供应商名称；下游包含淘宝天猫、京东、拼多多、唯品会及内容平台的自营或合作运营。海外业务已有产品、渠道、认证及合作方规划，但2025年境外收入规模较小。",
+  "industry_chain": {
+    "positioning": "飞科位于个人护理电器产业链中游，以品牌、产品设计、制造组织和渠道运营为核心，上游连接零部件与生产配套，下游连接线上线下零售渠道。",
+    "stages": [
+      {"stage": "upstream", "title": "核心零部件与生产配套", "activities": ["电机、电池及电子控制组件", "塑胶、刀头及结构件", "包装与生产设备配套"], "representative_enterprises": [], "is_target_stage": false},
+      {"stage": "midstream", "title": "个人护理电器品牌制造", "activities": ["产品设计与研发", "整机制造与质量控制", "品牌及供应链管理"], "representative_enterprises": [{"name": "上海飞科电器股份有限公司", "source_ids": ["E01"]}], "is_target_stage": true},
+      {"stage": "downstream", "title": "销售渠道与终端消费", "activities": ["经销与商超渠道", "综合电商与内容电商", "消费者服务"], "representative_enterprises": [{"name": "淘宝天猫", "source_ids": ["E01"]}, {"name": "京东", "source_ids": ["E01"]}, {"name": "拼多多", "source_ids": ["E01"]}, {"name": "唯品会", "source_ids": ["E01"]}], "is_target_stage": false}
+    ],
+    "regional_ecosystem": {"summary": "本轮公开检索未取得足以确认主要经营地已形成个人护理电器产业集群的资料，不作集群结论。", "source_ids": []}
+  },
   "financials": [
     {
       "year": "2025",
@@ -975,6 +983,11 @@
       {
         "business_id": "B01",
         "business": "个人护理电器",
+        "activity_id": "B01-A01",
+        "activity_name": "个人护理电器整机制造",
+        "activity_type": "manufacturing",
+        "activity_object": "电动剃须刀、电吹风等个人护理电器",
+        "condition_status": "not_applicable",
         "judgment": "no_match",
         "matched_items": [],
         "reason": "已检索三条目录路径，现有公开事实主要证明成品设计、制造与销售，未发现可直接对应的具体鼓励类条目。",
@@ -987,6 +1000,11 @@
       {
         "business_id": "B02",
         "business": "生活及厨房电器",
+        "activity_id": "B02-A01",
+        "activity_name": "生活及厨房电器制造",
+        "activity_type": "manufacturing",
+        "activity_object": "挂烫机等生活及厨房电器",
+        "condition_status": "not_applicable",
         "judgment": "no_match",
         "matched_items": [],
         "reason": "现有生活和厨房电器经营事实与目录中的具体研发、制造技术条目缺少直接对应。",
@@ -999,6 +1017,11 @@
       {
         "business_id": "B03",
         "business": "供应链管理",
+        "activity_id": "B03-A01",
+        "activity_name": "集团供应链管理",
+        "activity_type": "management",
+        "activity_object": "集团零部件采购与供应商协同",
+        "condition_status": "not_applicable",
         "judgment": "no_match",
         "matched_items": [],
         "reason": "集团内部采购协调和供应商管理不等同于目录中的电子商务、物流平台或服务外包业务。",
@@ -1011,14 +1034,21 @@
       {
         "business_id": "B04",
         "business": "海外市场运营",
+        "activity_id": "B04-A01",
+        "activity_name": "跨境电子商务销售",
+        "activity_type": "sales",
+        "activity_object": "个人护理电器境外线上销售",
+        "condition_status": "missing",
         "judgment": "potential_match",
         "matched_items": [
           {
+            "catalog_entry_id": "hainan_added_2024:91",
             "catalog_scope": "hainan_added_2024",
             "catalog_item_no": "91",
             "catalog_item": "电子商务（含跨境电子商务）",
             "detailed_item": "电子商务",
-            "match_type": "potential"
+            "match_type": "potential",
+            "catalog_classification": "action_boundary"
           }
         ],
         "reason": "企业存在海外渠道和销售规划，与跨境电子商务的网络交易方向有重合，但公开事实尚不足以证明已通过电商平台完成跨关境交易、电子支付和跨境物流闭环。",

@@ -8,7 +8,7 @@ import re
 from urllib.parse import urlparse
 
 
-REQUIRED_TOP = ("meta", "entity_resolution", "enterprise_overview", "equity", "businesses", "encouraged_industry_assessment", "industry_position", "financials", "risks", "landing_businesses", "policy_research", "policy_opportunity_radar", "policies", "sources")
+REQUIRED_TOP = ("meta", "entity_resolution", "enterprise_overview", "equity", "businesses", "industry_chain", "encouraged_industry_assessment", "industry_position", "financials", "risks", "landing_businesses", "policy_research", "policy_opportunity_radar", "policies", "sources")
 REQUIRED_ENTITY = ("user_input", "name_type", "legal_entity", "analysis_entity", "financial_scope", "risk_scope")
 REQUIRED_POLICY = ("name", "region", "region_evidence", "source_type", "source_url", "status", "enterprise_business", "landing_action")
 POLICY_EVIDENCE_FIELDS = ("source_id", "issuer", "document_number", "published_at", "validity_evidence", "applicable_object", "plain_language", "conditions", "policy_value", "handling_route")
@@ -174,9 +174,27 @@ def validate_report_data(data: dict) -> list[str]:
     for item in data.get("businesses", []):
         if "sanya_fit" in item:
             errors.append(f"已停用业务字段sanya_fit：{item.get('segment', '未命名业务')}")
-        for field in ("segment", "products", "entity", "revenue_model", "footprint"):
+        if "revenue_model" in item:
+            errors.append(f"已停用业务字段revenue_model，请使用sales_channels：{item.get('segment', '未命名业务')}")
+        for field in ("segment", "products", "entity", "sales_channels", "footprint"):
             if not str(item.get(field, "")).strip():
                 errors.append(f"业务拆解缺少{field}：{item.get('segment', '未命名业务')}")
+    chain = data.get("industry_chain", {})
+    if not isinstance(chain, dict) or not str(chain.get("positioning", "")).strip():
+        errors.append("产业链上下游缺少一句话产业链定位")
+    stages = chain.get("stages", []) if isinstance(chain, dict) else []
+    if [item.get("stage") for item in stages] != ["upstream", "midstream", "downstream"]:
+        errors.append("产业链上下游必须按upstream、midstream、downstream三段完整呈现")
+    for stage in stages:
+        if not str(stage.get("title", "")).strip() or not stage.get("activities"):
+            errors.append(f"产业链{stage.get('stage', '未知环节')}缺少标题或核心活动")
+        for company in stage.get("representative_enterprises", []):
+            source_ids = company.get("source_ids", [])
+            if not str(company.get("name", "")).strip() or not source_ids:
+                errors.append(f"产业链代表企业缺少名称或来源：{company}")
+            for source_id in source_ids:
+                if source_id not in report_source_ids or not str(source_id).startswith("E"):
+                    errors.append(f"产业链代表企业引用无效E类来源：{source_id}")
     industry = data.get("industry_position", {})
     if not isinstance(industry, dict):
         errors.append("行业地位必须使用结构化对象，包含结论、品类、位置、时点和来源")

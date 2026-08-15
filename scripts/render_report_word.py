@@ -50,8 +50,19 @@ def encouraged_industry_rows(assessment):
             f"{candidate.get('catalog_item_no', '—')}．{candidate.get('catalog_item', '未注明条目')}｜{candidate.get('detailed_item', '未注明细化目录')}"
             for candidate in item.get("matched_items", [])
         ) or "完成三条目录路径检索后，未发现可合理对应的具体条目"
-        rendered.append([item.get("business", "未命名业务"), labels.get(item.get("judgment"), "研究未完成"), matched, item.get("reason", "未说明"), item.get("verification_needed", "无")])
+        rendered.append([item.get("activity_name", item.get("business", "未命名经营活动")), labels.get(item.get("judgment"), "研究未完成"), matched, item.get("reason", "未说明"), item.get("verification_needed", "无")])
     return rendered
+
+
+def add_industry_chain(doc, chain):
+    add_body(doc, "产业链定位：" + chain.get("positioning", "需企业补充"))
+    labels = {"upstream": "上游", "midstream": "中游", "downstream": "下游"}
+    rendered = []
+    for stage in chain.get("stages", []):
+        enterprises = "、".join(item.get("name", "") for item in stage.get("representative_enterprises", [])) or "本轮未发现可靠代表企业"
+        rendered.append([labels.get(stage.get("stage"), "环节"), stage.get("title", "未命名"), "；".join(stage.get("activities", [])), enterprises])
+    add_standard_table(doc, ["环节", "定位", "核心活动", "代表企业"], rendered, [1.6, 3.2, 6.0, 5.1])
+    add_body(doc, "区域产业生态：" + chain.get("regional_ecosystem", {}).get("summary", "本轮未发现可靠资料"))
 
 
 def policy_match_rows(policies):
@@ -107,9 +118,9 @@ def main() -> int:
         industry_text = str(industry or "需企业补充")
     add_body(doc, "行业地位：" + industry_text)
     add_heading(doc, "（二）股权架构拆解", 2); doc.add_picture(str(image), width=Cm(15)); add_body(doc, entity.get("equity_summary", "需企业补充")); add_equity_evidence_summary(doc, data["equity"]); add_equity_conflict_disclosures(doc, data["equity"].get("conflict_disclosures", []))
-    add_heading(doc, "（三）主要业务及产品拆解", 2); add_standard_table(doc, ["业务板块", "主要产品或服务", "主要承载主体", "客户及收入来源", "国内外业务布局"], rows(data["businesses"], ("segment", "products", "entity", "revenue_model", "footprint")), [2.4, 3.5, 3.0, 3.8, 3.2])
-    add_heading(doc, "（四）海南自由贸易港鼓励类产业目录匹配", 2); add_body(doc, "总体判断：" + data["encouraged_industry_assessment"].get("summary", "未说明")); add_standard_table(doc, ["企业业务", "匹配结论", "对应目录条目", "判断依据", "相近可能或待核事项"], encouraged_industry_rows(data["encouraged_industry_assessment"]), [2.5, 1.7, 4.0, 4.8, 3.0])
-    add_heading(doc, "（五）上下游及国内外业务", 2); add_body(doc, data.get("upstream_downstream", "需企业补充"))
+    add_heading(doc, "（三）主要业务及产品拆解", 2); add_standard_table(doc, ["业务板块", "主要产品或服务", "主要承载主体", "销售渠道", "国内外业务布局"], rows(data["businesses"], ("segment", "products", "entity", "sales_channels", "footprint")), [2.4, 3.5, 3.0, 3.8, 3.2])
+    add_heading(doc, "（四）海南自由贸易港鼓励类产业目录匹配", 2); add_body(doc, "总体判断：" + data["encouraged_industry_assessment"].get("summary", "未说明")); add_standard_table(doc, ["企业具体经营活动", "匹配结论", "对应目录条目", "判断依据", "相近可能或待核事项"], encouraged_industry_rows(data["encouraged_industry_assessment"]), [2.5, 1.7, 4.0, 4.8, 3.0])
+    add_heading(doc, "（五）产业链上下游", 2); add_industry_chain(doc, data["industry_chain"])
     h1(doc, "二、近三年经营数据")
     headers = financial_headers(data["meta"])
     add_heading(doc, "（一）营业收入、利润、纳税及政府补助情况", 2); add_standard_table(doc, headers, rows(data["financials"], ("year", "revenue", "revenue_change", "profit", "profit_change", "tax_value", "tax_basis", "government_support", "source")), [1.1, 1.55, 0.9, 1.45, 0.9, 1.5, 1.5, 1.6, 1.0])

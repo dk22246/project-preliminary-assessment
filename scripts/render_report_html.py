@@ -24,6 +24,7 @@ table.report-table{width:100%;table-layout:fixed;border-collapse:collapse;margin
    validation data and never displace the actual policy results in the report. */
 .policy-note{margin:0 0 7pt;color:var(--muted);font-size:8.8pt;line-height:1.45;text-indent:0}.policy-match-table{font-size:8.55pt}.policy-match-table td:first-child{text-align:left;vertical-align:top}.policy-match-table td:nth-child(2){white-space:pre-line}.policy-match-table a{color:#006e7a;font-weight:700;text-decoration:underline;text-underline-offset:2px}.policy-ref{display:block;margin-top:2pt;color:var(--muted);font-size:7.8pt;line-height:1.35}.policy-match-table .status{display:block;font-weight:700;color:var(--accent);line-height:1.4}.pending-policy-table{font-size:8.65pt}.pending-policy-table td:first-child{text-align:left;vertical-align:top}
 .catalog-summary,.equity-evidence-summary{margin:7pt 0 9pt;padding:7pt 9pt;border-left:3px solid var(--accent);background:#f0f7f7;text-indent:0}.catalog-table td:nth-child(2){font-weight:700;color:var(--accent)}.catalog-table td:first-child{text-align:left;vertical-align:top}
+.chain-position{margin:7pt 0 8pt;padding:7pt 9pt;background:#f0f7f7;border-left:3px solid var(--accent);text-indent:0}.chain-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7pt;margin:7pt 0 9pt}.chain-card{min-width:0;padding:8pt;border:1px solid var(--line);background:#fff;break-inside:avoid}.chain-card.target{border-top:3px solid var(--accent)}.chain-card h3{margin:0 0 5pt;color:var(--ink)}.chain-card ul{margin:0 0 5pt;padding-left:15pt}.chain-card p{margin:3pt 0;text-indent:0;font-size:8.8pt}.chain-source{color:var(--muted);font-size:7.8pt}.chain-region{margin:5pt 0 12pt;color:var(--muted);font-size:8.8pt;text-indent:0}
 @media screen{body{padding:24px 0;background:var(--canvas)}main{box-shadow:0 8px 28px rgba(23,42,69,.12)}.report-section{animation:fade-in .2s ease both}}@keyframes fade-in{from{opacity:.96;transform:translateY(2px)}to{opacity:1;transform:none}}@media (max-width:760px){body{padding:0}.toc-grid{grid-template-columns:1fr}.cover{min-height:100vh}.cover h1{font-size:21pt}.report-section,.toc{padding-left:11mm;padding-right:11mm}.wide{font-size:7.8pt}}@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}@media print{html,body{background:#fff}main{max-width:none;box-shadow:none}.cover{min-height:260mm}.report-section{padding-left:0;padding-right:0}.toc{padding-left:0;padding-right:0}}
 '''
 
@@ -151,7 +152,7 @@ def encouraged_industry_table(assessment: dict) -> str:
         matched_text = "；".join(matched) or "完成三条目录路径检索后，未发现可合理对应的具体条目"
         verification = str(item.get("verification_needed", "无"))
         rows.append([
-            str(item.get("business", "未命名业务")),
+            str(item.get("activity_name", item.get("business", "未命名经营活动"))),
             labels.get(str(item.get("judgment")), "研究未完成"),
             matched_text,
             str(item.get("reason", "未说明")),
@@ -159,11 +160,26 @@ def encouraged_industry_table(assessment: dict) -> str:
         ])
     summary = '<p class="catalog-summary"><strong>总体判断：</strong>' + escape(str(assessment.get("summary", "未说明"))) + '</p>'
     return summary + report_table(
-        ["企业业务", "匹配结论", "对应目录条目", "判断依据", "相近可能或待核事项"],
+        ["企业具体经营活动", "匹配结论", "对应目录条目", "判断依据", "相近可能或待核事项"],
         rows,
         "wide catalog-table",
         [15, 11, 25, 29, 20],
     )
+
+
+def industry_chain_block(chain: dict) -> str:
+    stage_labels = {"upstream": "上游", "midstream": "中游", "downstream": "下游"}
+    cards = []
+    for stage in chain.get("stages", []):
+        activities = "".join(f"<li>{escape(str(value))}</li>" for value in stage.get("activities", []))
+        enterprises = stage.get("representative_enterprises", [])
+        names = "、".join(escape(str(item.get("name", ""))) for item in enterprises) or "本轮未发现可靠代表企业"
+        sources = sorted({str(source) for item in enterprises for source in item.get("source_ids", [])})
+        source_text = "" if not sources else f'<span class="chain-source">（来源：{escape("、".join(sources))}）</span>'
+        target = " target" if stage.get("is_target_stage") else ""
+        cards.append(f'<article class="chain-card{target}"><h3>{stage_labels.get(stage.get("stage"), "环节")}｜{escape(str(stage.get("title", "未命名")))}</h3><ul>{activities}</ul><p><strong>代表企业：</strong>{names}{source_text}</p></article>')
+    region = chain.get("regional_ecosystem", {})
+    return f'<p class="chain-position"><strong>产业链定位：</strong>{escape(str(chain.get("positioning", "需企业补充")))}</p><div class="chain-grid">{"".join(cards)}</div><p class="chain-region"><strong>区域产业生态：</strong>{escape(str(region.get("summary", "本轮未发现可靠资料")))}</p>'
 
 
 def section(title: str, body: str) -> str:
@@ -201,8 +217,8 @@ def main() -> int:
         ["分析口径", entity.get("financial_scope", "未公开披露")],
     ]
     overview_text = '<div class="summary-note"><p><strong>企业概况：</strong>' + escape(overview["profile"]) + '</p><p><strong>经营表现：</strong>' + escape(overview["operating_summary"]) + '</p><p><strong>员工规模：</strong>' + escape(overview["employee_scale"]) + '</p><p><strong>行业地位：</strong>' + escape(industry_position_text(data.get("industry_position", {}))) + "</p></div>"
-    business_rows = [[item[key] for key in ("segment", "products", "entity", "revenue_model", "footprint")] for item in data["businesses"]]
-    basic = "<h2>（一）企业主体认定与企业概况</h2>" + report_table(["基本事项", "企业情况"], entity_rows, "entity-table", [18, 82]) + overview_text + "<h2>（二）股权架构拆解</h2><div class=\"svg-wrap\">" + equity_svg(data["equity"]) + "</div>" + paragraph(entity.get("equity_summary", "需企业补充")) + equity_evidence_summary(data["equity"]) + equity_conflict_disclosures(data["equity"].get("conflict_disclosures", [])) + "<h2>（三）主要业务及产品拆解</h2>" + report_table(["业务板块", "主要产品或服务", "主要承载主体", "客户及收入来源", "国内外业务布局"], business_rows, "wide business-table", [14, 25, 20, 23, 18]) + "<h2>（四）海南自由贸易港鼓励类产业目录匹配</h2>" + encouraged_industry_table(data["encouraged_industry_assessment"]) + "<h2>（五）上下游及国内外业务</h2>" + paragraph(data.get("upstream_downstream", "本轮公开检索未发现可靠数据，需企业补充。"))
+    business_rows = [[item[key] for key in ("segment", "products", "entity", "sales_channels", "footprint")] for item in data["businesses"]]
+    basic = "<h2>（一）企业主体认定与企业概况</h2>" + report_table(["基本事项", "企业情况"], entity_rows, "entity-table", [18, 82]) + overview_text + "<h2>（二）股权架构拆解</h2><div class=\"svg-wrap\">" + equity_svg(data["equity"]) + "</div>" + paragraph(entity.get("equity_summary", "需企业补充")) + equity_evidence_summary(data["equity"]) + equity_conflict_disclosures(data["equity"].get("conflict_disclosures", [])) + "<h2>（三）主要业务及产品拆解</h2>" + report_table(["业务板块", "主要产品或服务", "主要承载主体", "销售渠道", "国内外业务布局"], business_rows, "wide business-table", [14, 25, 20, 23, 18]) + "<h2>（四）海南自由贸易港鼓励类产业目录匹配</h2>" + encouraged_industry_table(data["encouraged_industry_assessment"]) + "<h2>（五）产业链上下游</h2>" + industry_chain_block(data["industry_chain"])
     sections.append(section("一、企业基本情况", basic))
     financial_rows = [[item.get(key, "未公开披露") for key in ("year", "revenue", "revenue_change", "profit", "profit_change", "tax_value", "tax_basis", "government_support", "source")] for item in data["financials"]]
     support_rows = [[item.get(key, "未公开披露") for key in ("year", "name", "department", "amount", "purpose", "conditions", "source")] for item in data.get("government_support", [])] or [["—", "本轮公开检索未发现可确认的政府补助明细", "—", "—", "需企业补充", "需企业补充", "—"]]

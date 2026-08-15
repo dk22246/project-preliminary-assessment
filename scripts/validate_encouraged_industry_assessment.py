@@ -8,6 +8,7 @@ from pathlib import Path
 import sys
 
 from report_core import load_data
+from search_industry_catalog import activity_is_compatible, classify_catalog_entry
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -16,6 +17,8 @@ JUDGMENTS = {"direct_match", "potential_match", "no_match", "research_incomplete
 OVERALL = {"direct_match", "potential_match_only", "no_match", "research_incomplete"}
 SCOPES = {"hainan_added_2024", "industrial_restructuring_current", "foreign_investment_current"}
 BANNED = ("已经认定", "保证享受", "自动符合", "必然享受")
+ACTIVITY_TYPES = {"research", "manufacturing", "processing", "mining", "sales", "trade", "operation", "technical_service", "investment", "logistics", "management", "other"}
+CONDITION_STATUSES = {"met", "missing", "not_required", "not_applicable"}
 
 
 def _text(value: object) -> str:
@@ -66,6 +69,7 @@ def validate_assessment(data: dict) -> list[str]:
             errors.append(f"目录路径{scope}检索状态未完成")
 
     catalog = json.loads(CATALOG_PATH.read_text(encoding="utf-8-sig"))
+    entries_by_id = {item["id"]: item for item in catalog.get("entries", [])}
     hainan_keys = {
         (_text(item.get("item_no")), _text(item.get("item_title")), _text(detail.get("detail_title")))
         for item in catalog.get("entries", [])
@@ -74,8 +78,11 @@ def validate_assessment(data: dict) -> list[str]:
     }
     rows = assessment.get("business_assessments", [])
     row_ids = [_text(item.get("business_id")) for item in rows]
-    if sorted(row_ids) != sorted(business_ids) or len(row_ids) != len(set(row_ids)):
-        errors.append("每项主要业务必须有且只有一条目录主判断")
+    if set(row_ids) != set(business_ids):
+        errors.append("每项主要业务必须至少有一条经营活动级目录判断，且不得引用未知业务")
+    activity_ids = [_text(item.get("activity_id")) for item in rows]
+    if any(not item for item in activity_ids) or len(activity_ids) != len(set(activity_ids)):
+        errors.append("每项经营活动必须具有唯一且非空的activity_id")
     judgments: list[str] = []
     for item in rows:
         business_id = _text(item.get("business_id")) or "未知业务"
@@ -86,8 +93,14 @@ def validate_assessment(data: dict) -> list[str]:
             continue
         if judgment == "research_incomplete":
             errors.append(f"{business_id}: 目录研究未完成，禁止交付")
-        if not _text(item.get("business")) or not _text(item.get("reason")):
-            errors.append(f"{business_id}: 缺少业务名称或判断依据")
+        activity_type = _text(item.get("activity_type"))
+        condition_status = _text(item.get("condition_status"))
+        if not _text(item.get("business")) or not _text(item.get("activity_name")) or not _text(item.get("activity_object")) or not _text(item.get("reason")):
+            errors.append(f"{business_id}: 缺少业务、具体经营活动、活动对象或判断依据")
+        if activity_type not in ACTIVITY_TYPES:
+            errors.append(f"{business_id}: activity_type无效")
+        if condition_status not in CONDITION_STATUSES:
+            errors.append(f"{business_id}: condition_status无效")
         items = item.get("matched_items", [])
         if judgment in {"direct_match", "potential_match"} and not items:
             errors.append(f"{business_id}: 明确或相近判断必须列出具体目录条目")
@@ -102,10 +115,23 @@ def validate_assessment(data: dict) -> list[str]:
         if judgment in {"direct_match", "potential_match"} and (not catalog_sources or any(not _text(source).startswith("P") or source not in sources for source in catalog_sources)):
             errors.append(f"{business_id}: 缺少有效P类目录来源")
         for matched in items:
-            required = ("catalog_scope", "catalog_item_no", "catalog_item", "detailed_item", "match_type")
+            required = ("catalog_entry_id", "catalog_scope", "catalog_item_no", "catalog_item", "detailed_item", "match_type")
             if any(not _text(matched.get(field)) for field in required):
                 errors.append(f"{business_id}: 目录条目字段不完整")
                 continue
+            entry_id = _text(matched.get("catalog_entry_id"))
+            entry = entries_by_id.get(entry_id)
+            if not entry:
+                errors.append(f"{business_id}: catalog_entry_id未指向内置目录条目")
+                continue
+            derived = classify_catalog_entry(entry)
+            declared = _text(matched.get("catalog_classification"))
+            if declared and declared != derived["classification"]:
+                errors.append(f"{business_id}: 目录条目分类与内置规则不一致")
+            if judgment == "direct_match" and not activity_is_compatible(entry, activity_type):
+                errors.append(f"{business_id}: 企业具体经营活动与目录行为边界不一致，禁止明确匹配")
+            if judgment == "direct_match" and derived["classification"] == "action_condition" and condition_status != "met":
+                errors.append(f"{business_id}: 目录含硬条件但企业证据未证明满足，禁止明确匹配")
             if _text(matched.get("catalog_scope")) == "hainan_added_2024":
                 key = (_text(matched.get("catalog_item_no")), _text(matched.get("catalog_item")), _text(matched.get("detailed_item")))
                 if key not in hainan_keys:
@@ -129,7 +155,7 @@ def main() -> int:
     if errors:
         print("\n".join(errors), file=sys.stderr)
         return 1
-    print("通过：鼓励类产业目录三路径、逐业务三档判断及来源均已校验")
+    print("通过：鼓励类产业目录三路径、经营活动级判断、行为边界及来源均已校验")
     return 0
 
 

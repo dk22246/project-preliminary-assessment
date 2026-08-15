@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "Sanya CBD Preliminary Assessment Report Data",
   "type": "object",
-  "required": ["meta", "entity_resolution", "enterprise_overview", "equity", "businesses", "encouraged_industry_assessment", "industry_position", "financials", "risks", "landing_businesses", "policy_research", "policy_opportunity_radar", "policies", "sources"],
+  "required": ["meta", "entity_resolution", "enterprise_overview", "equity", "businesses", "industry_chain", "encouraged_industry_assessment", "industry_position", "financials", "risks", "landing_businesses", "policy_research", "policy_opportunity_radar", "policies", "sources"],
   "properties": {
     "meta": {
       "type": "object",
@@ -87,8 +87,17 @@
       "minItems": 1,
       "items": {
         "type": "object",
-        "required": ["id", "segment", "products", "entity", "revenue_model", "footprint"],
+        "required": ["id", "segment", "products", "entity", "sales_channels", "footprint"],
         "properties": {"id": {"type": "string", "pattern": "^B[0-9]+$"}}
+      }
+    },
+    "industry_chain": {
+      "type": "object",
+      "required": ["positioning", "stages", "regional_ecosystem"],
+      "properties": {
+        "positioning": {"type": "string", "minLength": 1},
+        "stages": {"type": "array", "minItems": 3, "maxItems": 3},
+        "regional_ecosystem": {"type": "object", "required": ["summary", "source_ids"]}
       }
     },
     "encouraged_industry_assessment": {

@@ -10,6 +10,20 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 CATALOG = ROOT / "references" / "catalogs" / "complete-industry-catalog-library.json"
 SUBJECTS = {"domestic": "domestic_positive", "foreign": "foreign_positive"}
+ACTIVITY_KEYWORDS = {
+    "research": ("研发", "研究", "技术开发", "设计"),
+    "manufacturing": ("制造", "生产"),
+    "processing": ("加工", "洗选", "冶炼"),
+    "mining": ("开采", "采矿", "采煤", "勘探", "抽采"),
+    "sales": ("销售", "零售", "批发", "交易"),
+    "trade": ("贸易", "进出口", "跨境电子商务", "跨境电商"),
+    "operation": ("运营", "经营"),
+    "technical_service": ("检验", "检测", "维修", "咨询", "技术服务"),
+    "logistics": ("物流", "运输", "仓储", "配送", "储运"),
+    "investment": ("投资",),
+    "management": ("管理",),
+}
+CONDITION_MARKERS = ("≥", "≤", "以上", "以下", "不得", "不含", "不包括", "仅限", "必须", "资质", "认证", "产能", "设计生产能力")
 
 
 def _terms(queries: list[str]) -> list[str]:
@@ -28,6 +42,20 @@ def _haystack(entry: dict) -> str:
         for item in entry.get("detail_entries", [])
     )
     return " ".join(str(entry.get(key, "")) for key in ("section", "subsection", "item_title", "region")) + " " + details
+
+
+def classify_catalog_entry(entry: dict) -> dict:
+    """Derive stable action boundaries from the packaged catalog text."""
+    text = _haystack(entry)
+    activity_types = sorted({kind for kind, words in ACTIVITY_KEYWORDS.items() if any(word in text for word in words)})
+    has_condition = any(marker in text for marker in CONDITION_MARKERS)
+    classification = "action_condition" if has_condition else "action_boundary" if activity_types else "broad_category"
+    return {"classification": classification, "activity_types": activity_types}
+
+
+def activity_is_compatible(entry: dict, activity_type: str) -> bool:
+    derived = classify_catalog_entry(entry)
+    return derived["classification"] == "broad_category" or activity_type in derived["activity_types"]
 
 
 def _rank(entries: list[dict], terms: list[str], limit: int) -> list[dict]:
