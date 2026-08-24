@@ -216,9 +216,9 @@
   "industry_chain": {
     "positioning": "飞科位于个人护理电器产业链中游，以品牌、产品设计、制造组织和渠道运营为核心，上游连接零部件与生产配套，下游连接线上线下零售渠道。",
     "stages": [
-      {"stage": "upstream", "title": "核心零部件与生产配套", "activities": ["电机、电池及电子控制组件", "塑胶、刀头及结构件", "包装与生产设备配套"], "representative_enterprises": [], "is_target_stage": false},
-      {"stage": "midstream", "title": "个人护理电器品牌制造", "activities": ["产品设计与研发", "整机制造与质量控制", "品牌及供应链管理"], "representative_enterprises": [{"name": "上海飞科电器股份有限公司", "source_ids": ["E01"]}], "is_target_stage": true},
-      {"stage": "downstream", "title": "销售渠道与终端消费", "activities": ["经销与商超渠道", "综合电商与内容电商", "消费者服务"], "representative_enterprises": [{"name": "淘宝天猫", "source_ids": ["E01"]}, {"name": "京东", "source_ids": ["E01"]}, {"name": "拼多多", "source_ids": ["E01"]}, {"name": "唯品会", "source_ids": ["E01"]}], "is_target_stage": false}
+      {"stage": "upstream", "title": "核心零部件与生产配套", "activities": ["电机、电池及电子控制组件", "塑胶、刀头及结构件", "包装与生产设备配套"], "relationship_scope": "行业代表样本，不代表已确认属于飞科供应商", "representative_enterprises": [{"name": "万宝至马达（Mabuchi Motor）", "note": "剃须刀及个护电器用微型电机", "source_ids": ["E03"]}, {"name": "日本电产（Nidec）", "note": "美容护理电器用电机", "source_ids": ["E04"]}, {"name": "鹏辉能源", "note": "个人护理电器用消费电池", "source_ids": ["E05"]}, {"name": "亿纬锂能", "note": "消费类锂离子及圆柱电池", "source_ids": ["E06"]}], "is_target_stage": false},
+      {"stage": "midstream", "title": "个人护理电器品牌制造", "activities": ["产品设计与研发", "整机制造与质量控制", "品牌及供应链管理"], "relationship_scope": "研究对象及同类代表品牌，不作排名", "representative_enterprises": [{"name": "飞科电器", "note": "研究对象", "source_ids": ["E01"]}, {"name": "飞利浦", "note": "同类代表品牌", "source_ids": ["E07"]}, {"name": "博朗", "note": "同类代表品牌", "source_ids": ["E07"]}, {"name": "松下", "note": "同类代表品牌", "source_ids": ["E07"]}], "is_target_stage": true},
+      {"stage": "downstream", "title": "销售渠道与终端消费", "activities": ["经销与商超渠道", "综合电商与内容电商", "消费者服务"], "relationship_scope": "飞科年报披露的主要线上渠道平台", "representative_enterprises": [{"name": "淘宝天猫", "source_ids": ["E01"]}, {"name": "京东", "source_ids": ["E01"]}, {"name": "拼多多", "source_ids": ["E01"]}, {"name": "唯品会", "source_ids": ["E01"]}], "is_target_stage": false}
     ],
     "regional_ecosystem": {"summary": "本轮公开检索未取得足以确认主要经营地已形成个人护理电器产业集群的资料，不作集群结论。", "source_ids": []}
   },
@@ -794,6 +794,51 @@
       "date": "2025-05-20",
       "location": "https://roadshow.cnstock.com/fbh/fkdq2024",
       "used_in": "第一部分企业概况"
+    },
+    {
+      "id": "E03",
+      "type": "产业链资料",
+      "name": "Mabuchi Motor家用电器应用及电动剃须刀电机产品页",
+      "issuer": "MABUCHI MOTOR CO., LTD.",
+      "date": "2026-08-15",
+      "location": "https://www.mabuchi-motor.com/product/case/home-appliances.html",
+      "used_in": "第一部分产业链上游"
+    },
+    {
+      "id": "E04",
+      "type": "产业链资料",
+      "name": "Nidec美容护理电器电机应用页",
+      "issuer": "NIDEC CORPORATION",
+      "date": "2026-08-15",
+      "location": "https://www.nidec.com/en/product/search/application/A_B103/A_M106/",
+      "used_in": "第一部分产业链上游"
+    },
+    {
+      "id": "E05",
+      "type": "产业链资料",
+      "name": "鹏辉能源个人护理电器消费电池产品资料",
+      "issuer": "广州鹏辉能源科技股份有限公司",
+      "date": "2024-04-23",
+      "location": "https://www.greatpower.net/vancheerfile/files/2024/4/20240423141821719.pdf",
+      "used_in": "第一部分产业链上游"
+    },
+    {
+      "id": "E06",
+      "type": "产业链资料",
+      "name": "亿纬锂能消费电池产品页",
+      "issuer": "惠州亿纬锂能股份有限公司",
+      "date": "2026-08-15",
+      "location": "https://www.evebattery.com/en/consumer-battery",
+      "used_in": "第一部分产业链上游"
+    },
+    {
+      "id": "E07",
+      "type": "企业信息",
+      "name": "上海飞科电器股份有限公司首次公开发行股票招股说明书",
+      "issuer": "上海飞科电器股份有限公司／法定披露",
+      "date": "2016-04-01",
+      "location": "https://static.cninfo.com.cn/finalpage/2016-04-01/1202124026.PDF",
+      "used_in": "第一部分产业链中游竞争格局"
     },
     {
       "id": "F01",

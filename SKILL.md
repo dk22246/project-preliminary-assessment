@@ -15,7 +15,7 @@ description: Use when 招商人员只提供企业名称或基础资料，需要�
 
 - 仅通过 Git 仓库完整克隆或复制整个 Skill 目录，不得只复制 `SKILL.md`、聊天文本或单个脚本。
 - 所有文本和结构化数据均为 UTF-8；读入 JSON 时兼容 UTF-8 BOM，写入时明确指定 UTF-8。跨 Agent 不依赖 PowerShell 编码或参数转发；Python 子进程统一使用 `-X utf8`。
-- 新设备完整克隆后只运行一次 `python -X utf8 scripts/bootstrap.py --node <Node路径>`。启动器自动探测运行能力、执行版本级部署验证并写入本地 `.runtime/verification.json`；同一版本再次运行只执行秒级 doctor，不重复跑完整测试。Git commit 或关键文件指纹变化时必须重新验证。若裸 `python` 不可用，使用 Agent 已知的真实 Python 可执行文件；不得把 Windows 商店占位符当作运行时。
+- 新设备完整克隆后，如运行环境未提供兼容的 Playwright，先在 Skill 根目录执行 `npm install` 安装 `package.json` 声明的浏览器依赖；随后只运行一次 `python -X utf8 scripts/bootstrap.py --node <Node路径>`。启动器负责探测和验证，不代替依赖安装；验证通过后写入本地 `.runtime/verification.json`。同一版本再次运行只执行秒级 doctor，不重复跑完整测试。Git commit 或关键文件指纹变化时必须重新验证。若裸 `python` 不可用，使用 Agent 已知的真实 Python 可执行文件；不得把 Windows 商店占位符当作运行时。
 - 必须先形成 `report-data.json` 和 `equity-evidence.json`，再以 `--equity-evidence <股权台账> --node <Node路径>` 运行 `scripts/run_report_pipeline.py`；不得绕过结构化数据、股权证据校验、浏览器版式门禁或 HTML 渲染器直接手写报告。
 - 以固定 Git commit 部署并记录 commit SHA；升级时重新执行上述部署门禁。PDF 和 Word 继续仅按用户要求生成。
 

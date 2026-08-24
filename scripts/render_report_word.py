@@ -59,8 +59,8 @@ def add_industry_chain(doc, chain):
     labels = {"upstream": "上游", "midstream": "中游", "downstream": "下游"}
     rendered = []
     for stage in chain.get("stages", []):
-        enterprises = "、".join(item.get("name", "") for item in stage.get("representative_enterprises", [])) or "本轮未发现可靠代表企业"
-        rendered.append([labels.get(stage.get("stage"), "环节"), stage.get("title", "未命名"), "；".join(stage.get("activities", [])), enterprises])
+        enterprises = "；".join(item.get("name", "") + (f"（{item.get('note')}）" if item.get("note") else "") for item in stage.get("representative_enterprises", [])) or "本轮未发现可靠代表企业"
+        rendered.append([labels.get(stage.get("stage"), "环节"), stage.get("title", "未命名"), "；".join(stage.get("activities", [])), enterprises + "\n口径：" + stage.get("relationship_scope", "行业代表样本，不等同于已确认交易关系")])
     add_standard_table(doc, ["环节", "定位", "核心活动", "代表企业"], rendered, [1.6, 3.2, 6.0, 5.1])
     add_body(doc, "区域产业生态：" + chain.get("regional_ecosystem", {}).get("summary", "本轮未发现可靠资料"))
 
@@ -130,7 +130,8 @@ def main() -> int:
     add_heading(doc, "政府补助及财政支持明细表", 3); add_standard_table(doc, ["年度", "名称", "发放部门", "金额", "用途", "附带条件", "来源"], rows(data.get("government_support", []), ("year", "name", "department", "amount", "purpose", "conditions", "source")) or [["—", "本轮公开检索未发现可确认明细", "—", "—", "需企业补充", "需企业补充", "—"]], [1.1, 2.5, 2.0, 1.3, 3.0, 3.0, 1.0])
     add_heading(doc, "（二）经营数据分析", 2); add_body(doc, data.get("financial_analysis", "需企业补充"))
     h1(doc, "三、风险与合规情况")
-    add_body(doc, data["risks"].get("summary", "截至公开检索未发现重大记录，仍需企业及主管部门核验。"))
+    add_heading(doc, "（一）行政处罚及监管风险", 2); add_standard_table(doc, ["时间", "风险类型", "具体事项", "处理结果", "是否已整改", "对招商的影响", "来源编号"], data["risks"].get("regulatory", []), [1.0, 1.7, 5.0, 1.5, 1.5, 3.2, 1.0])
+    add_heading(doc, "（二）诉讼、执行及失信情况", 2); add_standard_table(doc, ["时间", "事项类型", "涉及对象或金额", "当前状态", "对招商的影响", "来源编号"], data["risks"].get("litigation", []), [1.2, 2.2, 4.8, 2.2, 4.0, 1.0])
     h1(doc, "四、三亚落地业务及落地方式"); add_standard_table(doc, ["建议落地业务", "企业现有事实基础", "三亚具体承接方式", "可形成的业务及价值", "可行性"], rows(data["landing_businesses"], ("business", "fact_basis", "sanya_path", "value", "feasibility")), [3.0, 4.0, 4.0, 4.0, 1.0])
     h1(doc, "五、企业政策匹配")
     add_heading(doc, "（一）重点政策匹配清单", 2)

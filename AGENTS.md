@@ -1,10 +1,14 @@
-# Agent entrypoint
+`SKILL.md` is the sole authority; deploy only by fully cloning or copying the complete Skill directory.
 
-Use `SKILL.md` as the authoritative workflow and read only the referenced files needed for the current stage.
+## Required workflow
 
-1. On a fresh clone, install the browser dependency with `npm install` unless a compatible Playwright runtime is already exposed, then run once: `python -X utf8 scripts/bootstrap.py --node <node-path>`. After a fingerprint change, rerun bootstrap. Do not run the full suite per session or per company.
-2. Before a normal report, run `python -X utf8 scripts/doctor.py --node <node-path>`; then use `scripts/run_report_pipeline.py`.
-3. Default output is HTML. Generate PDF or Word only when requested.
-4. Policy currentness is always checked live against official sources. Reuse URLs and within-run results, never cached final eligibility conclusions.
-5. Do not silently degrade when browser, network, Playwright, policy evidence or validation is unavailable. Stop with the exact missing capability.
-6. Keep complete evidence, policy conditions and exclusions in ledgers; keep the report policy table to `匹配政策或工具 | 匹配原因`.
+- If no compatible Playwright runtime is already available, run `npm install` in the Skill root before bootstrap.
+- On first deployment or fingerprint change, run:
+  `python -X utf8 scripts/bootstrap.py --node <node-path>`
+- For every normal task, first run:
+  `python -X utf8 scripts/doctor.py --node <node-path>`
+- Then run:
+  `python -X utf8 scripts/run_report_pipeline.py <report-data.json> --equity-evidence <equity-evidence.json> --research-ledger <research-ledger.json> --policy-search-ledger <policy-search-ledger.json> --out-dir <output-dir> --node <node-path>`
+- Deliver HTML by default; generate PDF or Word only when requested.
+- For every report, verify current policy in real time against official sources.
+- If required capability, evidence, or validation is unavailable, stop and name the gap; never silently downgrade.

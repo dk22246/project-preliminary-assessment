@@ -5,4 +5,6 @@ outputs/
 qa_*/
 .runtime/
 node_modules/
+tmp/
+tmp*/
 examples/nanfu-report-data.json

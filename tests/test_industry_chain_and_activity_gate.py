@@ -24,6 +24,16 @@ class IndustryChainAndActivityGateTests(unittest.TestCase):
         self.assertFalse(validate_report_data(self.data))
         self.assertTrue(all("sales_channels" in item and "revenue_model" not in item for item in self.data["businesses"]))
         self.assertEqual(["upstream", "midstream", "downstream"], [item["stage"] for item in self.data["industry_chain"]["stages"]])
+        self.assertGreaterEqual(len(self.data["industry_chain"]["stages"][0]["representative_enterprises"]), 1)
+        self.assertGreaterEqual(len(self.data["industry_chain"]["stages"][1]["representative_enterprises"]), 3)
+        chain_text = json.dumps(self.data["industry_chain"], ensure_ascii=False)
+        self.assertNotRegex(chain_text, r"第一|第二|第三|第[一二三]名|销量第一|占有率第一")
+
+    def test_html_removes_risk_summary_section(self):
+        renderer = (ROOT / "scripts" / "render_report_html.py").read_text(encoding="utf-8")
+        word_renderer = (ROOT / "scripts" / "render_report_word.py").read_text(encoding="utf-8")
+        self.assertNotIn("风险综合判断", renderer)
+        self.assertNotIn('data["risks"].get("summary"', word_renderer)
 
     def test_missing_chain_is_rejected(self):
         data = copy.deepcopy(self.data)

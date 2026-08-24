@@ -188,6 +188,12 @@ def validate_report_data(data: dict) -> list[str]:
     for stage in stages:
         if not str(stage.get("title", "")).strip() or not stage.get("activities"):
             errors.append(f"产业链{stage.get('stage', '未知环节')}缺少标题或核心活动")
+        if not str(stage.get("relationship_scope", "")).strip():
+            errors.append(f"产业链{stage.get('stage', '未知环节')}缺少代表企业关系口径")
+        if stage.get("stage") == "upstream" and not stage.get("representative_enterprises"):
+            errors.append("产业链上游不得留空，必须列公开可核验的行业代表样本并注明非确认供应商")
+        if stage.get("stage") == "midstream" and len(stage.get("representative_enterprises", [])) < 3:
+            errors.append("产业链中游必须包含研究对象和至少2家主要同类品牌")
         for company in stage.get("representative_enterprises", []):
             source_ids = company.get("source_ids", [])
             if not str(company.get("name", "")).strip() or not source_ids:

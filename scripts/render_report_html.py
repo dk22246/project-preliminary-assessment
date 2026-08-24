@@ -173,11 +173,12 @@ def industry_chain_block(chain: dict) -> str:
     for stage in chain.get("stages", []):
         activities = "".join(f"<li>{escape(str(value))}</li>" for value in stage.get("activities", []))
         enterprises = stage.get("representative_enterprises", [])
-        names = "、".join(escape(str(item.get("name", ""))) for item in enterprises) or "本轮未发现可靠代表企业"
+        names = "；".join(escape(str(item.get("name", ""))) + (f"（{escape(str(item.get('note')))}）" if item.get("note") else "") for item in enterprises) or "本轮未发现可靠代表企业"
         sources = sorted({str(source) for item in enterprises for source in item.get("source_ids", [])})
         source_text = "" if not sources else f'<span class="chain-source">（来源：{escape("、".join(sources))}）</span>'
         target = " target" if stage.get("is_target_stage") else ""
-        cards.append(f'<article class="chain-card{target}"><h3>{stage_labels.get(stage.get("stage"), "环节")}｜{escape(str(stage.get("title", "未命名")))}</h3><ul>{activities}</ul><p><strong>代表企业：</strong>{names}{source_text}</p></article>')
+        scope = str(stage.get("relationship_scope", "行业代表样本，不等同于已确认交易关系"))
+        cards.append(f'<article class="chain-card{target}"><h3>{stage_labels.get(stage.get("stage"), "环节")}｜{escape(str(stage.get("title", "未命名")))}</h3><ul>{activities}</ul><p><strong>代表企业：</strong>{names}{source_text}</p><p class="chain-source">口径：{escape(scope)}</p></article>')
     region = chain.get("regional_ecosystem", {})
     return f'<p class="chain-position"><strong>产业链定位：</strong>{escape(str(chain.get("positioning", "需企业补充")))}</p><div class="chain-grid">{"".join(cards)}</div><p class="chain-region"><strong>区域产业生态：</strong>{escape(str(region.get("summary", "本轮未发现可靠资料")))}</p>'
 
@@ -227,7 +228,7 @@ def main() -> int:
     finance = "<h2>（一）营业收入、利润、纳税及政府补助情况</h2>" + report_table(financial_headers(data["meta"]), financial_rows, "wide financial-table", [10, 11, 11, 11, 11, 9, 10, 20, 7]) + note_html + "<h3>政府补助及财政支持明细表</h3>" + report_table(["年度", "补助或支持名称", "发放部门", "金额", "对应项目或用途", "附带条件或履约要求", "来源编号"], support_rows, "wide support-table", [8, 16, 12, 12, 16, 28, 8]) + "<h2>（二）经营数据分析</h2>" + paragraph(data.get("financial_analysis", "需企业补充"))
     sections.append(section("二、近三年经营数据", finance))
     risk = data["risks"]
-    risk_body = "<h2>（一）行政处罚及监管风险</h2>" + report_table(["时间", "风险类型", "具体事项", "处理结果", "是否已整改", "对招商的影响", "来源编号"], risk.get("regulatory", []), "wide risk-table", [6, 12, 33, 10, 10, 21, 8]) + "<h2>（二）诉讼、执行及失信情况</h2>" + report_table(["时间", "事项类型", "涉及对象或金额", "当前状态", "对招商的影响", "来源编号"], risk.get("litigation", []), "wide risk-table", [9, 18, 32, 16, 17, 8]) + "<h2>（三）风险综合判断</h2>" + paragraph(risk.get("summary", "需企业补充"))
+    risk_body = "<h2>（一）行政处罚及监管风险</h2>" + report_table(["时间", "风险类型", "具体事项", "处理结果", "是否已整改", "对招商的影响", "来源编号"], risk.get("regulatory", []), "wide risk-table", [6, 12, 33, 10, 10, 21, 8]) + "<h2>（二）诉讼、执行及失信情况</h2>" + report_table(["时间", "事项类型", "涉及对象或金额", "当前状态", "对招商的影响", "来源编号"], risk.get("litigation", []), "wide risk-table", [9, 18, 32, 16, 17, 8])
     sections.append(section("三、风险与合规情况", risk_body))
     landing_rows = [[item[key] for key in ("business", "fact_basis", "sanya_path", "value", "feasibility")] for item in data["landing_businesses"]]
     sections.append(section("四、三亚落地业务及落地方式", report_table(["建议落地业务", "企业现有事实基础", "三亚具体承接方式", "可形成的业务及价值", "可行性"], landing_rows, "wide landing-table", [14, 25, 29, 24, 8])))
