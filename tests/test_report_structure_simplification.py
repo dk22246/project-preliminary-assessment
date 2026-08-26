@@ -44,7 +44,7 @@ class ReportStructureSimplificationTests(unittest.TestCase):
 
     def test_business_table_has_only_five_enterprise_fact_columns(self):
         html = self.render_html()
-        business_part = html.split("（三）主要业务及产品拆解", 1)[1].split("</table>", 1)[0]
+        business_part = html.split("主要业务及产品拆解", 1)[1].split("</table>", 1)[0]
         self.assertEqual(business_part.count("<th>"), 5)
         self.assertNotIn("与三亚的潜在结合点", business_part)
         self.assertNotIn("sanya_fit", json.dumps(REPORT, ensure_ascii=False))

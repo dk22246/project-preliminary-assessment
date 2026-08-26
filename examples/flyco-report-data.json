@@ -37,6 +37,11 @@
       "F01"
     ]
   },
+  "top500_status": [
+    {"ranking_name": "fortune_global_500", "ranking_label": "Fortune Global 500", "year": 2026, "status": "not_listed", "rank": null, "listed_entity": null, "relationship_to_target": "not_applicable", "relationship_source_ids": [], "reason": null, "source_ids": ["E90"]},
+    {"ranking_name": "china_enterprise_500", "ranking_label": "中国企业500强", "year": 2025, "status": "not_listed", "rank": null, "listed_entity": null, "relationship_to_target": "not_applicable", "relationship_source_ids": [], "reason": null, "source_ids": ["E91"]},
+    {"ranking_name": "china_private_enterprise_500", "ranking_label": "中国民营企业500强", "year": 2025, "status": "not_listed", "rank": null, "listed_entity": null, "relationship_to_target": "not_applicable", "relationship_source_ids": [], "reason": null, "source_ids": ["E92"]}
+  ],
   "equity": {
     "nodes": [
       {
@@ -214,13 +219,27 @@
     ]
   },
   "industry_chain": {
-    "positioning": "飞科位于个人护理电器产业链中游，以品牌、产品设计、制造组织和渠道运营为核心，上游连接零部件与生产配套，下游连接线上线下零售渠道。",
-    "stages": [
-      {"stage": "upstream", "title": "核心零部件与生产配套", "activities": ["电机、电池及电子控制组件", "塑胶、刀头及结构件", "包装与生产设备配套"], "relationship_scope": "行业代表样本，不代表已确认属于飞科供应商", "representative_enterprises": [{"name": "万宝至马达（Mabuchi Motor）", "note": "剃须刀及个护电器用微型电机", "source_ids": ["E03"]}, {"name": "日本电产（Nidec）", "note": "美容护理电器用电机", "source_ids": ["E04"]}, {"name": "鹏辉能源", "note": "个人护理电器用消费电池", "source_ids": ["E05"]}, {"name": "亿纬锂能", "note": "消费类锂离子及圆柱电池", "source_ids": ["E06"]}], "is_target_stage": false},
-      {"stage": "midstream", "title": "个人护理电器品牌制造", "activities": ["产品设计与研发", "整机制造与质量控制", "品牌及供应链管理"], "relationship_scope": "研究对象及同类代表品牌，不作排名", "representative_enterprises": [{"name": "飞科电器", "note": "研究对象", "source_ids": ["E01"]}, {"name": "飞利浦", "note": "同类代表品牌", "source_ids": ["E07"]}, {"name": "博朗", "note": "同类代表品牌", "source_ids": ["E07"]}, {"name": "松下", "note": "同类代表品牌", "source_ids": ["E07"]}], "is_target_stage": true},
-      {"stage": "downstream", "title": "销售渠道与终端消费", "activities": ["经销与商超渠道", "综合电商与内容电商", "消费者服务"], "relationship_scope": "飞科年报披露的主要线上渠道平台", "representative_enterprises": [{"name": "淘宝天猫", "source_ids": ["E01"]}, {"name": "京东", "source_ids": ["E01"]}, {"name": "拼多多", "source_ids": ["E01"]}, {"name": "唯品会", "source_ids": ["E01"]}], "is_target_stage": false}
+    "positioning": {"summary": "飞科位于个人护理电器的品牌、产品与制造组织环节；上下游内容仅作行业结构与代表样本说明。"},
+    "peer_enterprises": [
+      {"name": "飞利浦", "core_business": "个人护理电器", "scale_or_position": "行业代表品牌", "similarity_dimensions": ["个人护理品类", "品牌渠道"], "similarity": "与研究对象同属个人护理电器品牌经营环节。", "reason": "用于横向比较，不代表交易关系。", "source_ids": ["E07"]},
+      {"name": "博朗", "core_business": "个人护理电器", "scale_or_position": "行业代表品牌", "similarity_dimensions": ["个人护理品类", "品牌渠道"], "similarity": "与研究对象同属个人护理电器品牌经营环节。", "reason": "用于横向比较，不代表交易关系。", "source_ids": ["E07"]},
+      {"name": "松下", "core_business": "个人护理电器", "scale_or_position": "行业代表品牌", "similarity_dimensions": ["个人护理品类", "品牌渠道"], "similarity": "与研究对象同属个人护理电器品牌经营环节。", "reason": "用于横向比较，不代表交易关系。", "source_ids": ["E07"]}
     ],
-    "regional_ecosystem": {"summary": "本轮公开检索未取得足以确认主要经营地已形成个人护理电器产业集群的资料，不作集群结论。", "source_ids": []}
+    "upstream": [
+      {"activity": "微型电机", "function": "为行业产品提供通用驱动部件。", "representative_enterprises": [{"name": "万宝至马达（Mabuchi Motor）", "note": "行业代表样本，不代表已确认供应商。", "source_ids": ["E03"]}], "relationship_scope": "行业代表样本，不代表已确认供应商。"},
+      {"activity": "护理电器电机", "function": "为行业产品提供通用驱动部件。", "representative_enterprises": [{"name": "日本电产（Nidec）", "note": "行业代表样本，不代表已确认供应商。", "source_ids": ["E04"]}], "relationship_scope": "行业代表样本，不代表已确认供应商。"},
+      {"activity": "消费电池", "function": "为行业产品提供通用储能部件。", "representative_enterprises": [{"name": "鹏辉能源", "note": "行业代表样本，不代表已确认供应商。", "source_ids": ["E05"]}, {"name": "亿纬锂能", "note": "行业代表样本，不代表已确认供应商。", "source_ids": ["E06"]}], "relationship_scope": "行业代表样本，不代表已确认供应商。"}
+    ],
+    "downstream": [
+      {"activity": "综合电商零售", "function": "提供行业零售触达。", "representative_enterprises": [{"name": "淘宝天猫", "note": "年报列示渠道；不代表已确认客户或合作伙伴。", "source_ids": ["E01"]}], "relationship_scope": "公开渠道代表样本，不代表已确认客户或合作伙伴。"},
+      {"activity": "自营电商零售", "function": "提供行业零售触达。", "representative_enterprises": [{"name": "京东", "note": "年报列示渠道；不代表已确认客户或合作伙伴。", "source_ids": ["E01"]}], "relationship_scope": "公开渠道代表样本，不代表已确认客户或合作伙伴。"},
+      {"activity": "折扣及社交电商零售", "function": "提供行业零售触达。", "representative_enterprises": [{"name": "拼多多", "note": "年报列示渠道；不代表已确认客户或合作伙伴。", "source_ids": ["E01"]}, {"name": "唯品会", "note": "年报列示渠道；不代表已确认客户或合作伙伴。", "source_ids": ["E01"]}], "relationship_scope": "公开渠道代表样本，不代表已确认客户或合作伙伴。"}
+    ],
+    "industry_common_needs": [
+      {"need": "供应链协同", "basis": "由行业上游部件与品牌制造环节归纳，不是飞科已发生事实。", "status": "industry_inference", "source_ids": ["E03", "E04"]},
+      {"need": "产品研发与质量控制", "basis": "由个人护理电器品牌制造环节归纳，不是飞科已发生事实。", "status": "industry_inference", "source_ids": ["E01", "E07"]},
+      {"need": "渠道运营", "basis": "由行业零售触达环节归纳，不是飞科已发生事实。", "status": "industry_inference", "source_ids": ["E01"]}
+    ]
   },
   "financials": [
     {
@@ -526,6 +545,7 @@
       {
         "id": "S01",
         "signal_type": "headquarters_and_talent",
+        "basis_type": "enterprise_fact",
         "fact": "企业具备上市公司管理、品牌运营和核心团队配置能力。",
         "source_ids": ["E01"],
         "opportunities": [
@@ -537,6 +557,7 @@
       {
         "id": "S02",
         "signal_type": "overseas_business",
+        "basis_type": "enterprise_fact",
         "fact": "企业公开披露海外产品、渠道拓展和境外投资运营方向。",
         "source_ids": ["E01"],
         "opportunities": [
@@ -552,6 +573,7 @@
       {
         "id": "S03",
         "signal_type": "import_and_processing",
+        "basis_type": "enterprise_fact",
         "fact": "企业存在供应链采购能力，但本轮未发现海南岛内进口自用或加工生产安排。",
         "source_ids": ["E01"],
         "opportunities": [
@@ -1001,6 +1023,33 @@
       "date": "2024-02-01",
       "location": "https://www.ndrc.gov.cn/xxgk/zcfb/fzggwl/202312/P020231229700886191069.pdf",
       "used_in": "第一部分鼓励类产业目录匹配"
+    },
+    {
+      "id": "E90",
+      "type": "官方榜单",
+      "name": "Fortune Global 500 2026",
+      "issuer": "Fortune",
+      "date": "2026-08-01",
+      "location": "https://fortune.com/ranking/global500/2026/",
+      "used_in": "第一部分企业基本情况/500强事实核验"
+    },
+    {
+      "id": "E91",
+      "type": "权威转载榜单",
+      "name": "2025中国企业500强",
+      "issuer": "央视新闻客户端",
+      "date": "2025-09-15",
+      "location": "https://news.cnr.cn/native/gd/kx/20250915/t20250915_527362516.shtml",
+      "used_in": "第一部分企业基本情况/500强事实核验"
+    },
+    {
+      "id": "E92",
+      "type": "官方榜单",
+      "name": "2025中国民营企业500强",
+      "issuer": "中华全国工商业联合会",
+      "date": "2025-08-28",
+      "location": "https://www.acfic.org.cn/qlyw/202508/t20250827_319997.html",
+      "used_in": "第一部分企业基本情况/500强事实核验"
     }
   ],
   "encouraged_industry_assessment": {

@@ -8,7 +8,7 @@ import re
 from urllib.parse import urlparse
 
 
-REQUIRED_TOP = ("meta", "entity_resolution", "enterprise_overview", "equity", "businesses", "industry_chain", "encouraged_industry_assessment", "industry_position", "financials", "risks", "landing_businesses", "policy_research", "policy_opportunity_radar", "policies", "sources")
+REQUIRED_TOP = ("meta", "entity_resolution", "enterprise_overview", "equity", "businesses", "top500_status", "industry_chain", "encouraged_industry_assessment", "industry_position", "financials", "risks", "landing_businesses", "policy_research", "policy_opportunity_radar", "policies", "sources")
 REQUIRED_ENTITY = ("user_input", "name_type", "legal_entity", "analysis_entity", "financial_scope", "risk_scope")
 REQUIRED_POLICY = ("name", "region", "region_evidence", "source_type", "source_url", "status", "enterprise_business", "landing_action")
 POLICY_EVIDENCE_FIELDS = ("source_id", "issuer", "document_number", "published_at", "validity_evidence", "applicable_object", "plain_language", "conditions", "policy_value", "handling_route")
@@ -44,6 +44,19 @@ OVERSEAS_OPPORTUNITY_TOPICS = {
     "cross_border_fund_pool",
     "offshore_trade_stamp_duty",
 }
+TOP500_REQUIREMENTS = {
+    "fortune_global_500": (2026, "https://fortune.com/ranking/global500/2026/", {"Fortune"}),
+    "china_enterprise_500": (2025, "https://news.cnr.cn/native/gd/kx/20250915/t20250915_527362516.shtml", {"央视新闻客户端", "中国企业联合会/中国企业家协会"}),
+    "china_private_enterprise_500": (2025, "https://www.acfic.org.cn/qlyw/202508/t20250827_319997.html", {"中华全国工商业联合会"}),
+}
+TOP500_STATUSES = {"listed", "group_listed", "not_listed", "research_incomplete"}
+TOP500_RELATIONSHIPS = {"same_entity", "parent_group", "ultimate_group", "not_applicable"}
+TRANSACTION_TERMS = re.compile(r"供应商|供货商|客户|采购方|经销商|合作伙伴|合作方|supplier|vendor|customer|client|dealer|partner", re.IGNORECASE)
+NEGATED_TRANSACTION_TERMS = re.compile(
+    r"(?:不(?:代表|是|属于)?|非|未(?:确认|证实)?)(?:已确认)?(?:供应商|客户|合作伙伴)(?:或(?:供应商|客户|合作伙伴))*|"
+    r"(?:not|no)\s+(?:a\s+)?(?:confirmed\s+)?(?:supplier|customer|client|partner)",
+    re.IGNORECASE,
+)
 
 
 def load_data(path: str | Path) -> dict:
@@ -179,28 +192,8 @@ def validate_report_data(data: dict) -> list[str]:
         for field in ("segment", "products", "entity", "sales_channels", "footprint"):
             if not str(item.get(field, "")).strip():
                 errors.append(f"业务拆解缺少{field}：{item.get('segment', '未命名业务')}")
-    chain = data.get("industry_chain", {})
-    if not isinstance(chain, dict) or not str(chain.get("positioning", "")).strip():
-        errors.append("产业链上下游缺少一句话产业链定位")
-    stages = chain.get("stages", []) if isinstance(chain, dict) else []
-    if [item.get("stage") for item in stages] != ["upstream", "midstream", "downstream"]:
-        errors.append("产业链上下游必须按upstream、midstream、downstream三段完整呈现")
-    for stage in stages:
-        if not str(stage.get("title", "")).strip() or not stage.get("activities"):
-            errors.append(f"产业链{stage.get('stage', '未知环节')}缺少标题或核心活动")
-        if not str(stage.get("relationship_scope", "")).strip():
-            errors.append(f"产业链{stage.get('stage', '未知环节')}缺少代表企业关系口径")
-        if stage.get("stage") == "upstream" and not stage.get("representative_enterprises"):
-            errors.append("产业链上游不得留空，必须列公开可核验的行业代表样本并注明非确认供应商")
-        if stage.get("stage") == "midstream" and len(stage.get("representative_enterprises", [])) < 3:
-            errors.append("产业链中游必须包含研究对象和至少2家主要同类品牌")
-        for company in stage.get("representative_enterprises", []):
-            source_ids = company.get("source_ids", [])
-            if not str(company.get("name", "")).strip() or not source_ids:
-                errors.append(f"产业链代表企业缺少名称或来源：{company}")
-            for source_id in source_ids:
-                if source_id not in report_source_ids or not str(source_id).startswith("E"):
-                    errors.append(f"产业链代表企业引用无效E类来源：{source_id}")
+    errors.extend(validate_top500_status(data, report_source_ids))
+    errors.extend(validate_industry_chain(data, report_source_ids))
     industry = data.get("industry_position", {})
     if not isinstance(industry, dict):
         errors.append("行业地位必须使用结构化对象，包含结论、品类、位置、时点和来源")
@@ -312,6 +305,12 @@ def validate_policy_opportunity_radar(data: dict, report_source_ids: set[str] | 
             if disposition == "surfaced" and not (policy_source_ids & visible_policy_ids):
                 errors.append(f"政策机会雷达{label}/{topic or '未命名主题'}标记surfaced但没有进入正式政策表")
         signal_type = str(signal.get("signal_type", "")).strip().lower()
+        basis_type = str(signal.get("basis_type", "")).strip().lower()
+        source_kinds = {str(value).strip().lower() for value in signal.get("source_kinds", [])}
+        if basis_type != "enterprise_fact":
+            errors.append(f"政策机会雷达{label}的basis_type必须为enterprise_fact")
+        if signal_type == "industry_common_need" or "industry_inference" in source_kinds:
+            errors.append(f"政策机会雷达{label}不得以industry_common_needs或industry_inference作为企业事实触发")
         signal_fact = str(signal.get("fact", ""))
         is_overseas_signal = (
             any(marker in signal_type for marker in ("overseas", "foreign_trade", "cross_border", "global"))
@@ -325,6 +324,148 @@ def validate_policy_opportunity_radar(data: dict, report_source_ids: set[str] | 
     if missing_from_radar:
         errors.append(f"正式政策表存在未由企业事实信号触发的政策：{', '.join(missing_from_radar)}")
     return errors
+
+
+def validate_top500_status(data: dict, report_source_ids: set[str]) -> list[str]:
+    """Require exactly the latest official result for each mandated ranking."""
+    errors: list[str] = []
+    items = data.get("top500_status", [])
+    if not isinstance(items, list):
+        return ["top500_status必须为列表"]
+    names = [item.get("ranking_name") for item in items if isinstance(item, dict)]
+    if set(names) != set(TOP500_REQUIREMENTS) or len(names) != len(TOP500_REQUIREMENTS):
+        errors.append("top500_status必须恰好覆盖三类指定500强榜单，且不得重复或额外添加")
+    sources = {str(item.get("id", "")).strip(): item for item in data.get("sources", [])}
+    for item in items:
+        if not isinstance(item, dict):
+            errors.append("top500_status条目必须为对象")
+            continue
+        name = item.get("ranking_name")
+        status = item.get("status")
+        label = name or "未命名榜单"
+        if not str(item.get("ranking_label", "")).strip():
+            errors.append(f"top500_status/{label}缺少ranking_label")
+        if name not in TOP500_REQUIREMENTS:
+            continue
+        expected_year, expected_url, expected_issuers = TOP500_REQUIREMENTS[name]
+        if item.get("year") != expected_year:
+            errors.append(f"top500_status/{label}/{status or 'unknown'}必须使用最新正式年度{expected_year}")
+        if status not in TOP500_STATUSES:
+            errors.append(f"top500_status/{label}的status无效")
+        relationship = item.get("relationship_to_target")
+        if relationship not in TOP500_RELATIONSHIPS:
+            errors.append(f"top500_status/{label}的relationship_to_target无效")
+        source_ids = item.get("source_ids", [])
+        valid_official_source = any(
+            source_id in report_source_ids and str(source_id).startswith("E")
+            and str(sources.get(str(source_id), {}).get("location", "")).strip() == expected_url
+            and str(sources.get(str(source_id), {}).get("type", "")).strip() in {"官方榜单", "权威转载榜单"}
+            and str(sources.get(str(source_id), {}).get("issuer", "")).strip() in expected_issuers
+            for source_id in source_ids
+        )
+        if not valid_official_source:
+            errors.append(f"top500_status/{label}/{status or 'unknown'}必须引用对应最新官方榜单E类来源")
+        if status == "listed":
+            if not isinstance(item.get("rank"), int) or not str(item.get("listed_entity", "")).strip() or relationship != "same_entity":
+                errors.append(f"top500_status/{label}的listed必须有名次、入选实体且relationship_to_target为same_entity")
+        elif status == "group_listed":
+            relationship_source_ids = item.get("relationship_source_ids", [])
+            if not isinstance(item.get("rank"), int) or not str(item.get("listed_entity", "")).strip() or relationship not in {"parent_group", "ultimate_group"}:
+                errors.append(f"top500_status/{label}的group_listed必须有名次、集团实体及集团关系")
+            _validate_e_sources(relationship_source_ids, report_source_ids, f"top500_status/{label}/集团关系", errors)
+        elif status == "not_listed":
+            if relationship != "not_applicable" or item.get("rank") is not None or item.get("listed_entity") is not None:
+                errors.append(f"top500_status/{label}的not_listed必须使用not_applicable关系，且名次和入选实体必须为空")
+        elif status == "research_incomplete":
+            if not str(item.get("reason", "")).strip() or item.get("rank") is not None or item.get("listed_entity") is not None:
+                errors.append(f"top500_status/{label}的research_incomplete必须说明reason，且不得填写名次或入选实体")
+    return errors
+
+
+def _has_unsupported_transaction_claim(value: str) -> bool:
+    remaining = NEGATED_TRANSACTION_TERMS.sub("", value)
+    return bool(TRANSACTION_TERMS.search(remaining))
+
+
+def validate_industry_chain(data: dict, report_source_ids: set[str]) -> list[str]:
+    errors: list[str] = []
+    chain = data.get("industry_chain", {})
+    if not isinstance(chain, dict):
+        return ["industry_chain必须为对象"]
+    required = ("positioning", "peer_enterprises", "upstream", "downstream", "industry_common_needs")
+    for field in required:
+        if field not in chain:
+            errors.append(f"industry_chain缺少{field}")
+    for forbidden in ("cluster_implications", "investment_lead"):
+        if forbidden in chain:
+            errors.append(f"industry_chain禁止{forbidden}")
+    positioning = chain.get("positioning", {})
+    if not isinstance(positioning, dict) or not str(positioning.get("summary", "")).strip():
+        errors.append("industry_chain.positioning.summary不能为空")
+    peers = chain.get("peer_enterprises", [])
+    if not isinstance(peers, list) or not 3 <= len(peers) <= 6:
+        errors.append("peer_enterprises必须为3-6项")
+    for peer in peers if isinstance(peers, list) else []:
+        if not isinstance(peer, dict) or any(not str(peer.get(field, "")).strip() for field in ("name", "core_business", "scale_or_position", "similarity", "reason")):
+            errors.append("peer_enterprises缺少必填说明字段")
+            continue
+        if not isinstance(peer.get("similarity_dimensions"), list) or len(peer["similarity_dimensions"]) < 2:
+            errors.append("peer_enterprises的similarity_dimensions至少两项")
+        _validate_e_sources(peer.get("source_ids", []), report_source_ids, "peer_enterprises", errors)
+    for section in ("upstream", "downstream"):
+        entries = chain.get(section, [])
+        if not isinstance(entries, list) or not 3 <= len(entries) <= 6:
+            errors.append(f"industry_chain.{section}必须为3-6项")
+            continue
+        for entry in entries:
+            if not isinstance(entry, dict) or any(not str(entry.get(field, "")).strip() for field in ("activity", "function", "relationship_scope")):
+                errors.append(f"industry_chain.{section}缺少activity、function或relationship_scope")
+                continue
+            representatives = entry.get("representative_enterprises")
+            if not isinstance(representatives, list) or not representatives:
+                errors.append(f"industry_chain.{section}缺少representative_enterprises")
+                continue
+            claim_text = [str(entry.get("relationship_scope", ""))]
+            for representative in representatives:
+                if not isinstance(representative, dict) or not str(representative.get("name", "")).strip():
+                    errors.append(f"industry_chain.{section}的representative_enterprises必须为含name和source_ids的对象")
+                    continue
+                _validate_e_sources(representative.get("source_ids", []), report_source_ids, "representative_enterprises", errors)
+                claim_text.extend(str(representative.get(field, "")) for field in ("name", "note"))
+            if not entry.get("transaction_evidence") and any(_has_unsupported_transaction_claim(value) for value in claim_text):
+                errors.append(f"industry_chain.{section}未提供transaction_evidence，不得声称供应商、客户或合作伙伴；需直接交易证据")
+            transaction_evidence = entry.get("transaction_evidence")
+            if transaction_evidence is not None:
+                if not isinstance(transaction_evidence, dict) or not str(transaction_evidence.get("relationship", "")).strip():
+                    errors.append(f"industry_chain.{section}.transaction_evidence必须为含relationship和source_ids的对象")
+                else:
+                    _validate_e_sources(transaction_evidence.get("source_ids", []), report_source_ids, f"industry_chain.{section}.transaction_evidence", errors)
+        activities = [str(entry.get("activity", "")).strip() for entry in entries if isinstance(entry, dict)]
+        if len(set(activities)) != len(activities):
+            errors.append(f"industry_chain.{section}不得用重复activity凑足3-6项")
+    needs = chain.get("industry_common_needs", [])
+    if not isinstance(needs, list) or not 3 <= len(needs) <= 6:
+        errors.append("industry_common_needs必须为3-6项")
+    for need in needs if isinstance(needs, list) else []:
+        if not isinstance(need, dict) or not str(need.get("need", "")).strip() or not str(need.get("basis", "")).strip():
+            errors.append("industry_common_needs缺少need或basis")
+            continue
+        if need.get("status") != "industry_inference":
+            errors.append("industry_common_needs的status必须为industry_inference")
+        _validate_e_sources(need.get("source_ids", []), report_source_ids, "industry_common_needs", errors)
+    need_names = [str(need.get("need", "")).strip() for need in needs if isinstance(need, dict)]
+    if len(set(need_names)) != len(need_names):
+        errors.append("industry_common_needs不得用重复need凑足3-6项")
+    return errors
+
+
+def _validate_e_sources(source_ids: object, report_source_ids: set[str], label: str, errors: list[str]) -> None:
+    if not isinstance(source_ids, list) or not source_ids:
+        errors.append(f"{label}缺少有效E类source_ids")
+        return
+    for source_id in source_ids:
+        if source_id not in report_source_ids or not str(source_id).startswith("E"):
+            errors.append(f"{label}引用无效E类来源：{source_id}")
 
 
 def _is_official_policy_url(url: str) -> bool:

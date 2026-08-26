@@ -29,6 +29,8 @@ description: Use when 招商人员只提供企业名称或基础资料，需要�
 6. **设计落地路径并路由主管部门。** 对可承接活动写清三亚主体、职能、人员、合同、收入、利润、结算或投资路径，以及可形成的税收、贸易、投资、就业、品牌和产业带动。将经营动作拆成政府管理事项，按 `references/department-routing.json` 或经职责依据核验的动态路由，逐项对应主管部门。
 7. **实时检索、核验并提炼重点政策。** 每次报告重新核验官方原文、现行状态和申报状态，`report-data.json.meta.policy_researched_at` 必须与 `policy-search-ledger.json.researched_at` 一致且标记 `realtime`；正式报告超过24小时未完成交付时重新检索。为每个机会主题和主管部门建立角色及七路径回执。任一路径或附件未完成，写为 `research_incomplete` 并停止交付；过期或非现行文件只留后台处置。只有现行、已纳入且通过正式性、地域、条件、办理方式和企业承接路径核验的正向机会，才能进入报告。
 8. **汇总成唯一事实源。** 将报告结论和 `policy_opportunity_radar` 写入符合 `schemas/report.schema.json` 的 `report-data.json`，股权证据写入 `equity-evidence.json`，业务链路写入 `research-ledger.json`，实时检索回执写入 `policy-search-ledger.json`。全部门禁通过后才渲染。
+
+   企业基本情况必须完成 Fortune Global 500（2026）、中国企业500强（2025）和中国民营企业500强（2025）的官方榜单核验；状态只能为 `listed`、`group_listed`、`not_listed` 或 `research_incomplete`，并逐项绑定对应最新官方 E 类来源。产业链仅按定位、同类企业、上游、下游、行业共性需求五段记录；行业共性需求仅为 `industry_inference`，不得作为企业事实或政策触发依据。无 `transaction_evidence=true` 时，不得将代表企业称为已确认供应商、客户或合作伙伴；不得加入产业集群启示或招商对象标签。
 9. **生成并复核交付物。** 先运行 `scripts/doctor.py --node <Node路径>`；再运行 `scripts/run_report_pipeline.py` 默认生成 HTML，仅在用户要求时附加 `--pdf` 或 `--word`。HTML 必须通过整页、表格和SVG版式验收；任一失败都禁止交付。
 
 ## 企业与落地业务判断

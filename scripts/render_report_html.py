@@ -167,20 +167,80 @@ def encouraged_industry_table(assessment: dict) -> str:
     )
 
 
+def source_ids_text(item: dict) -> str:
+    return "、".join(str(source_id) for source_id in item.get("source_ids", [])) or "未注明来源"
+
+
+def top500_rows(items: list[dict]) -> list[list[str]]:
+    status_labels = {"listed": "已入选", "group_listed": "集团入选", "not_listed": "未入选", "research_incomplete": "核验未完成"}
+    relationship_labels = {
+        "same_entity": "研究对象（同一主体）",
+        "parent_group": "集团关系：研究对象的母集团",
+        "ultimate_group": "集团关系：研究对象的最终控制集团",
+        "not_applicable": "不适用",
+    }
+    rendered = []
+    for item in items:
+        status = str(item.get("status", "research_incomplete"))
+        if status == "research_incomplete":
+            ranking_result = str(item.get("reason") or "未说明核验原因")
+        elif status == "not_listed":
+            ranking_result = "—"
+        else:
+            rank = item.get("rank")
+            rank_text = f"第{rank}名" if rank else "名次未披露"
+            ranking_result = f"{rank_text}｜{item.get('listed_entity') or '入选主体未注明'}"
+        rendered.append([
+            str(item.get("ranking_label", "未命名榜单")),
+            str(item.get("year", "未注明")),
+            status_labels.get(status, "核验未完成"),
+            ranking_result,
+            relationship_labels.get(str(item.get("relationship_to_target")), "关系未注明"),
+            source_ids_text(item),
+        ])
+    return rendered
+
+
+def top500_table(items: list[dict]) -> str:
+    return report_table(
+        ["榜单", "年度", "状态", "名次/入选主体", "与研究对象关系", "来源"],
+        top500_rows(items),
+        "wide top500-table",
+        [18, 8, 11, 22, 29, 12],
+    )
+
+
+def representative_enterprises_text(items: list[dict]) -> str:
+    return "；".join(
+        str(item.get("name", "未命名企业"))
+        + (f"（{item.get('note')}）" if item.get("note") else "")
+        + f"（来源：{source_ids_text(item)}）"
+        for item in items
+    ) or "本轮未发现可靠代表企业"
+
+
 def industry_chain_block(chain: dict) -> str:
-    stage_labels = {"upstream": "上游", "midstream": "中游", "downstream": "下游"}
-    cards = []
-    for stage in chain.get("stages", []):
-        activities = "".join(f"<li>{escape(str(value))}</li>" for value in stage.get("activities", []))
-        enterprises = stage.get("representative_enterprises", [])
-        names = "；".join(escape(str(item.get("name", ""))) + (f"（{escape(str(item.get('note')))}）" if item.get("note") else "") for item in enterprises) or "本轮未发现可靠代表企业"
-        sources = sorted({str(source) for item in enterprises for source in item.get("source_ids", [])})
-        source_text = "" if not sources else f'<span class="chain-source">（来源：{escape("、".join(sources))}）</span>'
-        target = " target" if stage.get("is_target_stage") else ""
-        scope = str(stage.get("relationship_scope", "行业代表样本，不等同于已确认交易关系"))
-        cards.append(f'<article class="chain-card{target}"><h3>{stage_labels.get(stage.get("stage"), "环节")}｜{escape(str(stage.get("title", "未命名")))}</h3><ul>{activities}</ul><p><strong>代表企业：</strong>{names}{source_text}</p><p class="chain-source">口径：{escape(scope)}</p></article>')
-    region = chain.get("regional_ecosystem", {})
-    return f'<p class="chain-position"><strong>产业链定位：</strong>{escape(str(chain.get("positioning", "需企业补充")))}</p><div class="chain-grid">{"".join(cards)}</div><p class="chain-region"><strong>区域产业生态：</strong>{escape(str(region.get("summary", "本轮未发现可靠资料")))}</p>'
+    positioning = str(chain.get("positioning", {}).get("summary", "需企业补充"))
+    peer_rows = [[
+        str(item.get("name", "未命名企业")), str(item.get("core_business", "未说明")),
+        str(item.get("scale_or_position", "未说明")), "、".join(item.get("similarity_dimensions", [])),
+        str(item.get("similarity", "未说明")), str(item.get("reason", "未说明")), source_ids_text(item),
+    ] for item in chain.get("peer_enterprises", [])]
+    flow_rows = lambda section: [[
+        str(item.get("activity", "未命名环节")), str(item.get("function", "未说明")),
+        representative_enterprises_text(item.get("representative_enterprises", [])), str(item.get("relationship_scope", "未说明")),
+    ] for item in chain.get(section, [])]
+    need_rows = [[
+        str(item.get("need", "未命名需求")), "行业推断", str(item.get("basis", "未说明")), source_ids_text(item),
+    ] for item in chain.get("industry_common_needs", [])]
+    return (
+        f'<p class="chain-position"><strong>产业链定位：</strong>{escape(positioning)}</p>'
+        + "<h3>同类型企业</h3>" + report_table(["企业", "核心业务", "规模或位置", "相似维度", "相似性说明", "比较用途", "来源"], peer_rows, "wide chain-peer-table", [11, 14, 12, 14, 18, 21, 10])
+        + "<h3>上游产业环节</h3>" + report_table(["产业环节", "环节功能", "代表企业", "关系口径"], flow_rows("upstream"), "wide chain-flow-table", [17, 21, 35, 27])
+        + "<h3>下游产业及渠道</h3>" + report_table(["产业或渠道", "环节功能", "代表企业", "关系口径"], flow_rows("downstream"), "wide chain-flow-table", [17, 21, 35, 27])
+        + '<h3>行业共性需求</h3><p class="chain-region"><strong>行业推断：</strong>以下内容仅基于行业结构归纳，不是研究对象已发生的企业事实，不得作为政策触发依据。</p>'
+        + report_table(["共性需求", "属性", "推断依据", "来源"], need_rows, "wide chain-needs-table", [22, 12, 52, 14])
+    )
 
 
 def section(title: str, body: str) -> str:
@@ -219,7 +279,7 @@ def main() -> int:
     ]
     overview_text = '<div class="summary-note"><p><strong>企业概况：</strong>' + escape(overview["profile"]) + '</p><p><strong>经营表现：</strong>' + escape(overview["operating_summary"]) + '</p><p><strong>员工规模：</strong>' + escape(overview["employee_scale"]) + '</p><p><strong>行业地位：</strong>' + escape(industry_position_text(data.get("industry_position", {}))) + "</p></div>"
     business_rows = [[item[key] for key in ("segment", "products", "entity", "sales_channels", "footprint")] for item in data["businesses"]]
-    basic = "<h2>（一）企业主体认定与企业概况</h2>" + report_table(["基本事项", "企业情况"], entity_rows, "entity-table", [18, 82]) + overview_text + "<h2>（二）股权架构拆解</h2><div class=\"svg-wrap\">" + equity_svg(data["equity"]) + "</div>" + paragraph(entity.get("equity_summary", "需企业补充")) + equity_evidence_summary(data["equity"]) + equity_conflict_disclosures(data["equity"].get("conflict_disclosures", [])) + "<h2>（三）主要业务及产品拆解</h2>" + report_table(["业务板块", "主要产品或服务", "主要承载主体", "销售渠道", "国内外业务布局"], business_rows, "wide business-table", [14, 25, 20, 23, 18]) + "<h2>（四）海南自由贸易港鼓励类产业目录匹配</h2>" + encouraged_industry_table(data["encouraged_industry_assessment"]) + "<h2>（五）产业链上下游</h2>" + industry_chain_block(data["industry_chain"])
+    basic = "<h2>（一）企业主体认定与企业概况</h2>" + report_table(["基本事项", "企业情况"], entity_rows, "entity-table", [18, 82]) + overview_text + "<h2>（二）500强核验</h2>" + top500_table(data["top500_status"]) + "<h2>（三）股权架构拆解</h2><div class=\"svg-wrap\">" + equity_svg(data["equity"]) + "</div>" + paragraph(entity.get("equity_summary", "需企业补充")) + equity_evidence_summary(data["equity"]) + equity_conflict_disclosures(data["equity"].get("conflict_disclosures", [])) + "<h2>（四）主要业务及产品拆解</h2>" + report_table(["业务板块", "主要产品或服务", "主要承载主体", "销售渠道", "国内外业务布局"], business_rows, "wide business-table", [14, 25, 20, 23, 18]) + "<h2>（五）海南自由贸易港鼓励类产业目录匹配</h2>" + encouraged_industry_table(data["encouraged_industry_assessment"]) + "<h2>（六）产业链上下游</h2>" + industry_chain_block(data["industry_chain"])
     sections.append(section("一、企业基本情况", basic))
     financial_rows = [[item.get(key, "未公开披露") for key in ("year", "revenue", "revenue_change", "profit", "profit_change", "tax_value", "tax_basis", "government_support", "source")] for item in data["financials"]]
     support_rows = [[item.get(key, "未公开披露") for key in ("year", "name", "department", "amount", "purpose", "conditions", "source")] for item in data.get("government_support", [])] or [["—", "本轮公开检索未发现可确认的政府补助明细", "—", "—", "需企业补充", "需企业补充", "—"]]
