@@ -273,6 +273,12 @@ def validate_policy_opportunity_radar(data: dict, report_source_ids: set[str] | 
     seen_ids: set[str] = set()
     visible_policy_ids = {str(item.get("source_id", "")).strip() for item in data.get("policies", []) if str(item.get("source_id", "")).strip()}
     radar_positive_ids: set[str] = set()
+    enterprise_fact_ids = {
+        str(item.get("id", "")).strip()
+        for section in ("businesses", "landing_businesses")
+        for item in data.get(section, [])
+        if isinstance(item, dict) and str(item.get("id", "")).strip()
+    }
     for signal in signals:
         signal_id = str(signal.get("id", "")).strip()
         label = signal_id or "未编号信号"
@@ -306,9 +312,12 @@ def validate_policy_opportunity_radar(data: dict, report_source_ids: set[str] | 
                 errors.append(f"政策机会雷达{label}/{topic or '未命名主题'}标记surfaced但没有进入正式政策表")
         signal_type = str(signal.get("signal_type", "")).strip().lower()
         basis_type = str(signal.get("basis_type", "")).strip().lower()
+        enterprise_fact_refs = signal.get("enterprise_fact_refs", [])
         source_kinds = {str(value).strip().lower() for value in signal.get("source_kinds", [])}
         if basis_type != "enterprise_fact":
             errors.append(f"政策机会雷达{label}的basis_type必须为enterprise_fact")
+        if not isinstance(enterprise_fact_refs, list) or not enterprise_fact_refs or any(str(ref) not in enterprise_fact_ids for ref in enterprise_fact_refs):
+            errors.append(f"政策机会雷达{label}必须引用已存在的企业业务或拟落地业务ID，不得以行业共性需求替代企业事实")
         if signal_type == "industry_common_need" or "industry_inference" in source_kinds:
             errors.append(f"政策机会雷达{label}不得以industry_common_needs或industry_inference作为企业事实触发")
         signal_fact = str(signal.get("fact", ""))
@@ -370,9 +379,24 @@ def validate_top500_status(data: dict, report_source_ids: set[str]) -> list[str]
                 errors.append(f"top500_status/{label}的listed必须有名次、入选实体且relationship_to_target为same_entity")
         elif status == "group_listed":
             relationship_source_ids = item.get("relationship_source_ids", [])
+            relationship_evidence = item.get("relationship_evidence")
             if not isinstance(item.get("rank"), int) or not str(item.get("listed_entity", "")).strip() or relationship not in {"parent_group", "ultimate_group"}:
                 errors.append(f"top500_status/{label}的group_listed必须有名次、集团实体及集团关系")
             _validate_e_sources(relationship_source_ids, report_source_ids, f"top500_status/{label}/集团关系", errors)
+            if not isinstance(relationship_evidence, dict):
+                errors.append(f"top500_status/{label}/集团关系必须提供结构化relationship_evidence")
+            else:
+                claim = str(relationship_evidence.get("claim", "")).strip()
+                target = str(data.get("entity_resolution", {}).get("analysis_entity", "")).strip()
+                listed_entity = str(item.get("listed_entity", "")).strip()
+                if not claim or not str(relationship_evidence.get("as_of_date", "")).strip() or target not in claim or listed_entity not in claim:
+                    errors.append(f"top500_status/{label}/集团关系证据必须同时点名研究对象、入选集团和证据时点")
+                evidence_ids = relationship_evidence.get("source_ids", [])
+                _validate_e_sources(evidence_ids, report_source_ids, f"top500_status/{label}/集团关系证据", errors)
+                for source_id in evidence_ids if isinstance(evidence_ids, list) else []:
+                    used_in = str(sources.get(str(source_id), {}).get("used_in", ""))
+                    if not re.search(r"股权|控制|集团关系|主体关系", used_in):
+                        errors.append(f"top500_status/{label}/集团关系来源{source_id}未声明用于股权、控制或集团关系核验")
         elif status == "not_listed":
             if relationship != "not_applicable" or item.get("rank") is not None or item.get("listed_entity") is not None:
                 errors.append(f"top500_status/{label}的not_listed必须使用not_applicable关系，且名次和入选实体必须为空")
@@ -436,10 +460,19 @@ def validate_industry_chain(data: dict, report_source_ids: set[str]) -> list[str
                 errors.append(f"industry_chain.{section}未提供transaction_evidence，不得声称供应商、客户或合作伙伴；需直接交易证据")
             transaction_evidence = entry.get("transaction_evidence")
             if transaction_evidence is not None:
-                if not isinstance(transaction_evidence, dict) or not str(transaction_evidence.get("relationship", "")).strip():
-                    errors.append(f"industry_chain.{section}.transaction_evidence必须为含relationship和source_ids的对象")
+                if not isinstance(transaction_evidence, dict) or not str(transaction_evidence.get("relationship", "")).strip() or not str(transaction_evidence.get("evidence_text", "")).strip() or not str(transaction_evidence.get("as_of_date", "")).strip():
+                    errors.append(f"industry_chain.{section}.transaction_evidence必须包含relationship、evidence_text、as_of_date和source_ids")
                 else:
-                    _validate_e_sources(transaction_evidence.get("source_ids", []), report_source_ids, f"industry_chain.{section}.transaction_evidence", errors)
+                    evidence_ids = transaction_evidence.get("source_ids", [])
+                    _validate_e_sources(evidence_ids, report_source_ids, f"industry_chain.{section}.transaction_evidence", errors)
+                    relationship_text = str(transaction_evidence.get("relationship", ""))
+                    evidence_text = str(transaction_evidence.get("evidence_text", ""))
+                    if not TRANSACTION_TERMS.search(relationship_text + evidence_text):
+                        errors.append(f"industry_chain.{section}.transaction_evidence未说明具体交易关系")
+                    for source_id in evidence_ids if isinstance(evidence_ids, list) else []:
+                        used_in = str({str(item.get('id', '')).strip(): item for item in data.get('sources', [])}.get(str(source_id), {}).get("used_in", ""))
+                        if not re.search(r"交易关系|供应商|客户|采购|经销|合作", used_in):
+                            errors.append(f"industry_chain.{section}.transaction_evidence来源{source_id}未声明用于直接交易关系核验")
         activities = [str(entry.get("activity", "")).strip() for entry in entries if isinstance(entry, dict)]
         if len(set(activities)) != len(activities):
             errors.append(f"industry_chain.{section}不得用重复activity凑足3-6项")

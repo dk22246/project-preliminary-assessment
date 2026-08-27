@@ -23,9 +23,9 @@ def report_with_top500_contract() -> dict:
     data = copy.deepcopy(REPORT)
     data["sources"].extend(copy.deepcopy(TOP500_SOURCES))
     data["top500_status"] = [
-        {"year": 2026, "ranking_name": "fortune_global_500", "ranking_label": "Fortune Global 500", "status": "not_listed", "rank": None, "listed_entity": None, "relationship_to_target": "not_applicable", "relationship_source_ids": [], "reason": None, "source_ids": ["E90"]},
-        {"year": 2025, "ranking_name": "china_enterprise_500", "ranking_label": "中国企业500强", "status": "not_listed", "rank": None, "listed_entity": None, "relationship_to_target": "not_applicable", "relationship_source_ids": [], "reason": None, "source_ids": ["E91"]},
-        {"year": 2025, "ranking_name": "china_private_enterprise_500", "ranking_label": "中国民营企业500强", "status": "not_listed", "rank": None, "listed_entity": None, "relationship_to_target": "not_applicable", "relationship_source_ids": [], "reason": None, "source_ids": ["E92"]},
+        {"year": 2026, "ranking_name": "fortune_global_500", "ranking_label": "Fortune Global 500", "status": "not_listed", "rank": None, "listed_entity": None, "relationship_to_target": "not_applicable", "relationship_source_ids": [], "relationship_evidence": None, "reason": None, "source_ids": ["E90"]},
+        {"year": 2025, "ranking_name": "china_enterprise_500", "ranking_label": "中国企业500强", "status": "not_listed", "rank": None, "listed_entity": None, "relationship_to_target": "not_applicable", "relationship_source_ids": [], "relationship_evidence": None, "reason": None, "source_ids": ["E91"]},
+        {"year": 2025, "ranking_name": "china_private_enterprise_500", "ranking_label": "中国民营企业500强", "status": "not_listed", "rank": None, "listed_entity": None, "relationship_to_target": "not_applicable", "relationship_source_ids": [], "relationship_evidence": None, "reason": None, "source_ids": ["E92"]},
     ]
     return data
 
@@ -132,6 +132,13 @@ class Top500AndSupplyChainContractTests(unittest.TestCase):
         item.update({"status": "group_listed", "rank": 100, "listed_entity": "示例集团", "relationship_to_target": "parent_group"})
         self.assert_contract_error(data, "集团关系")
 
+    def test_group_relationship_rejects_unrelated_e_source(self):
+        data = report_with_top500_contract()
+        item = data["top500_status"][0]
+        target = data["entity_resolution"]["analysis_entity"]
+        item.update({"status": "group_listed", "rank": 100, "listed_entity": "示例集团", "relationship_to_target": "parent_group", "relationship_source_ids": ["E01"], "relationship_evidence": {"claim": f"{target}由示例集团控制", "as_of_date": "2026-08-27", "source_ids": ["E01"]}})
+        self.assert_contract_error(data, "未声明用于股权")
+
     def test_relationship_to_target_rejects_unknown_enum(self):
         data = report_with_top500_contract()
         data["top500_status"][2]["relationship_to_target"] = "affiliate"
@@ -201,6 +208,17 @@ class Top500AndSupplyChainContractTests(unittest.TestCase):
         data = report_with_full_new_contract()
         data["policy_opportunity_radar"]["signals"][0].pop("basis_type")
         self.assert_contract_error(data, "basis_type")
+
+    def test_policy_radar_rejects_inference_disguised_without_enterprise_fact_ref(self):
+        data = report_with_full_new_contract()
+        data["policy_opportunity_radar"]["signals"][0]["enterprise_fact_refs"] = ["N01"]
+        self.assert_contract_error(data, "不得以行业共性需求替代")
+
+    def test_transaction_evidence_rejects_unrelated_e_source(self):
+        data = report_with_full_new_contract()
+        data["industry_chain"]["upstream"][0]["relationship_scope"] = "已确认供应商"
+        data["industry_chain"]["upstream"][0]["transaction_evidence"] = {"relationship": "供应商", "evidence_text": "声称存在供应关系", "as_of_date": "2026-08-27", "source_ids": ["E03"]}
+        self.assert_contract_error(data, "未声明用于直接交易关系核验")
 
     def test_peer_enterprise_requires_two_similarity_dimensions(self):
         data = report_with_full_new_contract()

@@ -38,9 +38,9 @@
     ]
   },
   "top500_status": [
-    {"ranking_name": "fortune_global_500", "ranking_label": "Fortune Global 500", "year": 2026, "status": "not_listed", "rank": null, "listed_entity": null, "relationship_to_target": "not_applicable", "relationship_source_ids": [], "reason": null, "source_ids": ["E90"]},
-    {"ranking_name": "china_enterprise_500", "ranking_label": "中国企业500强", "year": 2025, "status": "not_listed", "rank": null, "listed_entity": null, "relationship_to_target": "not_applicable", "relationship_source_ids": [], "reason": null, "source_ids": ["E91"]},
-    {"ranking_name": "china_private_enterprise_500", "ranking_label": "中国民营企业500强", "year": 2025, "status": "not_listed", "rank": null, "listed_entity": null, "relationship_to_target": "not_applicable", "relationship_source_ids": [], "reason": null, "source_ids": ["E92"]}
+    {"ranking_name": "fortune_global_500", "ranking_label": "Fortune Global 500", "year": 2026, "status": "not_listed", "rank": null, "listed_entity": null, "relationship_to_target": "not_applicable", "relationship_source_ids": [], "relationship_evidence": null, "reason": null, "source_ids": ["E90"]},
+    {"ranking_name": "china_enterprise_500", "ranking_label": "中国企业500强", "year": 2025, "status": "not_listed", "rank": null, "listed_entity": null, "relationship_to_target": "not_applicable", "relationship_source_ids": [], "relationship_evidence": null, "reason": null, "source_ids": ["E91"]},
+    {"ranking_name": "china_private_enterprise_500", "ranking_label": "中国民营企业500强", "year": 2025, "status": "not_listed", "rank": null, "listed_entity": null, "relationship_to_target": "not_applicable", "relationship_source_ids": [], "relationship_evidence": null, "reason": null, "source_ids": ["E92"]}
   ],
   "equity": {
     "nodes": [
@@ -546,6 +546,7 @@
         "id": "S01",
         "signal_type": "headquarters_and_talent",
         "basis_type": "enterprise_fact",
+        "enterprise_fact_refs": ["B01", "L01"],
         "fact": "企业具备上市公司管理、品牌运营和核心团队配置能力。",
         "source_ids": ["E01"],
         "opportunities": [
@@ -558,6 +559,7 @@
         "id": "S02",
         "signal_type": "overseas_business",
         "basis_type": "enterprise_fact",
+        "enterprise_fact_refs": ["B04", "L04"],
         "fact": "企业公开披露海外产品、渠道拓展和境外投资运营方向。",
         "source_ids": ["E01"],
         "opportunities": [
@@ -574,6 +576,7 @@
         "id": "S03",
         "signal_type": "import_and_processing",
         "basis_type": "enterprise_fact",
+        "enterprise_fact_refs": ["B03", "L03"],
         "fact": "企业存在供应链采购能力，但本轮未发现海南岛内进口自用或加工生产安排。",
         "source_ids": ["E01"],
         "opportunities": [
