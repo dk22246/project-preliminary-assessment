@@ -65,6 +65,19 @@ class PortablePolicyRadarContractTests(unittest.TestCase):
         errors = validate_report_data(data)
         self.assertTrue(any("行业地位" in error for error in errors), errors)
 
+    def test_industry_position_allows_an_explicit_no_public_evidence_result(self):
+        data = copy.deepcopy(REPORT)
+        data["industry_position"] = {
+            "statement": "本轮公开检索未发现足以形成行业排名或市场份额结论的可靠证据。",
+            "category": "目标企业核心行业",
+            "position": "公开资料不足以形成可核验行业位置结论",
+            "period": "本轮检索时点",
+            "evidence_status": "not_public",
+            "source_ids": ["E01"],
+        }
+        errors = validate_report_data(data)
+        self.assertFalse(any("行业地位" in error for error in errors), errors)
+
     def test_overseas_signal_requires_disposition_for_adjacent_policy_tools(self):
         data = copy.deepcopy(REPORT)
         data["policy_opportunity_radar"] = {

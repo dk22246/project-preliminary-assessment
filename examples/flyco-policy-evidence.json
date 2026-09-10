@@ -1,0 +1,84 @@
+{
+  "version": "1.0",
+  "enterprise": "上海飞科电器股份有限公司",
+  "researched_at": "2026-08-10T10:00:00+08:00",
+  "mode": "fixture",
+  "fixture_metadata": {
+    "fixture_only": true,
+    "fixture_name": "flyco-release-test"
+  },
+  "records": [
+    {
+      "id": "PE01", "policy_source_id": "P01",
+      "requested_url": "https://dofcom.hainan.gov.cn/dofcom/Policys/202506/b200f0e7989e47198ad69f6ed11b4b0b.shtml?ddtab=true",
+      "final_url": "https://dofcom.hainan.gov.cn/dofcom/Policys/202506/b200f0e7989e47198ad69f6ed11b4b0b.shtml?ddtab=true",
+      "retrieved_at": "2026-08-10T10:00:00+08:00", "http_status": 200, "content_type": "text/html",
+      "artifact_path": "evidence-sample/official-policy.md", "artifact_sha256": "00359aaaff5cef59f2872e5b267e16531640353881943623a960fe5f8b4a5aa1",
+      "issuer": "财政部、税务总局", "title": "财政部 税务总局关于延续实施海南自由贸易港企业所得税优惠政策的通知", "document_number": "财税〔2025〕3号", "published_at": "2025-01-24",
+      "validity_status": "current", "validity_basis": "发布测试固定政策证据", "validity_locator": "fixture记录", "application_status": "not_application_based", "application_basis": "按规定申报享受", "application_locator": "fixture记录"
+    },
+    {
+      "id": "PE03", "policy_source_id": "P03",
+      "requested_url": "https://mof.hainan.gov.cn/sczt/zcfg/202502/28bd363fc59d4779a0752b535ba457cb/files/25a735d4dac34e43b28d1f77257b188a.pdf",
+      "final_url": "https://mof.hainan.gov.cn/sczt/zcfg/202502/28bd363fc59d4779a0752b535ba457cb/files/25a735d4dac34e43b28d1f77257b188a.pdf",
+      "retrieved_at": "2026-08-10T10:00:00+08:00", "http_status": 200, "content_type": "application/pdf",
+      "artifact_path": "evidence-sample/official-policy.md", "artifact_sha256": "00359aaaff5cef59f2872e5b267e16531640353881943623a960fe5f8b4a5aa1",
+      "issuer": "财政部、税务总局", "title": "财政部 税务总局关于延续实施海南自由贸易港高端紧缺人才个人所得税政策的通知", "document_number": "财税〔2025〕4号", "published_at": "2025-01-24",
+      "validity_status": "current", "validity_basis": "发布测试固定政策证据", "validity_locator": "fixture记录", "application_status": "not_application_based", "application_basis": "按规定申报享受", "application_locator": "fixture记录"
+    },
+    {
+      "id": "PE04", "policy_source_id": "P04",
+      "requested_url": "https://mof.hainan.gov.cn/sczt/0503/202509/035b9fef33be404492e9cd6877b84363.shtml?ddtab=true",
+      "final_url": "https://mof.hainan.gov.cn/sczt/0503/202509/035b9fef33be404492e9cd6877b84363.shtml?ddtab=true",
+      "retrieved_at": "2026-08-10T10:00:00+08:00", "http_status": 200, "content_type": "text/html",
+      "artifact_path": "evidence-sample/official-policy.md", "artifact_sha256": "00359aaaff5cef59f2872e5b267e16531640353881943623a960fe5f8b4a5aa1",
+      "issuer": "海南省财政厅等五部门", "title": "海南省财政厅等五部门关于落实海南自由贸易港个人所得税优惠政策有关事项的公告", "document_number": "2025年第24号", "published_at": "2025-09-01",
+      "validity_status": "current", "validity_basis": "发布测试固定政策证据", "validity_locator": "fixture记录", "application_status": "not_application_based", "application_basis": "按规定申报享受", "application_locator": "fixture记录"
+    },
+    {
+      "id": "PE06", "policy_source_id": "P06",
+      "requested_url": "https://haikou.pbc.gov.cn/haikou/fileDir/resource/cms/2025/07/2025072316565467907.pdf",
+      "final_url": "https://haikou.pbc.gov.cn/haikou/fileDir/resource/cms/2025/07/2025072316565467907.pdf",
+      "retrieved_at": "2026-08-10T10:00:00+08:00", "http_status": 200, "content_type": "application/pdf",
+      "artifact_path": "evidence-sample/official-policy.md", "artifact_sha256": "00359aaaff5cef59f2872e5b267e16531640353881943623a960fe5f8b4a5aa1",
+      "issuer": "中国人民银行海南省分行", "title": "海南自由贸易港多功能自由贸易账户业务管理办法", "document_number": "琼银发〔2024〕32号", "published_at": "2024-04-03",
+      "validity_status": "current", "validity_basis": "发布测试固定政策证据", "validity_locator": "fixture记录", "application_status": "not_application_based", "application_basis": "按规定办理", "application_locator": "fixture记录"
+    },
+    {
+      "id": "PE07", "policy_source_id": "P07",
+      "requested_url": "https://www.mof.gov.cn/gkml/caizhengwengao/wg2025/wg202503/202505/P020250513318507070749.pdf",
+      "final_url": "https://www.mof.gov.cn/gkml/caizhengwengao/wg2025/wg202503/202505/P020250513318507070749.pdf",
+      "retrieved_at": "2026-08-10T10:00:00+08:00", "http_status": 200, "content_type": "application/pdf",
+      "artifact_path": "evidence-sample/official-policy.md", "artifact_sha256": "00359aaaff5cef59f2872e5b267e16531640353881943623a960fe5f8b4a5aa1",
+      "issuer": "财政部、税务总局", "title": "财政部 税务总局关于继续实施离岸贸易印花税优惠政策的通知", "document_number": "财税〔2025〕10号", "published_at": "2025-03-24",
+      "validity_status": "current", "validity_basis": "发布测试固定政策证据", "validity_locator": "fixture记录", "application_status": "not_application_based", "application_basis": "按规定申报享受", "application_locator": "fixture记录"
+    },
+    {
+      "id": "PE08", "policy_source_id": "P08",
+      "requested_url": "https://dofcom.hainan.gov.cn/dofcom/zwdt/202311/a2d8baa540b642eea9b94b70d2378652/files/8432d09ab5fd443293cfa4c7546d105a.pdf",
+      "final_url": "https://dofcom.hainan.gov.cn/dofcom/zwdt/202311/a2d8baa540b642eea9b94b70d2378652/files/8432d09ab5fd443293cfa4c7546d105a.pdf",
+      "retrieved_at": "2026-08-10T10:00:00+08:00", "http_status": 200, "content_type": "application/pdf",
+      "artifact_path": "evidence-sample/official-policy.md", "artifact_sha256": "00359aaaff5cef59f2872e5b267e16531640353881943623a960fe5f8b4a5aa1",
+      "issuer": "海南省商务厅", "title": "海南自由贸易港企业境外投资合规管理指引（2023年版）", "document_number": "无文号说明", "published_at": "2023-11-01",
+      "validity_status": "current", "validity_basis": "发布测试固定政策证据", "validity_locator": "fixture记录", "application_status": "not_application_based", "application_basis": "按规定办理", "application_locator": "fixture记录"
+    },
+    {
+      "id": "PE12", "policy_source_id": "P12",
+      "requested_url": "https://jx.mof.gov.cn/xxgk/zhengcefagui/202006/t20200630_3541194.htm",
+      "final_url": "https://jx.mof.gov.cn/xxgk/zhengcefagui/202006/t20200630_3541194.htm",
+      "retrieved_at": "2026-08-10T10:00:00+08:00", "http_status": 200, "content_type": "text/html",
+      "artifact_path": "evidence-sample/official-policy.md", "artifact_sha256": "00359aaaff5cef59f2872e5b267e16531640353881943623a960fe5f8b4a5aa1",
+      "issuer": "财政部、税务总局", "title": "财政部 税务总局关于海南自由贸易港企业所得税优惠政策的通知", "document_number": "财税〔2020〕31号", "published_at": "2020-06-23",
+      "validity_status": "current", "validity_basis": "发布测试固定政策证据", "validity_locator": "fixture记录", "application_status": "not_application_based", "application_basis": "按规定申报享受", "application_locator": "fixture记录"
+    },
+    {
+      "id": "PE13", "policy_source_id": "P13",
+      "requested_url": "https://www.safe.gov.cn/hainan/2025/0123/2130.html",
+      "final_url": "https://www.safe.gov.cn/hainan/2025/0123/2130.html",
+      "retrieved_at": "2026-08-10T10:00:00+08:00", "http_status": 200, "content_type": "text/html",
+      "artifact_path": "evidence-sample/official-policy.md", "artifact_sha256": "00359aaaff5cef59f2872e5b267e16531640353881943623a960fe5f8b4a5aa1",
+      "issuer": "国家外汇管理局海南省分局", "title": "国家外汇管理局海南省分局关于印发《跨国公司本外币一体化资金池业务试点管理规定》的通知", "document_number": "琼汇发〔2025〕3号", "published_at": "2025-01-22",
+      "validity_status": "current", "validity_basis": "发布测试固定政策证据", "validity_locator": "fixture记录", "application_status": "not_application_based", "application_basis": "按规定办理", "application_locator": "fixture记录"
+    }
+  ]
+}

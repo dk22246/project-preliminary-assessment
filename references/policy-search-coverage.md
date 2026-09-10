@@ -41,6 +41,10 @@
 
 `collect_web_evidence.py` 只负责网页和附件取证；它不是完整的政策发现器。无论使用浏览器、搜索引擎、网页采集器还是人工目录检索，结果都必须写入同一份 `policy-search-ledger.json`。
 
+每条 `complete` 回执还必须记录本轮 `query`、`checked_at`、`result_count`、`result_source_ids` 和 `evidence_record_ids`。同一目录入口可复用，但每条路径仍须保留自身检索词、结果数量和处置结果，不得复制“已完成检索”摘要代替实际回执。
+
+主管部门级批量检索优先使用 `scripts/discover_current_policies.py`：任务只能来自已确认的落地业务和主管部门路由；同一部门同一入口单次只抓取一次，不同政府域名最多并发4路，同域名并发1路。429、502、503、504最多指数退避重试2次；登录、验证码、403或付费墙不得绕过，直接标记 `research_incomplete`。缓存仅允许在本轮访问官方来源并获得复验回执后复用，申报通知、失效目录和动态公示必须重新获取。
+
 ## 结论状态边界
 
 - 发现现行政策、企业资格尚缺事实：`conditional_opportunity`。

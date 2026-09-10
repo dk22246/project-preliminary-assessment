@@ -6,8 +6,13 @@ from report_core import load_data, validate_report_data
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("report_data")
+    parser.add_argument("--fixture-mode", action="store_true")
     args = parser.parse_args()
-    errors = validate_report_data(load_data(args.report_data))
+    data = load_data(args.report_data)
+    errors = validate_report_data(data)
+    fixture = data.get("fixture_metadata") or {}
+    if fixture.get("fixture_only") and not args.fixture_mode:
+        errors.append("正式报告不得使用fixture底稿；发布测试必须显式传入--fixture-mode")
     if errors:
         print("\n".join(errors))
         return 1

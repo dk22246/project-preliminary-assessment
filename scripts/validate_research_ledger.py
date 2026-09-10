@@ -15,6 +15,7 @@ DISPOSITIONS = {"include", "merge", "exclude"}
 ROUTE_STATUSES = {"matched_static_rule", "verified_dynamic_route", "rejected_route", "unresolved"}
 CURRENT_POLICY_STATUSES = {"current_open", "current_no_open_call", "current_conditional"}
 POLICY_STATUSES = CURRENT_POLICY_STATUSES | {"expired_relevant", "renewal_pending", "not_applicable", "insufficient_evidence", "no_current_policy"}
+ROUTE_BY_LISTING_STATUS = {"listed": "listed_disclosure", "nonlisted": "nonlisted_public_evidence"}
 
 
 def _index(rows: list[dict], label: str, errors: list[str]) -> dict[str, dict]:
@@ -32,11 +33,32 @@ def _index(rows: list[dict], label: str, errors: list[str]) -> dict[str, dict]:
 
 def validate_research_ledger(ledger: dict, report_data: dict) -> list[str]:
     errors: list[str] = []
-    for field in ("enterprise", "fact_ledger", "business_candidates", "department_routes"):
+    for field in ("enterprise", "enterprise_profile", "fact_ledger", "business_candidates", "department_routes"):
         if not ledger.get(field):
             errors.append(f"研究底稿缺少{field}")
     if errors:
         return errors
+    profile = ledger["enterprise_profile"]
+    report_entity = str(report_data.get("entity_resolution", {}).get("analysis_entity", "")).strip()
+    profile_entity = str(profile.get("analysis_entity", "")).strip()
+    if not profile_entity:
+        errors.append("enterprise_profile缺少analysis_entity")
+    elif profile_entity != report_entity:
+        errors.append("enterprise_profile.analysis_entity与报告主体不一致")
+    listing_status = str(profile.get("listing_status", "")).strip()
+    route = str(profile.get("research_route", "")).strip()
+    expected_route = ROUTE_BY_LISTING_STATUS.get(listing_status)
+    if expected_route is None:
+        errors.append("enterprise_profile.listing_status只能为listed或nonlisted")
+    elif route != expected_route:
+        errors.append(f"enterprise_profile.research_route与listing_status不一致：应为{expected_route}")
+    report_source_ids = {str(item.get("id", "")).strip() for item in report_data.get("sources", [])}
+    basis_source_ids = profile.get("basis_source_ids", [])
+    if not basis_source_ids:
+        errors.append("enterprise_profile缺少上市状态判断来源")
+    for source_id in basis_source_ids:
+        if source_id not in report_source_ids or not str(source_id).startswith("E"):
+            errors.append(f"enterprise_profile引用无效E类来源：{source_id}")
     facts = _index(ledger["fact_ledger"], "企业事实", errors)
     candidates = _index(ledger["business_candidates"], "业务候选", errors)
     routes = _index(ledger["department_routes"], "主管部门路由", errors)

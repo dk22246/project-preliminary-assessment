@@ -31,6 +31,67 @@ def usd_data():
 
 
 class FinancialRenderingTests(unittest.TestCase):
+    def test_every_financial_row_requires_an_explicit_data_status(self):
+        data = copy.deepcopy(FLYCO)
+        data["financials"][0].pop("data_status", None)
+        errors = validate_report_data(data)
+        self.assertTrue(any("data_status" in error for error in errors), errors)
+
+    def test_nonlisted_report_accepts_three_explicit_not_public_financial_rows(self):
+        data = copy.deepcopy(FLYCO)
+        data["enterprise_overview"]["listing_status"] = "非上市"
+        for row in data["financials"]:
+            row.update({
+                "data_status": "not_public",
+                "revenue": "未公开披露",
+                "revenue_change": "未公开披露",
+                "profit": "未公开披露",
+                "profit_change": "未公开披露",
+                "tax_value": "未公开披露，需企业补充",
+                "tax_basis": "需企业补充",
+                "government_support": "未公开披露，需企业补充",
+                "source": "本轮公开检索未发现可靠数据",
+                "availability_note": "本轮公开检索未发现可靠数据，需企业补充",
+            })
+        errors = validate_report_data(data)
+        self.assertFalse(any("财务行" in error for error in errors), errors)
+
+    def test_unavailable_financial_row_requires_a_reason(self):
+        data = copy.deepcopy(FLYCO)
+        row = data["financials"][0]
+        row.update({
+            "data_status": "not_public",
+            "revenue": "未公开披露",
+            "revenue_change": "未公开披露",
+            "profit": "未公开披露",
+            "profit_change": "未公开披露",
+        })
+        row.pop("availability_note", None)
+        errors = validate_report_data(data)
+        self.assertTrue(any("availability_note" in error for error in errors), errors)
+
+    def test_html_displays_the_unavailable_financial_reason(self):
+        data = copy.deepcopy(FLYCO)
+        data["financials"][0].update({
+            "data_status": "not_public",
+            "revenue": "未公开披露",
+            "revenue_change": "未公开披露",
+            "profit": "未公开披露",
+            "profit_change": "未公开披露",
+            "availability_note": "本轮公开检索未发现可靠数据，需企业补充",
+        })
+        with tempfile.TemporaryDirectory() as directory:
+            source = Path(directory) / "nonlisted-report-data.json"
+            output = Path(directory) / "report.html"
+            source.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
+            result = subprocess.run(
+                [sys.executable, "-X", "utf8", str(ROOT / "scripts" / "render_report_html.py"), str(source), "--out", str(output)],
+                text=True,
+                capture_output=True,
+            )
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+            self.assertIn("本轮公开检索未发现可靠数据，需企业补充", output.read_text(encoding="utf-8"))
+
     def test_rejects_explanatory_sentence_in_yoy_cell(self):
         data = usd_data()
         data["financials"][-1]["revenue_change"] = "—（本报告未纳入FY2023基数）"

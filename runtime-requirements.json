@@ -4,6 +4,13 @@
   "node": ">=18",
   "default_output": ["python", "node", "playwright", "chrome"],
   "word_output": ["python-docx"],
+  "network": {
+    "connect_timeout_seconds": 10,
+    "read_timeout_seconds": 30,
+    "max_retries": 2,
+    "max_concurrency": 4,
+    "per_host_concurrency": 1
+  },
   "fingerprint_roots": ["agents", "examples", "references", "schemas", "scripts", "tests"],
   "fingerprint_files": [
     "SKILL.md",
@@ -25,6 +32,11 @@
     "scripts/verify_html_layout.mjs",
     "scripts/bootstrap.py",
     "scripts/doctor.py",
-    "scripts/runtime_state.py"
+    "scripts/runtime_state.py",
+    "scripts/discover_current_policies.py",
+    "scripts/policy_cache.py",
+    "scripts/validate_policy_evidence.py",
+    "scripts/validate_research_stop_gate.py",
+    "references/ranking-registry.json"
   ]
 }

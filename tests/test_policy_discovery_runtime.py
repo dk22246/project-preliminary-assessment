@@ -1,0 +1,104 @@
+import sys
+import tempfile
+import threading
+import time
+import unittest
+from pathlib import Path
+
+
+ROOT = Path(__file__).parents[1]
+sys.path.insert(0, str(ROOT / "scripts"))
+
+try:
+    from discover_current_policies import discover_current_policies
+except ModuleNotFoundError:
+    discover_current_policies = None
+
+
+def research_ledger():
+    return {
+        "enterprise": "测试企业",
+        "department_routes": [
+            {"id": "DR01", "landing_business_id": "L01", "department": "海南省商务厅", "entry_url": "https://dofcom.hainan.gov.cn/dofcom/Policys/list.shtml"},
+            {"id": "DR02", "landing_business_id": "L02", "department": "海南省商务厅", "entry_url": "https://dofcom.hainan.gov.cn/dofcom/Policys/list.shtml"},
+        ],
+        "business_candidates": [
+            {"id": "BC01", "disposition": "include", "disposition_target": "L01"},
+            {"id": "BC02", "disposition": "include", "disposition_target": "L02"},
+        ],
+    }
+
+
+def report_data():
+    return {"landing_businesses": [{"id": "L01", "business": "国际贸易"}, {"id": "L02", "business": "跨境电商"}]}
+
+
+class PolicyDiscoveryRuntimeTests(unittest.TestCase):
+    def test_deduplicates_one_department_entry_and_records_machine_receipt_fields(self):
+        self.assertIsNotNone(discover_current_policies, "discover_current_policies.py must provide discover_current_policies")
+        calls = []
+
+        def fetch(url, headers):
+            calls.append(url)
+            return {"status": 200, "final_url": url, "body": b"official policy directory", "headers": {"Content-Type": "text/html"}}
+
+        with tempfile.TemporaryDirectory() as directory:
+            result = discover_current_policies(research_ledger(), report_data(), Path(directory), fetch=fetch)
+
+        self.assertEqual(calls, ["https://dofcom.hainan.gov.cn/dofcom/Policys/list.shtml"])
+        self.assertEqual(result["metrics"]["requests"], 1)
+        self.assertEqual(result["metrics"]["successful_requests"], 1)
+        runs = result["policy_search_ledger"]["searches"]
+        self.assertEqual(len(runs), 2)
+        for item in runs:
+            run = item["department_searches"][0]["runs"][0]
+            self.assertEqual(run["query"], item["topic"])
+            self.assertIn("checked_at", run)
+            self.assertIn("result_count", run)
+            self.assertIn("result_source_ids", run)
+            self.assertIn("evidence_record_ids", run)
+
+    def test_retries_transient_gateway_failure_at_most_two_times(self):
+        self.assertIsNotNone(discover_current_policies, "discover_current_policies.py must provide discover_current_policies")
+        attempts = []
+
+        def fetch(url, headers):
+            attempts.append(url)
+            if len(attempts) < 3:
+                return {"status": 503, "final_url": url, "headers": {}}
+            return {"status": 200, "final_url": url, "body": b"ok", "headers": {"Content-Type": "text/html"}}
+
+        with tempfile.TemporaryDirectory() as directory:
+            result = discover_current_policies(research_ledger(), report_data(), Path(directory), fetch=fetch, sleep=lambda _: None)
+
+        self.assertEqual(len(attempts), 3)
+        self.assertEqual(result["metrics"]["retries"], 2)
+        self.assertEqual(result["metrics"]["failed_requests"], 0)
+
+    def test_serializes_different_department_entries_on_the_same_official_host(self):
+        self.assertIsNotNone(discover_current_policies, "discover_current_policies.py must provide discover_current_policies")
+        ledger = research_ledger()
+        ledger["department_routes"][1]["department"] = "海南省发展和改革委员会"
+        ledger["department_routes"][1]["entry_url"] = "https://dofcom.hainan.gov.cn/another-policy-list.shtml"
+        active = 0
+        peak = 0
+        lock = threading.Lock()
+
+        def fetch(url, headers):
+            nonlocal active, peak
+            with lock:
+                active += 1
+                peak = max(peak, active)
+            time.sleep(0.02)
+            with lock:
+                active -= 1
+            return {"status": 200, "final_url": url, "body": b"ok", "headers": {"Content-Type": "text/html"}}
+
+        with tempfile.TemporaryDirectory() as directory:
+            discover_current_policies(ledger, report_data(), Path(directory), fetch=fetch, max_concurrency=4)
+
+        self.assertEqual(peak, 1)
+
+
+if __name__ == "__main__":
+    unittest.main()

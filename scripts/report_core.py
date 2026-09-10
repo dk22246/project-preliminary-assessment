@@ -4,6 +4,7 @@ from __future__ import annotations
 from html import escape
 from pathlib import Path
 import json
+import os
 import re
 from urllib.parse import urlparse
 
@@ -18,6 +19,9 @@ LEDGER_LABELS = {"direct_match": "可适用（条件待核）", "conditional_opp
 TERMS = ("实质性运营", "拟落地主体", "核心经营主体", "控股股东", "政府补助及财政支持")
 YOY_PATTERN = re.compile(r"(?:[+-]?\d+(?:\.\d+)?%|—|未计算|未公开披露)")
 FINANCIAL_VALUE_PATTERN = re.compile(r"\d{1,3}(?:,\d{3})*(?:\.\d+)?|\d+(?:\.\d+)?")
+FINANCIAL_UNAVAILABLE = "未公开披露"
+FINANCIAL_DATA_STATUSES = {"available", "partial", "not_public", "inaccessible"}
+INDUSTRY_EVIDENCE_STATUSES = {"ranked", "market_share", "tier", "qualitative_only", "not_public"}
 EQUITY_CONFLICT_FIELDS = (
     "id",
     "field",
@@ -44,11 +48,8 @@ OVERSEAS_OPPORTUNITY_TOPICS = {
     "cross_border_fund_pool",
     "offshore_trade_stamp_duty",
 }
-TOP500_REQUIREMENTS = {
-    "fortune_global_500": (2026, "https://fortune.com/ranking/global500/2026/", {"Fortune"}),
-    "china_enterprise_500": (2025, "https://news.cnr.cn/native/gd/kx/20250915/t20250915_527362516.shtml", {"央视新闻客户端", "中国企业联合会/中国企业家协会"}),
-    "china_private_enterprise_500": (2025, "https://www.acfic.org.cn/qlyw/202508/t20250827_319997.html", {"中华全国工商业联合会"}),
-}
+RANKING_NAMES = {"fortune_global_500", "china_enterprise_500", "china_private_enterprise_500"}
+RANKING_SOURCE_TYPES = {"官方榜单", "权威转载榜单"}
 TOP500_STATUSES = {"listed", "group_listed", "not_listed", "research_incomplete"}
 TOP500_RELATIONSHIPS = {"same_entity", "parent_group", "ultimate_group", "not_applicable"}
 TRANSACTION_TERMS = re.compile(r"供应商|供货商|客户|采购方|经销商|合作伙伴|合作方|supplier|vendor|customer|client|dealer|partner", re.IGNORECASE)
@@ -65,6 +66,33 @@ def load_data(path: str | Path) -> dict:
     return json.loads(Path(path).read_text(encoding="utf-8-sig"))
 
 
+def load_ranking_registry(path: str | Path | None = None) -> dict[str, dict]:
+    """Load the current ranking contract from data, failing closed on drift."""
+    registry_path = Path(path or os.environ.get("REPORT_RANKING_REGISTRY") or Path(__file__).parents[1] / "references" / "ranking-registry.json")
+    try:
+        payload = load_data(registry_path)
+    except (OSError, json.JSONDecodeError) as exc:
+        raise ValueError(f"500强榜单注册表不可读取：{registry_path}") from exc
+    if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", str(payload.get("verified_at", ""))):
+        raise ValueError("500强榜单注册表缺少有效verified_at")
+    raw = payload.get("rankings")
+    if not isinstance(raw, dict) or set(raw) != RANKING_NAMES:
+        raise ValueError("500强榜单注册表必须恰好包含三类榜单且不得重复")
+    for name, item in raw.items():
+        if not isinstance(item, dict):
+            raise ValueError(f"500强榜单注册表/{name}必须为对象")
+        if not isinstance(item.get("year"), int) or item["year"] < 2000:
+            raise ValueError(f"500强榜单注册表/{name}年度无效")
+        if not str(item.get("official_url", "")).startswith("https://"):
+            raise ValueError(f"500强榜单注册表/{name}缺少HTTPS正式来源")
+        if item.get("source_type") not in RANKING_SOURCE_TYPES:
+            raise ValueError(f"500强榜单注册表/{name}来源类型不是官方榜单或权威转载榜单")
+        issuers = item.get("allowed_issuers")
+        if not isinstance(issuers, list) or not issuers or any(not str(value).strip() for value in issuers):
+            raise ValueError(f"500强榜单注册表/{name}缺少允许发布机构")
+    return raw
+
+
 def financial_headers(meta: dict) -> list[str]:
     """Use the explicitly declared display unit; never infer it from cell text."""
     unit = str(meta.get("financial_unit", "")).strip()
@@ -73,12 +101,16 @@ def financial_headers(meta: dict) -> list[str]:
 
 
 def financial_change_notes(financials: list[dict]) -> list[str]:
-    """Keep explanations outside narrow year-on-year columns."""
+    """Keep change and public-data availability explanations below the table."""
     notes: list[str] = []
     for row in financials:
+        year = str(row.get("year", "未注明年度")).strip()
         note = str(row.get("change_note", "")).strip()
         if note:
-            notes.append(f"{str(row.get('year', '未注明年度')).strip()}：{note}")
+            notes.append(f"{year}：{note}")
+        availability_note = str(row.get("availability_note", "")).strip()
+        if availability_note:
+            notes.append(f"{year}数据可得性：{availability_note}")
     return notes
 
 
@@ -198,12 +230,17 @@ def validate_report_data(data: dict) -> list[str]:
     if not isinstance(industry, dict):
         errors.append("行业地位必须使用结构化对象，包含结论、品类、位置、时点和来源")
     else:
-        for field in ("statement", "category", "position", "period", "source_ids"):
+        for field in ("statement", "category", "position", "period", "evidence_status", "source_ids"):
             if not industry.get(field):
                 errors.append(f"行业地位缺少{field}")
         position = str(industry.get("position", "")).strip()
-        if position and not re.search(r"(?:第\s*1|第一|头部|第一梯队|TOP\s*1|Top\s*1|top\s*1|市场份额|排名)", position):
+        evidence_status = str(industry.get("evidence_status", "")).strip()
+        if evidence_status not in INDUSTRY_EVIDENCE_STATUSES:
+            errors.append("行业地位evidence_status只能为ranked、market_share、tier、qualitative_only或not_public")
+        elif evidence_status in {"ranked", "market_share", "tier"} and position and not re.search(r"(?:第\s*1|第一|头部|第一梯队|TOP\s*1|Top\s*1|top\s*1|市场份额|排名)", position):
             errors.append("行业地位必须写明经证据支持的排名、份额或第一梯队定位，不得只写知名品牌")
+        elif evidence_status in {"qualitative_only", "not_public"} and not re.search(r"(?:未发现|未公开|不足|无法|不形成|不认定)", str(industry.get("statement", "")) + position):
+            errors.append("行业地位缺少公开排名时必须明确证据边界，不得改写为头部或知名品牌")
         for source_id in industry.get("source_ids", []):
             if source_id not in report_source_ids or not str(source_id).startswith("E"):
                 errors.append(f"行业地位引用无效E类来源：{source_id}")
@@ -223,13 +260,25 @@ def validate_report_data(data: dict) -> list[str]:
     if unit and len(unit) > 20:
         errors.append("financial_unit 过长，必须使用简短统一显示单位")
     for row in data.get("financials", []):
-        for field in ("year", "revenue", "revenue_change", "profit", "profit_change", "tax_value", "tax_basis", "government_support", "source"):
+        for field in ("year", "data_status", "revenue", "revenue_change", "profit", "profit_change", "tax_value", "tax_basis", "government_support", "source"):
             if not str(row.get(field, "")).strip():
                 errors.append(f"财务行缺少{field}：{row}")
+        data_status = str(row.get("data_status", "")).strip()
+        if data_status not in FINANCIAL_DATA_STATUSES:
+            errors.append(f"财务行data_status不规范：{data_status or '缺失'}")
         for field in ("revenue", "profit"):
             value = str(row.get(field, "")).strip()
-            if value and not FINANCIAL_VALUE_PATTERN.fullmatch(value):
-                errors.append(f"财务行{field}必须为不含币种和单位的数值显示：{value}")
+            if value and value != FINANCIAL_UNAVAILABLE and not FINANCIAL_VALUE_PATTERN.fullmatch(value):
+                errors.append(f"财务行{field}必须为不含币种和单位的数值或“未公开披露”：{value}")
+        availability = [str(row.get(field, "")).strip() != FINANCIAL_UNAVAILABLE for field in ("revenue", "profit")]
+        if data_status == "available" and not all(availability):
+            errors.append(f"财务行data_status为available时收入和利润必须都有可靠数值：{row.get('year', '')}")
+        elif data_status == "partial" and (all(availability) or not any(availability)):
+            errors.append(f"财务行data_status为partial时收入和利润必须仅有一项可得：{row.get('year', '')}")
+        elif data_status in {"not_public", "inaccessible"} and any(availability):
+            errors.append(f"财务行data_status为{data_status}时收入和利润均应标为未公开披露：{row.get('year', '')}")
+        if data_status in {"partial", "not_public", "inaccessible"} and not str(row.get("availability_note", "")).strip():
+            errors.append(f"财务行{row.get('year', '未注明年度')}缺少availability_note")
         for field in ("revenue_change", "profit_change"):
             value = str(row.get(field, "")).strip()
             if value and not YOY_PATTERN.fullmatch(value):
@@ -338,11 +387,15 @@ def validate_policy_opportunity_radar(data: dict, report_source_ids: set[str] | 
 def validate_top500_status(data: dict, report_source_ids: set[str]) -> list[str]:
     """Require exactly the latest official result for each mandated ranking."""
     errors: list[str] = []
+    try:
+        requirements = load_ranking_registry()
+    except ValueError as exc:
+        return [str(exc)]
     items = data.get("top500_status", [])
     if not isinstance(items, list):
         return ["top500_status必须为列表"]
     names = [item.get("ranking_name") for item in items if isinstance(item, dict)]
-    if set(names) != set(TOP500_REQUIREMENTS) or len(names) != len(TOP500_REQUIREMENTS):
+    if set(names) != set(requirements) or len(names) != len(requirements):
         errors.append("top500_status必须恰好覆盖三类指定500强榜单，且不得重复或额外添加")
     sources = {str(item.get("id", "")).strip(): item for item in data.get("sources", [])}
     for item in items:
@@ -354,9 +407,13 @@ def validate_top500_status(data: dict, report_source_ids: set[str]) -> list[str]
         label = name or "未命名榜单"
         if not str(item.get("ranking_label", "")).strip():
             errors.append(f"top500_status/{label}缺少ranking_label")
-        if name not in TOP500_REQUIREMENTS:
+        if name not in requirements:
             continue
-        expected_year, expected_url, expected_issuers = TOP500_REQUIREMENTS[name]
+        requirement = requirements[name]
+        expected_year = requirement["year"]
+        expected_url = requirement["official_url"]
+        expected_issuers = set(requirement["allowed_issuers"])
+        expected_source_type = requirement["source_type"]
         if item.get("year") != expected_year:
             errors.append(f"top500_status/{label}/{status or 'unknown'}必须使用最新正式年度{expected_year}")
         if status not in TOP500_STATUSES:
@@ -368,7 +425,7 @@ def validate_top500_status(data: dict, report_source_ids: set[str]) -> list[str]
         valid_official_source = any(
             source_id in report_source_ids and str(source_id).startswith("E")
             and str(sources.get(str(source_id), {}).get("location", "")).strip() == expected_url
-            and str(sources.get(str(source_id), {}).get("type", "")).strip() in {"官方榜单", "权威转载榜单"}
+            and str(sources.get(str(source_id), {}).get("type", "")).strip() == expected_source_type
             and str(sources.get(str(source_id), {}).get("issuer", "")).strip() in expected_issuers
             for source_id in source_ids
         )

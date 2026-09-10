@@ -18,6 +18,12 @@ REPORT = load_data(ROOT / "examples" / "flyco-report-data.json")
 def valid_ledger():
     return {
         "enterprise": "上海飞科电器股份有限公司",
+        "enterprise_profile": {
+            "analysis_entity": "上海飞科电器股份有限公司",
+            "listing_status": "listed",
+            "research_route": "listed_disclosure",
+            "basis_source_ids": ["E01"],
+        },
         "fact_ledger": [
             {"id": "FA01", "source_id": "E01", "action": "管理", "object": "品牌与区域经营", "enterprise_role": "运营者", "confidence": "high"},
             {"id": "FA02", "source_id": "E02", "action": "运营", "object": "自营电商", "enterprise_role": "运营者", "confidence": "high"},
@@ -60,6 +66,21 @@ class ResearchLedgerTests(unittest.TestCase):
         ledger["fact_ledger"][0].pop("source_id")
         errors = validate_research_ledger(ledger, REPORT)
         self.assertTrue(any("FA01: 缺少source_id" in error for error in errors))
+
+    def test_rejects_route_for_a_different_analysis_entity(self):
+        ledger = valid_ledger()
+        ledger["enterprise_profile"]["analysis_entity"] = "其他企业有限公司"
+        errors = validate_research_ledger(ledger, REPORT)
+        self.assertTrue(any("analysis_entity" in error and "不一致" in error for error in errors), errors)
+
+    def test_rejects_listing_status_and_route_mismatch(self):
+        ledger = valid_ledger()
+        ledger["enterprise_profile"].update({
+            "listing_status": "nonlisted",
+            "research_route": "listed_disclosure",
+        })
+        errors = validate_research_ledger(ledger, REPORT)
+        self.assertTrue(any("research_route" in error and "不一致" in error for error in errors), errors)
 
     def test_rejects_landing_business_without_department_route(self):
         ledger = valid_ledger()

@@ -252,6 +252,20 @@ def validate_policy_search_coverage(coverage: dict, research_ledger: dict, repor
                         errors.append(f"{run_label}: 完成检索必须提供具体官方入口地址，不得以首页替代目录扫描")
                     if not _text(run.get("receipt_id")) or not _text(run.get("result_summary")):
                         errors.append(f"{run_label}: 完成检索必须记录回执和结果摘要")
+                    if not allow_stale_fixture:
+                        for field in ("query", "checked_at", "result_count", "result_source_ids", "evidence_record_ids"):
+                            if field not in run or run.get(field) is None:
+                                errors.append(f"{run_label}: 完成检索缺少本轮机器回执字段{field}")
+                        if "checked_at" in run:
+                            try:
+                                checked = datetime.fromisoformat(_text(run.get("checked_at")).replace("Z", "+00:00"))
+                            except ValueError:
+                                errors.append(f"{run_label}: checked_at必须为ISO 8601日期时间")
+                            else:
+                                if checked.tzinfo is None:
+                                    errors.append(f"{run_label}: checked_at必须包含时区")
+                        if "result_count" in run and (not isinstance(run.get("result_count"), int) or run.get("result_count", -1) < 0):
+                            errors.append(f"{run_label}: result_count必须为非负整数")
                 elif run_status == "not_available":
                     if not _text(run.get("not_available_basis")):
                         errors.append(f"{run_label}: not_available 必须说明官方路径不存在或不适用的依据")

@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Formal current-policy evidence ledger",
+  "type": "object",
+  "required": ["version", "enterprise", "researched_at", "mode", "records"],
+  "properties": {
+    "version": {"type": "string", "minLength": 1},
+    "enterprise": {"type": "string", "minLength": 1},
+    "researched_at": {"type": "string", "format": "date-time"},
+    "mode": {"enum": ["formal", "fixture"]},
+    "fixture_metadata": {"type": "object"},
+    "records": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "policy_source_id", "requested_url", "final_url", "retrieved_at", "http_status", "content_type", "artifact_path", "artifact_sha256", "issuer", "title", "document_number", "published_at", "validity_status", "validity_basis", "validity_locator", "application_status", "application_basis", "application_locator"],
+        "properties": {
+          "id": {"type": "string", "pattern": "^PE[0-9]+$"},
+          "policy_source_id": {"type": "string", "pattern": "^P[0-9]+$"},
+          "requested_url": {"type": "string", "format": "uri"},
+          "final_url": {"type": "string", "format": "uri"},
+          "retrieved_at": {"type": "string", "format": "date-time"},
+          "http_status": {"const": 200},
+          "content_type": {"enum": ["text/html", "application/pdf", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"]},
+          "artifact_path": {"type": "string", "minLength": 1},
+          "artifact_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+          "issuer": {"type": "string", "minLength": 1},
+          "title": {"type": "string", "minLength": 1},
+          "document_number": {"type": "string", "minLength": 1},
+          "published_at": {"type": "string", "format": "date"},
+          "validity_status": {"enum": ["current", "expired", "unknown"]},
+          "validity_basis": {"type": "string", "minLength": 1},
+          "validity_locator": {"type": "string", "minLength": 1},
+          "application_status": {"enum": ["open", "no_open_call", "not_application_based", "unknown"]},
+          "application_basis": {"type": "string", "minLength": 1},
+          "application_locator": {"type": "string", "minLength": 1}
+        }
+      }
+    }
+  },
+  "additionalProperties": true
+}

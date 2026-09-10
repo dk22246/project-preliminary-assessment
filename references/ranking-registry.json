@@ -1,0 +1,24 @@
+{
+  "version": "1.0",
+  "verified_at": "2026-08-27",
+  "rankings": {
+    "fortune_global_500": {
+      "year": 2026,
+      "official_url": "https://fortune.com/ranking/global500/2026/",
+      "allowed_issuers": ["Fortune"],
+      "source_type": "官方榜单"
+    },
+    "china_enterprise_500": {
+      "year": 2025,
+      "official_url": "https://news.cnr.cn/native/gd/kx/20250915/t20250915_527362516.shtml",
+      "allowed_issuers": ["央视新闻客户端", "中国企业联合会/中国企业家协会"],
+      "source_type": "权威转载榜单"
+    },
+    "china_private_enterprise_500": {
+      "year": 2025,
+      "official_url": "https://www.acfic.org.cn/qlyw/202508/t20250827_319997.html",
+      "allowed_issuers": ["中华全国工商业联合会"],
+      "source_type": "官方榜单"
+    }
+  }
+}

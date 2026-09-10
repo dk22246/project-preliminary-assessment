@@ -1,10 +1,12 @@
 """Portable same-data report pipeline: HTML by default; PDF/Word on demand."""
 from __future__ import annotations
 import argparse
+import json
 import os
 from pathlib import Path
 import subprocess
 import sys
+from time import perf_counter
 
 from doctor import check as check_runtime
 
@@ -35,6 +37,8 @@ def main(argv: list[str] | None = None, *, release_validation: bool = False) -> 
     parser.add_argument("--equity-evidence", required=True, help="validated provider-backed equity evidence ledger")
     parser.add_argument("--research-ledger", required=True, help="validated business discovery and policy routing ledger")
     parser.add_argument("--policy-search-ledger", required=True, help="validated dynamic policy-search coverage ledger")
+    parser.add_argument("--policy-evidence", required=True, help="fresh official policy evidence ledger for this report run")
+    parser.add_argument("--fixture-mode", action="store_true", help="allow packaged fixture evidence only for explicit tests and release verification")
     args = parser.parse_args(argv)
     runtime, runtime_errors = check_runtime(
         node=args.node,
@@ -52,17 +56,28 @@ def main(argv: list[str] | None = None, *, release_validation: bool = False) -> 
     out = Path(args.out_dir)
     out.mkdir(parents=True, exist_ok=True)
     data = Path(args.report_data)
+    validation_started = perf_counter()
     if args.evidence:
         run(python_command(SCRIPTS / "validate_evidence.py", args.evidence))
-    run(python_command(SCRIPTS / "validate_report_data.py", str(data)))
+    report_validation_args = [str(data)]
+    if args.fixture_mode:
+        report_validation_args.append("--fixture-mode")
+    run(python_command(SCRIPTS / "validate_report_data.py", *report_validation_args))
     run(python_command(SCRIPTS / "validate_text_quality.py", str(data)))
     run(python_command(SCRIPTS / "validate_encouraged_industry_assessment.py", str(data)))
     run(python_command(SCRIPTS / "validate_equity_evidence.py", args.equity_evidence, "--report-data", str(data)))
     run(python_command(SCRIPTS / "validate_research_ledger.py", args.research_ledger, "--report-data", str(data)))
+    run(python_command(SCRIPTS / "validate_research_stop_gate.py", args.research_ledger))
     run(python_command(SCRIPTS / "validate_policy_search_coverage.py", args.policy_search_ledger, "--research-ledger", args.research_ledger, "--report-data", str(data)))
+    policy_evidence_args = [args.policy_evidence, "--report-data", str(data), "--policy-search-ledger", args.policy_search_ledger]
+    if args.fixture_mode:
+        policy_evidence_args.append("--fixture-mode")
+    run(python_command(SCRIPTS / "validate_policy_evidence.py", *policy_evidence_args))
     run(python_command(SCRIPTS / "validate_business_policy_ledger.py", str(data)))
+    validation_seconds = perf_counter() - validation_started
     if not args.node:
         raise SystemExit("所有数据与政策校验通过后，仍必须提供 --node 运行 HTML 版式验收。")
+    render_started = perf_counter()
     cards = out / "policy-cards.json"
     run(python_command(SCRIPTS / "export_policy_cards.py", str(data), "--out", str(cards)))
     run(python_command(SCRIPTS / "validate_policy_scope.py", str(cards)))
@@ -85,6 +100,17 @@ def main(argv: list[str] | None = None, *, release_validation: bool = False) -> 
         image = out / "equity-chart.png"
         run([args.node, str(SCRIPTS / "render_svg_png.mjs"), str(out / "equity-chart.svg"), str(image)], env=env)
         run(python_command(SCRIPTS / "render_report_word.py", str(data), "--out", str(out / "report.docx"), "--equity-image", str(image)))
+    metrics = {
+        "deployment_mode": "fixture" if args.fixture_mode else "fast_path",
+        "enterprise_research_seconds": 0,
+        "policy_discovery_seconds": 0,
+        "policy_network_requests": 0,
+        "policy_cache_revalidated": 0,
+        "local_validation_seconds": round(validation_seconds, 3),
+        "render_and_layout_seconds": round(perf_counter() - render_started, 3),
+        "full_release_tests_run": False,
+    }
+    (out / "run-metrics.json").write_text(json.dumps(metrics, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     return 0
 
 

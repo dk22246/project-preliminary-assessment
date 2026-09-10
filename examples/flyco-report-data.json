@@ -1,4 +1,5 @@
 {
+  "fixture_metadata": {"fixture_only": true, "fixture_name": "flyco-release-test"},
   "meta": {
     "report_title": "飞科电器招商项目整体落地研判报告",
     "generated_at": "2026年7月27日",
@@ -214,6 +215,7 @@
     "category": "中国电动剃须刀",
     "position": "全国市场销量第一、市场综合占有率第一（多年）",
     "period": "截至2025年业绩说明会披露时点",
+    "evidence_status": "market_share",
     "source_ids": [
       "E02"
     ]
@@ -244,6 +246,7 @@
   "financials": [
     {
       "year": "2025",
+      "data_status": "available",
       "revenue": "38.61",
       "revenue_change": "-6.90%",
       "profit": "5.12",
@@ -255,6 +258,7 @@
     },
     {
       "year": "2024",
+      "data_status": "available",
       "revenue": "41.47",
       "revenue_change": "-18.03%",
       "profit": "4.58",
@@ -266,6 +270,7 @@
     },
     {
       "year": "2023",
+      "data_status": "available",
       "revenue": "50.60",
       "revenue_change": "+9.35%",
       "profit": "10.20",

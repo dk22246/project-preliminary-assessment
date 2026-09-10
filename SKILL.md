@@ -16,13 +16,16 @@ description: Use when 招商人员只提供企业名称或基础资料，需要�
 - 仅通过 Git 仓库完整克隆或复制整个 Skill 目录，不得只复制 `SKILL.md`、聊天文本或单个脚本。
 - 所有文本和结构化数据均为 UTF-8；读入 JSON 时兼容 UTF-8 BOM，写入时明确指定 UTF-8。跨 Agent 不依赖 PowerShell 编码或参数转发；Python 子进程统一使用 `-X utf8`。
 - 新设备完整克隆后，如运行环境未提供兼容的 Playwright，先在 Skill 根目录执行 `npm install` 安装 `package.json` 声明的浏览器依赖；随后只运行一次 `python -X utf8 scripts/bootstrap.py --node <Node路径>`。启动器负责探测和验证，不代替依赖安装；验证通过后写入本地 `.runtime/verification.json`。同一版本再次运行只执行秒级 doctor，不重复跑完整测试。Git commit 或关键文件指纹变化时必须重新验证。若裸 `python` 不可用，使用 Agent 已知的真实 Python 可执行文件；不得把 Windows 商店占位符当作运行时。
-- 必须先形成 `report-data.json` 和 `equity-evidence.json`，再以 `--equity-evidence <股权台账> --node <Node路径>` 运行 `scripts/run_report_pipeline.py`；不得绕过结构化数据、股权证据校验、浏览器版式门禁或 HTML 渲染器直接手写报告。
+- 正式项目必须先用 `scripts/init_report_workspace.py` 创建空白工作目录，再完成并填写 `report-data.json`、`equity-evidence.json`、`research-ledger.json`、`policy-search-ledger.json` 和 `policy-evidence.json` 五份同轮台账。不得复制飞科示例作为新企业底稿；飞科文件只用于显式 fixture 模式下的发布测试。
+- 正式流水线必须同时提供 `--equity-evidence`、`--research-ledger`、`--policy-search-ledger`、`--policy-evidence` 和 `--node`；不得绕过结构化数据、实时政策证据校验、股权证据校验、浏览器版式门禁或 HTML 渲染器直接手写报告。
 - 以固定 Git commit 部署并记录 commit SHA；升级时重新执行上述部署门禁。PDF 和 Word 继续仅按用户要求生成。
 
 ## 核心运行顺序
 
 1. **确认主体。** 用户只给企业名称时，先判断名称是集团、上市公司、品牌还是经营主体。唯一可识别时直接研究；存在同名、集团与上市主体混淆、品牌与主体混淆时，列出 2—4 个明确选项，请用户确认。Agent 可使用已有合法浏览器登录态访问企查查网页或天眼查网页，以页面显示的法律全称和统一社会信用代码锚定主体；确认前不得混用信息，不得绕过登录、验证码、付费墙或访问控制。
-2. **研究企业并核验股权。** 建立企业主体、股权结构、主要业务与产品、行业竞争位置、代表性上下游、国内外业务、近三年经营数据、政府补助和重大风险的事实卡。行业位置必须写明具体品类、排名/份额或第一梯队、统计时点和来源；没有排名证据时只能写“头部企业/第一梯队”，不得只写“知名品牌”或臆测 Top1。企查查网页和天眼查网页用于实时核验工商股东、持股比例、实际控制人或受益人页面标记、历史变化和主要子公司；上市公司始终以交易所、年报等法定披露定案。网页可见结果先写入符合 `schemas/equity-web-capture.schema.json` 的标准化取证 JSON，必须逐项记录五类覆盖处置；再由 `scripts/collect_equity_provider.py` 生成可校验取证链并形成 `equity-evidence.json`。每个股权节点和连接线绑定来源、断言类型与数据时点；直接股东比例必须闭合到100%，不能拆到具体股东时以“其他股东合计”补足并绑定同一法定披露来源，禁止重复计算。网页失败详情留在后台台账；报告只显示最终采用来源、编号和数据时点，只有实质冲突才显示差异说明。规则见 `references/entity-resolution.md`、`references/equity-evidence.md`。
+2. **锁定披露类型后研究企业并核验股权。** 主体确认后，必须在 `research-ledger.json.enterprise_profile` 将本报告分析主体标记为 `listed / listed_disclosure` 或 `nonlisted / nonlisted_public_evidence`，并绑定判断来源。该路由只改变企业证据来源、搜索顺序和停止条件，不改变研究内容、报告结构或后续实时政策检索。上市主体优先一次性使用交易所及法定披露完成近三年财务、业务、股权与风险核验；非上市主体直接跳过无依据的交易所和年报检索，优先企业官方材料、政府监管、工商股权、项目经营与风险记录。上市母公司材料可补充非上市分析主体，但不得替代该主体自己的数据。完整路由和停止条件见 `references/evidence-intake.md`、`references/business-discovery.md`。
+
+   两类主体均建立企业主体、股权结构、主要业务与产品、行业竞争位置、代表性上下游、国内外业务、近三年经营数据、政府补助和重大风险的事实卡。行业位置必须写明具体品类、证据状态、统计时点和来源；有排名、份额或第一梯队证据时明确写出，没有可靠证据时写“本轮未发现可核验公开排名或市场份额”，不得改写为“头部企业”或臆测 Top1。企查查网页和天眼查网页用于实时核验工商股东、持股比例、实际控制人或受益人页面标记、历史变化和主要子公司；上市公司始终以交易所、年报等法定披露定案。网页可见结果先写入符合 `schemas/equity-web-capture.schema.json` 的标准化取证 JSON，必须逐项记录五类覆盖处置；再由 `scripts/collect_equity_provider.py` 生成可校验取证链并形成 `equity-evidence.json`。每个股权节点和连接线绑定来源、断言类型与数据时点；直接股东比例必须闭合到100%，不能拆到具体股东时以“其他股东合计”补足并绑定同一法定披露来源，禁止重复计算。网页失败详情留在后台台账；报告只显示最终采用来源、编号和数据时点，只有实质冲突才显示差异说明。规则见 `references/entity-resolution.md`、`references/equity-evidence.md`。
 3. **强制判断鼓励类产业目录。** 为 `businesses` 每项核心现有业务分配唯一 `B` 类编号，先判断企业主体性质，再使用 `references/catalogs/hainan-ftz-encouraged-industry-complete-library.xlsx` 和同源的 `complete-industry-catalog-library.json` 分流检索：内资企业覆盖《产业结构调整指导目录》鼓励类与海南新增目录；外商投资企业覆盖全国鼓励外商投资目录与海南地区目录；两类主体均须以《产业结构调整指导目录》限制类、淘汰类执行冲突排查。输出只能为“明确符合”“存在相近可能”“暂未发现明确匹配”；没有明确匹配项正常交付，AI仍须主动判断并列出有实质重合的相近条目及缺失条件。只有目录文件、来源版本、主体分流、检索或业务覆盖未完成时才阻断。发布和部署预检必须运行 `scripts/validate_industry_catalog_library.py`。规则见 `references/encouraged-industry-assessment.md`。
 4. **拆解招商价值。** 从已处置候选中识别可在三亚中央商务区实质运营的业务、管理职能和相邻经营活动；不得由政策反向虚构业务。
 5. **建立政策机会雷达。** 将每条企业事实信号展开为可能在三亚承接的贸易、结算、投资、人员、管理或行业活动，逐项记录 `surfaced / merged / excluded / expired / not_current / pending_evidence / research_incomplete` 处置。海外产品、渠道或境外投资信号必须动态研判外贸、EF账户、跨境结算、ODI、境外直接投资所得税收、跨境资金池和离岸贸易等相邻主题；这是防遗漏路由，不是固定可享受政策清单。规则见 `references/policy-opportunity-radar.md`。
@@ -30,7 +33,7 @@ description: Use when 招商人员只提供企业名称或基础资料，需要�
 7. **实时检索、核验并提炼重点政策。** 每次报告重新核验官方原文、现行状态和申报状态，`report-data.json.meta.policy_researched_at` 必须与 `policy-search-ledger.json.researched_at` 一致且标记 `realtime`；正式报告超过24小时未完成交付时重新检索。为每个机会主题和主管部门建立角色及七路径回执。任一路径或附件未完成，写为 `research_incomplete` 并停止交付；过期或非现行文件只留后台处置。只有现行、已纳入且通过正式性、地域、条件、办理方式和企业承接路径核验的正向机会，才能进入报告。
 8. **汇总成唯一事实源。** 将报告结论和 `policy_opportunity_radar` 写入符合 `schemas/report.schema.json` 的 `report-data.json`，股权证据写入 `equity-evidence.json`，业务链路写入 `research-ledger.json`，实时检索回执写入 `policy-search-ledger.json`。全部门禁通过后才渲染。
 
-   企业基本情况必须完成 Fortune Global 500（2026）、中国企业500强（2025）和中国民营企业500强（2025）的官方榜单核验；状态只能为 `listed`、`group_listed`、`not_listed` 或 `research_incomplete`，并逐项绑定对应最新官方 E 类来源。产业链仅按定位、同类企业、上游、下游、行业共性需求五段记录；行业共性需求仅为 `industry_inference`，不得作为企业事实或政策触发依据。无 `transaction_evidence=true` 时，不得将代表企业称为已确认供应商、客户或合作伙伴；不得加入产业集群启示或招商对象标签。
+   企业基本情况必须按 `references/ranking-registry.json` 完成 Fortune Global 500、中国企业500强和中国民营企业500强的当前最新正式年度核验；状态只能为 `listed`、`group_listed`、`not_listed` 或 `research_incomplete`，并逐项绑定对应最新官方 E 类来源。注册表缺失、损坏或未核验时阻断，不得回退到硬编码旧年度。产业链仅按定位、同类企业、上游、下游、行业共性需求五段记录；行业共性需求仅为 `industry_inference`，不得作为企业事实或政策触发依据。无 `transaction_evidence=true` 时，不得将代表企业称为已确认供应商、客户或合作伙伴；不得加入产业集群启示或招商对象标签。
 9. **生成并复核交付物。** 先运行 `scripts/doctor.py --node <Node路径>`；再运行 `scripts/run_report_pipeline.py` 默认生成 HTML，仅在用户要求时附加 `--pdf` 或 `--word`。HTML 必须通过整页、表格和SVG版式验收；任一失败都禁止交付。
 
 ## 企业与落地业务判断
@@ -65,6 +68,8 @@ description: Use when 招商人员只提供企业名称或基础资料，需要�
 
 企业基本情况必须置于正文首节。主体认定采用简明两列表格，表后用短段落说明企业是谁、主要做什么、最近经营表现、员工规模和有证据支持的行业地位。不得另设“项目整体判断”重复概括，也不得另设独立的行业地位小节重复陈述。
 
+上市与非上市企业使用同一报告结构和研究主题。非上市企业完成规定来源检索后仍无法取得可靠财务、员工或行业排名数据时，必须在对应字段写明“本轮公开检索未发现可靠数据，需企业补充”或等义的明确证据边界；该结果属于已完成检索，不得填零、估算、虚构排名，也不得因公开披露不足无限扩展搜索。
+
 报告内的来源均用 `E/F/R/P` 编号回溯。风险事项少时可用简明文字，不得为了形式制造空表。关键事实、数字、政策和风险必须有可定位来源。
 
 ## 文件与执行入口
@@ -82,12 +87,15 @@ description: Use when 招商人员只提供企业名称或基础资料，需要�
 - `references/html-delivery.md`：HTML/PDF 与 Word 的同源交付、排版和质检。
 - `references/word-delivery.md`：仅在用户要求可编辑 Word 时读取的 Word 原生结构与页面复核规则。
 - `scripts/run_report_pipeline.py`：`数据及股权证据 validate → SVG → HTML → 浏览器全页版式门禁` 主入口，必须提供 `--equity-evidence` 和 `--node`；`--pdf` 和 `--word` 为预置的可选转换。
+- `scripts/init_report_workspace.py`：新企业唯一正式初始化入口；生成五份无业务结论的空白 JSON，默认拒绝覆盖已有目录。
 - `scripts/collect_equity_provider.py`、`scripts/validate_equity_evidence.py`：商业平台网页标准化取证、确定性 fragment 输出与逐节点、逐连线证据门禁；浏览器登录态由 Agent 合法持有且不得写入 Skill 或证据文件。
 - `scripts/collect_web_evidence.py`、`scripts/validate_evidence.py`：可选的公开网页证据采集与台账门禁；只增强取证，不改变政策卡校验。
 - `scripts/validate_research_ledger.py`：强制校验企业事实—业务候选—主管部门—候选政策—正式政策卡的完整追溯链。
 - `scripts/validate_policy_search_coverage.py`：强制校验业务语义、部门角色、七条检索路径、附件状态和报告结论边界；任一 `research_incomplete` 都阻断交付。
 - `scripts/search_industry_catalog.py`、`scripts/build_industry_catalog_library.py`、`scripts/validate_industry_catalog_library.py`：按内资/外商投资企业分流召回目录候选、从统一工作簿重建结构化检索库，并校验条数、来源、界定指引及限制类/淘汰类冲突路由。
 - `scripts/bootstrap.py`、`scripts/doctor.py`：跨 Agent 安装与秒级运行前自检；只有首次安装或版本指纹变化时执行完整部署验证。
+- `scripts/discover_current_policies.py`、`scripts/policy_cache.py`：按主管部门路由受控并发发现政策，并在每轮访问官方来源后复验缓存；不得用旧缓存冒充实时检索。
+- `scripts/validate_research_stop_gate.py`、`scripts/validate_policy_evidence.py`：分别阻断未完成企业必查事项的研究底稿，以及缺少本轮官方原文、哈希、效力和申报状态证据的前台政策。
 - `scripts/verify_skill.py`：维护者发布门禁；`--release` 运行预检和完整测试，`--smoke` 额外运行示例HTML，不得在每份报告前调用。
 - `scripts/preflight.py`：由部署门禁调用的目录、UTF-8、示例数据和政策预检；`--smoke` 同时生成示例 HTML 并进行浏览器全页版式验收。
 - `scripts/run_utf8.ps1`：仅供本机 PowerShell 需要改善终端显示时可选使用，不是跨 Agent 门禁。
@@ -97,18 +105,24 @@ description: Use when 招商人员只提供企业名称或基础资料，需要�
 示例：
 
 ```powershell
+# 新企业：先创建空白五台账工作目录
+& $py -X utf8 scripts/init_report_workspace.py "企业法律全称" --out-dir work/company
+
+# 日常运行前秒级环境检查
+& $py -X utf8 scripts/doctor.py --node $node
+
 # 默认：只生成 HTML，但必须通过浏览器版式验收
-& $py scripts/run_report_pipeline.py examples/flyco-report-data.json --equity-evidence examples/flyco-equity-evidence.json --research-ledger examples/flyco-research-ledger.json --policy-search-ledger examples/flyco-policy-search-ledger.json --out-dir outputs/flyco --node $node
+& $py -X utf8 scripts/run_report_pipeline.py work/company/report-data.json --equity-evidence work/company/equity-evidence.json --research-ledger work/company/research-ledger.json --policy-search-ledger work/company/policy-search-ledger.json --policy-evidence work/company/policy-evidence.json --out-dir outputs/company --node $node
 
 # 如本次使用网页取证，先校验证据台账并接入主流水线
-& $py scripts/validate_evidence.py evidence/enterprise/evidence.json
-& $py scripts/run_report_pipeline.py examples/flyco-report-data.json --equity-evidence equity-evidence.json --research-ledger research-ledger.json --policy-search-ledger policy-search-ledger.json --evidence evidence/enterprise/evidence.json --out-dir outputs/flyco --node $node
+& $py -X utf8 scripts/validate_evidence.py evidence/enterprise/evidence.json
+& $py -X utf8 scripts/run_report_pipeline.py report-data.json --equity-evidence equity-evidence.json --research-ledger research-ledger.json --policy-search-ledger policy-search-ledger.json --policy-evidence policy-evidence.json --evidence evidence/enterprise/evidence.json --out-dir outputs/company --node $node
 
 # 按需：HTML + PDF
-& $py scripts/run_report_pipeline.py examples/flyco-report-data.json --equity-evidence examples/flyco-equity-evidence.json --research-ledger examples/flyco-research-ledger.json --policy-search-ledger examples/flyco-policy-search-ledger.json --out-dir outputs/flyco --pdf --node $node
+& $py -X utf8 scripts/run_report_pipeline.py report-data.json --equity-evidence equity-evidence.json --research-ledger research-ledger.json --policy-search-ledger policy-search-ledger.json --policy-evidence policy-evidence.json --out-dir outputs/company --pdf --node $node
 
 # 按需：HTML + 可编辑 Word
-& $py scripts/run_report_pipeline.py examples/flyco-report-data.json --equity-evidence examples/flyco-equity-evidence.json --research-ledger examples/flyco-research-ledger.json --policy-search-ledger examples/flyco-policy-search-ledger.json --out-dir outputs/flyco --word --node $node
+& $py -X utf8 scripts/run_report_pipeline.py report-data.json --equity-evidence equity-evidence.json --research-ledger research-ledger.json --policy-search-ledger policy-search-ledger.json --policy-evidence policy-evidence.json --out-dir outputs/company --word --node $node
 ```
 
 所有路径以 Skill 根目录相对定位；不得在 Skill、脚本或示例中写死本机用户目录、磁盘盘符或浏览器绝对路径。运行环境需要时通过 `REPORT_NODE_MODULES`、`REPORT_CHROME_EXECUTABLE` 等环境变量提供。

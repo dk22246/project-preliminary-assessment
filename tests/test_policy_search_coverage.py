@@ -57,6 +57,11 @@ def coverage_ledger(researched_at=None):
             "entry_url": f"https://lwj.sanya.gov.cn/lwjsite/zcwj/{name}.shtml",
             "receipt_id": f"R-{index:02d}",
             "result_summary": "已完成官方目录或原文检索。",
+            "query": "体育赛事 大型活动 支持",
+            "checked_at": datetime.now(timezone.utc).isoformat(),
+            "result_count": 1,
+            "result_source_ids": ["P01"],
+            "evidence_record_ids": [f"PE{index:02d}"],
         }
         for index, name in enumerate(PATHS, 1)
     ]
@@ -210,6 +215,8 @@ class PolicySearchCoverageTests(unittest.TestCase):
                 "--equity-evidence", str(ROOT / "examples" / "flyco-equity-evidence.json"),
                 "--research-ledger", str(ROOT / "examples" / "flyco-research-ledger.json"),
                 "--policy-search-ledger", str(ledger_path),
+                "--policy-evidence", str(directory / "policy-evidence.json"),
+                "--fixture-mode",
                 "--out-dir", str(output_dir),
             ]
             entrypoint = (

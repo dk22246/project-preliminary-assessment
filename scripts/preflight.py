@@ -16,6 +16,7 @@ from validate_industry_catalog_library import validate as validate_industry_cata
 from validate_policy_scope import validate_policy
 from validate_research_ledger import validate_research_ledger
 from validate_policy_search_coverage import validate_policy_search_coverage
+from validate_research_stop_gate import validate_research_stop_gate
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -24,18 +25,19 @@ EVIDENCE_SAMPLE = ROOT / "examples" / "evidence-sample.json"
 EQUITY_SAMPLE = ROOT / "examples" / "flyco-equity-evidence.json"
 RESEARCH_SAMPLE = ROOT / "examples" / "flyco-research-ledger.json"
 POLICY_SEARCH_SAMPLE = ROOT / "examples" / "flyco-policy-search-ledger.json"
+POLICY_EVIDENCE_SAMPLE = ROOT / "examples" / "flyco-policy-evidence.json"
 REQUIRED = (
     "SKILL.md", "agents/openai.yaml", ".editorconfig", ".gitattributes",
     "references/policy-scope.md", "references/report-template.md", "references/html-delivery.md",
     "references/source-registry.md", "references/equity-evidence.md", "schemas/report.schema.json", "schemas/evidence.schema.json", "schemas/equity-evidence.schema.json", "schemas/equity-web-capture.schema.json",
     "references/encouraged-industry-assessment.md", "references/module-contract.json", "references/catalogs/source-metadata.json", "references/catalogs/hainan-ftz-encouraged-industry-complete-library.xlsx", "references/catalogs/complete-industry-catalog-library.json",
-    "references/business-discovery.md", "references/policy-discovery.md", "references/policy-search-coverage.md", "references/department-routing.json", "schemas/research-ledger.schema.json", "schemas/policy-search-ledger.schema.json",
+    "references/business-discovery.md", "references/policy-discovery.md", "references/policy-search-coverage.md", "references/department-routing.json", "references/ranking-registry.json", "schemas/research-ledger.schema.json", "schemas/policy-search-ledger.schema.json", "schemas/policy-evidence.schema.json",
     "scripts/run_report_pipeline.py", "scripts/render_report_html.py", "scripts/verify_html_layout.mjs", "scripts/collect_web_evidence.py", "scripts/validate_evidence.py", "scripts/collect_equity_provider.py", "scripts/validate_equity_evidence.py", "scripts/search_industry_catalog.py", "scripts/build_industry_catalog_library.py", "scripts/validate_industry_catalog_library.py", "scripts/validate_encouraged_industry_assessment.py",
-    "scripts/verify_skill.py", "scripts/bootstrap.py", "scripts/doctor.py", "scripts/runtime_state.py", "runtime-requirements.json", "AGENTS.md",
+    "scripts/verify_skill.py", "scripts/bootstrap.py", "scripts/doctor.py", "scripts/runtime_state.py", "scripts/init_report_workspace.py", "scripts/discover_current_policies.py", "scripts/policy_cache.py", "scripts/validate_policy_evidence.py", "scripts/validate_research_stop_gate.py", "runtime-requirements.json", "AGENTS.md",
     "scripts/evidence_collectors/__init__.py", "scripts/evidence_collectors/registry.py", "scripts/evidence_collectors/html_extract.py", "scripts/validate_research_ledger.py", "scripts/validate_policy_search_coverage.py",
     "scripts/validate_policy_scope.py", "scripts/validate_report_data.py", "scripts/validate_text_quality.py",
     "tests/test_business_triggered_policy_logic.py", "examples/equity-web-capture-valid.json", SAMPLE.relative_to(ROOT).as_posix(),
-    EVIDENCE_SAMPLE.relative_to(ROOT).as_posix(), EQUITY_SAMPLE.relative_to(ROOT).as_posix(), RESEARCH_SAMPLE.relative_to(ROOT).as_posix(), POLICY_SEARCH_SAMPLE.relative_to(ROOT).as_posix(), "examples/evidence-sample/official-policy.md",
+    EVIDENCE_SAMPLE.relative_to(ROOT).as_posix(), EQUITY_SAMPLE.relative_to(ROOT).as_posix(), RESEARCH_SAMPLE.relative_to(ROOT).as_posix(), POLICY_SEARCH_SAMPLE.relative_to(ROOT).as_posix(), POLICY_EVIDENCE_SAMPLE.relative_to(ROOT).as_posix(), "examples/evidence-sample/official-policy.md",
 )
 TEXT_SUFFIXES = {".md", ".py", ".json", ".yaml", ".yml", ".mjs", ".ps1", ".html", ".css"}
 
@@ -104,6 +106,7 @@ def static_errors() -> list[str]:
                     errors.append(f"研究底稿示例无法按UTF-8读取：{error}")
                 else:
                     errors.extend(validate_research_ledger(research, data))
+                    errors.extend(validate_research_stop_gate(research))
                     if POLICY_SEARCH_SAMPLE.is_file():
                         try:
                             policy_search = load_data(POLICY_SEARCH_SAMPLE)
@@ -121,6 +124,16 @@ def static_errors() -> list[str]:
     return errors
 
 
+def smoke_arguments(out_dir: Path, node: Path) -> list[str]:
+    return [
+        str(SAMPLE), "--equity-evidence", str(EQUITY_SAMPLE),
+        "--research-ledger", str(RESEARCH_SAMPLE),
+        "--policy-search-ledger", str(POLICY_SEARCH_SAMPLE),
+        "--policy-evidence", str(POLICY_EVIDENCE_SAMPLE),
+        "--fixture-mode", "--out-dir", str(out_dir), "--node", str(node),
+    ]
+
+
 def smoke(out_dir: Path) -> int:
     configured = os.environ.get("REPORT_NODE_EXECUTABLE")
     node = Path(configured) if configured else Path(sys.executable).parents[1] / "node" / "bin" / "node.exe"
@@ -128,12 +141,7 @@ def smoke(out_dir: Path) -> int:
         print(f"未找到随附 Node，无法执行浏览器版式验收：{node}", file=sys.stderr)
         return 1
     from run_report_pipeline import main as run_report_pipeline
-    return run_report_pipeline([
-        str(SAMPLE), "--equity-evidence", str(EQUITY_SAMPLE),
-        "--research-ledger", str(RESEARCH_SAMPLE),
-        "--policy-search-ledger", str(POLICY_SEARCH_SAMPLE),
-        "--out-dir", str(out_dir), "--node", str(node),
-    ], release_validation=True)
+    return run_report_pipeline(smoke_arguments(out_dir, node), release_validation=True)
 
 
 def main() -> int:
