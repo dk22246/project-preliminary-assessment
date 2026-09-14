@@ -22,10 +22,10 @@ description: Use when 招商人员只提供企业名称或基础资料，需要�
 
 ## 核心运行顺序
 
-1. **确认主体。** 用户只给企业名称时，先判断名称是集团、上市公司、品牌还是经营主体。唯一可识别时直接研究；存在同名、集团与上市主体混淆、品牌与主体混淆时，列出 2—4 个明确选项，请用户确认。Agent 可使用已有合法浏览器登录态访问企查查网页或天眼查网页，以页面显示的法律全称和统一社会信用代码锚定主体；确认前不得混用信息，不得绕过登录、验证码、付费墙或访问控制。
-2. **锁定披露类型后研究企业并核验股权。** 主体确认后，必须在 `research-ledger.json.enterprise_profile` 将本报告分析主体标记为 `listed / listed_disclosure` 或 `nonlisted / nonlisted_public_evidence`，并绑定判断来源。该路由只改变企业证据来源、搜索顺序和停止条件，不改变研究内容、报告结构或后续实时政策检索。上市主体优先一次性使用交易所及法定披露完成近三年财务、业务、股权与风险核验；非上市主体直接跳过无依据的交易所和年报检索，优先企业官方材料、政府监管、工商股权、项目经营与风险记录。上市母公司材料可补充非上市分析主体，但不得替代该主体自己的数据。完整路由和停止条件见 `references/evidence-intake.md`、`references/business-discovery.md`。
+1. **确认主体。** 用户只给企业名称时，先判断名称是集团、上市公司、品牌还是经营主体。唯一可识别时直接研究；存在同名、集团与上市主体混淆、品牌与主体混淆时，列出 2—4 个明确选项，请用户确认。上市公司优先以交易所证券资料和法定披露锚定法律主体；非上市公司按其研究路线使用企业官方与登记资料。商业平台仅在当前Agent合法可访问或用户提供可验证材料时作为补充，确认前不得混用信息，也不得绕过登录、验证码、付费墙或访问控制。
+2. **锁定披露类型后研究企业并核验股权。** 主体确认后，必须在 `research-ledger.json.enterprise_profile` 将本报告分析主体标记为 `listed / listed_disclosure` 或 `nonlisted / nonlisted_public_evidence`，并绑定判断来源。该路由改变企业证据来源、搜索动作和停止条件，不改变研究内容、报告结构或后续实时政策检索。上市主体以最新年度报告为集中研究主资料，一次提取近三年财务、业务、股权、政府补助与风险；以前年度报告只针对主资料未解决的历史缺口定向补查，企业官网和政府监管只补当前业务、最近一年重大变化及重要风险。完成规定主题和候选处置后，一轮集中披露研究即可停止，不得再做第二轮泛化媒体搜索。非上市主体仍直接跳过无依据的交易所和年报检索，优先企业官方材料、政府监管、工商股权、项目经营与风险记录。上市母公司材料可补充非上市分析主体，但不得替代该主体自己的数据。完整路由和停止条件见 `references/evidence-intake.md`、`references/business-discovery.md`。
 
-   两类主体均建立企业主体、股权结构、主要业务与产品、行业竞争位置、代表性上下游、国内外业务、近三年经营数据、政府补助和重大风险的事实卡。行业位置必须写明具体品类、证据状态、统计时点和来源；有排名、份额或第一梯队证据时明确写出，没有可靠证据时写“本轮未发现可核验公开排名或市场份额”，不得改写为“头部企业”或臆测 Top1。企查查网页和天眼查网页用于实时核验工商股东、持股比例、实际控制人或受益人页面标记、历史变化和主要子公司；上市公司始终以交易所、年报等法定披露定案。网页可见结果先写入符合 `schemas/equity-web-capture.schema.json` 的标准化取证 JSON，必须逐项记录五类覆盖处置；再由 `scripts/collect_equity_provider.py` 生成可校验取证链并形成 `equity-evidence.json`。每个股权节点和连接线绑定来源、断言类型与数据时点；直接股东比例必须闭合到100%，不能拆到具体股东时以“其他股东合计”补足并绑定同一法定披露来源，禁止重复计算。网页失败详情留在后台台账；报告只显示最终采用来源、编号和数据时点，只有实质冲突才显示差异说明。规则见 `references/entity-resolution.md`、`references/equity-evidence.md`。
+   两类主体均建立企业主体、股权结构、主要业务与产品、行业竞争位置、代表性上下游、国内外业务、近三年经营数据、政府补助和重大风险的事实卡。行业位置必须写明具体品类、证据状态、统计时点和来源；有排名、份额或第一梯队证据时明确写出，没有可靠证据时写“本轮未发现可核验公开排名或市场份额”，不得改写为“头部企业”或臆测 Top1。上市公司默认直接使用交易所、年度报告、招股说明书及控制权变更公告核验股权，不访问企查查或天眼查，也不要求商业平台尝试回执；只有用户提供可验证导出材料，或当前Agent确有合法可访问页面时，才将商业平台作为可选差异复核来源。可见网页结果仍须写入符合 `schemas/equity-web-capture.schema.json` 的标准化取证 JSON，再由 `scripts/collect_equity_provider.py` 生成可校验取证链。每个股权节点和连接线绑定来源、断言类型与数据时点；直接股东比例必须闭合到100%，不能拆到具体股东时以“其他股东合计”补足并绑定同一法定披露来源，禁止重复计算。报告只显示最终采用来源、编号和数据时点，只有实质冲突才显示差异说明。规则见 `references/entity-resolution.md`、`references/equity-evidence.md`。
 3. **强制判断鼓励类产业目录。** 为 `businesses` 每项核心现有业务分配唯一 `B` 类编号，先判断企业主体性质，再使用 `references/catalogs/hainan-ftz-encouraged-industry-complete-library.xlsx` 和同源的 `complete-industry-catalog-library.json` 分流检索：内资企业覆盖《产业结构调整指导目录》鼓励类与海南新增目录；外商投资企业覆盖全国鼓励外商投资目录与海南地区目录；两类主体均须以《产业结构调整指导目录》限制类、淘汰类执行冲突排查。输出只能为“明确符合”“存在相近可能”“暂未发现明确匹配”；没有明确匹配项正常交付，AI仍须主动判断并列出有实质重合的相近条目及缺失条件。只有目录文件、来源版本、主体分流、检索或业务覆盖未完成时才阻断。发布和部署预检必须运行 `scripts/validate_industry_catalog_library.py`。规则见 `references/encouraged-industry-assessment.md`。
 4. **拆解招商价值。** 从已处置候选中识别可在三亚中央商务区实质运营的业务、管理职能和相邻经营活动；不得由政策反向虚构业务。
 5. **建立政策机会雷达。** 将每条企业事实信号展开为可能在三亚承接的贸易、结算、投资、人员、管理或行业活动，逐项记录 `surfaced / merged / excluded / expired / not_current / pending_evidence / research_incomplete` 处置。海外产品、渠道或境外投资信号必须动态研判外贸、EF账户、跨境结算、ODI、境外直接投资所得税收、跨境资金池和离岸贸易等相邻主题；这是防遗漏路由，不是固定可享受政策清单。规则见 `references/policy-opportunity-radar.md`。
@@ -75,7 +75,7 @@ description: Use when 招商人员只提供企业名称或基础资料，需要�
 ## 文件与执行入口
 
 - `references/entity-resolution.md`：主体确认与股权核验。
-- `references/equity-evidence.md`：企查查网页、天眼查网页、法定披露的股权取证顺序、归一化和冲突处理。
+- `references/equity-evidence.md`：上市公司法定披露股权取证，以及可选商业平台证据的归一化和冲突处理。
 - `references/evidence-intake.md`：企业、财务、风险公开信息来源和禁用来源。
 - `references/source-registry.md`：网页取证的允许来源、企业官网显式登记与禁止范围。
 - `references/business-decomposition.md`：业务拆分和落地业务筛选。
@@ -88,7 +88,7 @@ description: Use when 招商人员只提供企业名称或基础资料，需要�
 - `references/word-delivery.md`：仅在用户要求可编辑 Word 时读取的 Word 原生结构与页面复核规则。
 - `scripts/ppa.py`：唯一公开入口，负责一次性部署、工作区创建、阶段状态、受控推进和正式交付。
 - `scripts/workflow_state.py`：内部状态机；为每轮正式报告绑定阶段回执、版本指纹和五份台账哈希。
-- `scripts/collect_equity_provider.py`、`scripts/validate_equity_evidence.py`：商业平台网页标准化取证、确定性 fragment 输出与逐节点、逐连线证据门禁；浏览器登录态由 Agent 合法持有且不得写入 Skill 或证据文件。
+- `scripts/collect_equity_provider.py`、`scripts/validate_equity_evidence.py`：可选商业平台网页标准化取证、确定性 fragment 输出与分上市状态的逐节点、逐连线证据门禁；上市公司无须商业平台回执，浏览器登录态由 Agent 合法持有且不得写入 Skill 或证据文件。
 - `scripts/collect_web_evidence.py`、`scripts/validate_evidence.py`：可选的公开网页证据采集与台账门禁；只增强取证，不改变政策卡校验。
 - `scripts/validate_research_ledger.py`：强制校验企业事实—业务候选—主管部门—候选政策—正式政策卡的完整追溯链。
 - `scripts/validate_policy_search_coverage.py`：强制校验业务语义、部门角色、七条检索路径、附件状态和报告结论边界；任一 `research_incomplete` 都阻断交付。

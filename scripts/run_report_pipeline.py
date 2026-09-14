@@ -88,7 +88,12 @@ def main(argv: list[str] | None = None, *, release_validation: bool = False) -> 
     run(python_command(SCRIPTS / "validate_report_data.py", *report_validation_args))
     run(python_command(SCRIPTS / "validate_text_quality.py", str(data)))
     run(python_command(SCRIPTS / "validate_encouraged_industry_assessment.py", str(data)))
-    run(python_command(SCRIPTS / "validate_equity_evidence.py", args.equity_evidence, "--report-data", str(data)))
+    run(python_command(
+        SCRIPTS / "validate_equity_evidence.py",
+        args.equity_evidence,
+        "--report-data", str(data),
+        "--research-ledger", args.research_ledger,
+    ))
     run(python_command(SCRIPTS / "validate_research_ledger.py", args.research_ledger, "--report-data", str(data)))
     run(python_command(SCRIPTS / "validate_research_stop_gate.py", args.research_ledger))
     run(python_command(SCRIPTS / "validate_policy_search_coverage.py", args.policy_search_ledger, "--research-ledger", args.research_ledger, "--report-data", str(data)))

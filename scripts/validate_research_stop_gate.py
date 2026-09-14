@@ -80,7 +80,10 @@ def validate_research_stop_gate(ledger: dict) -> list[str]:
         elif not str(candidate.get("disposition_reason", "")).strip():
             errors.append(f"{candidate_id}: 候选业务处置缺少原因")
     rounds = gate.get("discovery_rounds")
-    if not isinstance(rounds, list) or len(rounds) < 2:
+    if route == "listed_disclosure":
+        if not isinstance(rounds, list) or not rounds:
+            errors.append("上市公司尚未完成法定披露集中研究，不能结束一般性企业研究")
+    elif not isinstance(rounds, list) or len(rounds) < 2:
         errors.append("能力发现不足两轮，不能结束一般性企业研究")
     else:
         last_two = rounds[-2:]

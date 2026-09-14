@@ -148,7 +148,64 @@ def conflict(conflict_id="C01", severity="general", graph_action="keep_confirmed
     }
 
 
+def research_route(route="listed_disclosure"):
+    listed = route == "listed_disclosure"
+    return {
+        "enterprise_profile": {
+            "analysis_entity": REPORT["entity_resolution"]["analysis_entity"],
+            "listing_status": "listed" if listed else "nonlisted",
+            "research_route": route,
+            "basis_source_ids": ["E01"],
+        }
+    }
+
+
 class EquityEvidenceTests(unittest.TestCase):
+    def test_listed_disclosure_does_not_require_commercial_platform_attempt(self):
+        validator = importlib.import_module("validate_equity_evidence")
+        report = copy.deepcopy(REPORT)
+        ledger = evidence_ledger()
+        ledger["provider_attempts"] = []
+        ledger["sources"][0].update({
+            "provider": "legal_disclosure",
+            "method": "annual_report",
+            "record_locator": "2025年年度报告/股本及股东情况",
+        })
+        attach_graph(ledger, report)
+        for item in ledger["nodes"] + ledger["edges"]:
+            item["assertion_type"] = "legal_disclosure"
+        report["equity"]["evidence_summary"] = {
+            "display_source_id": "E01",
+            "display_source_title": "上市公司2025年年度报告法定披露",
+            "as_of_date": "2026-08-02",
+        }
+        self.assertEqual(
+            validator.validate_equity_evidence(
+                ledger,
+                report,
+                research_ledger=research_route("listed_disclosure"),
+            ),
+            [],
+        )
+
+    def test_nonlisted_route_still_requires_commercial_platform_attempt(self):
+        validator = importlib.import_module("validate_equity_evidence")
+        report = copy.deepcopy(REPORT)
+        ledger = evidence_ledger()
+        ledger["provider_attempts"] = []
+        ledger["sources"][0].update({
+            "provider": "official_registry",
+            "method": "official_registry_query",
+            "record_locator": "企业登记股东信息",
+        })
+        attach_graph(ledger, report)
+        errors = validator.validate_equity_evidence(
+            ledger,
+            report,
+            research_ledger=research_route("nonlisted_public_evidence"),
+        )
+        self.assertTrue(any("缺少企查查或天眼查接入尝试回执" in item for item in errors), errors)
+
     def test_report_data_requires_evidence_ids_on_every_equity_node_and_edge(self):
         data = copy.deepcopy(REPORT)
         data["equity"]["nodes"][0].pop("evidence_source_ids")
@@ -375,12 +432,13 @@ class EquityEvidenceTests(unittest.TestCase):
         self.assertIn('"validate_equity_evidence.py"', source)
         self.assertLess(source.index('"validate_equity_evidence.py"'), source.index('"render_equity_chart.py"'))
 
-    def test_skill_documents_provider_priority_and_non_overstatement_rules(self):
+    def test_skill_documents_listed_disclosure_priority_and_non_overstatement_rules(self):
         skill = (ROOT / "SKILL.md").read_text(encoding="utf-8")
         reference_path = ROOT / "references" / "equity-evidence.md"
         self.assertTrue(reference_path.is_file(), "缺少股权证据接入规则")
         reference = reference_path.read_text(encoding="utf-8")
-        self.assertIn("企查查网页", skill)
+        self.assertIn("上市公司默认直接使用交易所", skill)
+        self.assertIn("不访问企查查或天眼查", skill)
         self.assertIn("equity-evidence.json", skill)
         self.assertIn("不得把平台计算结果直接写成已确认的实际控制人", reference)
         self.assertIn("法定披露优先", reference)

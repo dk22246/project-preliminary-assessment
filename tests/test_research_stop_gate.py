@@ -50,6 +50,33 @@ def complete_ledger():
 
 
 class ResearchStopGateTests(unittest.TestCase):
+    def test_listed_route_accepts_one_concentrated_disclosure_round(self):
+        ledger = complete_ledger()
+        ledger["research_stop_gate"]["discovery_rounds"] = [
+            {"round": 1, "high_value_candidate_ids": ["BC01"]},
+        ]
+        self.assertEqual(validate_research_stop_gate(ledger), [])
+
+    def test_nonlisted_route_still_requires_two_discovery_rounds(self):
+        ledger = complete_ledger()
+        ledger["enterprise_profile"] = {
+            "analysis_entity": "非上市测试企业有限公司",
+            "listing_status": "nonlisted",
+            "research_route": "nonlisted_public_evidence",
+            "basis_source_ids": ["E01"],
+        }
+        ledger["research_stop_gate"]["source_channels"] = {
+            "company_official": {"status": "completed", "source_ids": ["E01"]},
+            "government_regulatory": {"status": "completed", "source_ids": ["E02"]},
+            "business_registry": {"status": "completed", "source_ids": ["E03"]},
+            "risk_records": {"status": "completed", "source_ids": ["R01"]},
+        }
+        ledger["research_stop_gate"]["discovery_rounds"] = [
+            {"round": 1, "high_value_candidate_ids": []},
+        ]
+        errors = validate_research_stop_gate(ledger)
+        self.assertTrue(any("能力发现不足两轮" in item for item in errors), errors)
+
     def test_complete_dispositions_and_two_empty_rounds_allow_policy_phase(self):
         self.assertIsNotNone(validate_research_stop_gate, "validate_research_stop_gate.py must provide validate_research_stop_gate")
         self.assertEqual(validate_research_stop_gate(complete_ledger()), [])

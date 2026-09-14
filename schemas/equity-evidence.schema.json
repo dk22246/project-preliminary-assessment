@@ -15,7 +15,7 @@
     },
     "provider_attempts": {
       "type": "array",
-      "minItems": 1,
+      "minItems": 0,
       "items": {
         "type": "object",
         "required": ["provider", "status", "queried_at"],

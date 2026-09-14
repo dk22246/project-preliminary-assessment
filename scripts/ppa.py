@@ -188,7 +188,7 @@ def _validate_stage(work_dir: Path, stage: str) -> dict:
             raise ValueError("企业事实台账为空")
         return {"validator": "validate_research_stop_gate.py", "fact_count": len(ledger["fact_ledger"])}
     if stage == "equity_financial_complete":
-        _validator("validate_equity_evidence.py", str(equity), "--report-data", str(report))
+        _validator("validate_equity_evidence.py", str(equity), "--report-data", str(report), "--research-ledger", str(research))
         financials = data.get("financials", [])
         if len(financials) != 3:
             raise ValueError("必须完成最近三个完整年度的财务行或明确未公开状态")
@@ -214,7 +214,7 @@ def _validate_stage(work_dir: Path, stage: str) -> dict:
         _validator("validate_report_data.py", str(report))
         _validator("validate_text_quality.py", str(report))
         _validator("validate_encouraged_industry_assessment.py", str(report))
-        _validator("validate_equity_evidence.py", str(equity), "--report-data", str(report))
+        _validator("validate_equity_evidence.py", str(equity), "--report-data", str(report), "--research-ledger", str(research))
         _validator("validate_research_ledger.py", str(research), "--report-data", str(report))
         _validator("validate_research_stop_gate.py", str(research))
         _validator("validate_policy_search_coverage.py", str(search), "--research-ledger", str(research), "--report-data", str(report))

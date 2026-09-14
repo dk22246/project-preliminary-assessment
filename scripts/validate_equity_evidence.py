@@ -35,6 +35,34 @@ CONFLICT_TEXT_FIELDS = (
 )
 
 
+def _validated_research_route(
+    research_ledger: dict | None,
+    legal_entity: str,
+    analysis_entity: str,
+    errors: list[str],
+) -> str:
+    if research_ledger is None:
+        return ""
+    profile = research_ledger.get("enterprise_profile")
+    if not isinstance(profile, dict):
+        errors.append("研究台账缺少enterprise_profile，无法应用股权分流规则")
+        return ""
+    profile_entity = _text(profile.get("analysis_entity"))
+    if profile_entity not in {legal_entity, analysis_entity}:
+        errors.append("研究台账分析主体与股权证据主体不一致")
+        return ""
+    listing_status = _text(profile.get("listing_status"))
+    route = _text(profile.get("research_route"))
+    expected = {
+        "listed": "listed_disclosure",
+        "nonlisted": "nonlisted_public_evidence",
+    }.get(listing_status)
+    if not expected or route != expected:
+        errors.append("研究台账上市状态与研究路由不一致，无法应用股权分流规则")
+        return ""
+    return route
+
+
 def _text(value: object) -> str:
     return str(value or "").strip()
 
@@ -146,17 +174,24 @@ def _validate_web_artifact_chain(source: dict, base_dir: Path, legal_entity: str
             errors.append(f"股权网页来源{source_id}与query bundle的{field}不一致")
 
 
-def validate_equity_evidence(ledger: dict, report: dict, base_dir: Path | None = None) -> list[str]:
+def validate_equity_evidence(
+    ledger: dict,
+    report: dict,
+    base_dir: Path | None = None,
+    *,
+    research_ledger: dict | None = None,
+) -> list[str]:
     errors: list[str] = []
     subject = ledger.get("subject", {})
     legal_entity = _text(report.get("entity_resolution", {}).get("legal_entity"))
     analysis_entity = _text(report.get("entity_resolution", {}).get("analysis_entity"))
     if _text(subject.get("legal_entity")) not in {legal_entity, analysis_entity}:
         errors.append("股权证据主体与报告法律主体不一致")
+    research_route = _validated_research_route(research_ledger, legal_entity, analysis_entity, errors)
 
     attempts = ledger.get("provider_attempts", [])
     commercial_attempts = [item for item in attempts if _text(item.get("provider")) in COMMERCIAL_PROVIDERS]
-    if not commercial_attempts:
+    if not commercial_attempts and research_route != "listed_disclosure":
         errors.append("缺少企查查或天眼查接入尝试回执")
     for item in attempts:
         provider = _text(item.get("provider"))
@@ -226,8 +261,12 @@ def validate_equity_evidence(ledger: dict, report: dict, base_dir: Path | None =
     if not successful_commercial:
         if not all(_text(item.get("status")) in {"unavailable", "error"} for item in commercial_attempts):
             errors.append("商业股权平台无成功来源且降级状态不完整")
-        if not any(_text(source.get("provider")) in {"legal_disclosure", "official_registry"} and _text(source.get("status")) == "success" for source in sources):
-            errors.append("商业股权平台不可用时必须有法定披露或官方登记替代来源")
+        accepted_fallbacks = {"legal_disclosure"} if research_route == "listed_disclosure" else {"legal_disclosure", "official_registry"}
+        if not any(_text(source.get("provider")) in accepted_fallbacks and _text(source.get("status")) == "success" for source in sources):
+            if research_route == "listed_disclosure":
+                errors.append("上市公司未使用商业股权平台时必须有法定披露成功来源")
+            else:
+                errors.append("商业股权平台不可用时必须有法定披露或官方登记替代来源")
 
     report_sources = {_text(item.get("id")) for item in report.get("sources", [])}
     for source_id in source_by_id:
@@ -373,8 +412,15 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="Validate equity evidence and its one-to-one match with the report graph.")
     parser.add_argument("equity_evidence", type=Path)
     parser.add_argument("--report-data", required=True, type=Path)
+    parser.add_argument("--research-ledger", type=Path)
     args = parser.parse_args()
-    errors = validate_equity_evidence(load_data(args.equity_evidence), load_data(args.report_data), args.equity_evidence.resolve().parent)
+    research_ledger = load_data(args.research_ledger) if args.research_ledger else None
+    errors = validate_equity_evidence(
+        load_data(args.equity_evidence),
+        load_data(args.report_data),
+        args.equity_evidence.resolve().parent,
+        research_ledger=research_ledger,
+    )
     if errors:
         print("\n".join(errors), file=sys.stderr)
         return 1
