@@ -13,7 +13,7 @@ def check(*, node: str | None = None, chrome: str | None = None, need_word: bool
     errors = capability_errors(state, need_node=True, need_word=need_word)
     verified = load_verified_state()
     if require_verified and not state_is_current(verified):
-        errors.append("Skill尚未通过当前版本部署验证；请先运行 scripts/bootstrap.py")
+        errors.append("Skill尚未通过当前版本部署验证；请先运行 scripts/ppa.py setup")
     return state, errors
 
 

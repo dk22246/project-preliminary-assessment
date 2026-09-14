@@ -15,9 +15,9 @@ description: Use when 招商人员只提供企业名称或基础资料，需要�
 
 - 仅通过 Git 仓库完整克隆或复制整个 Skill 目录，不得只复制 `SKILL.md`、聊天文本或单个脚本。
 - 所有文本和结构化数据均为 UTF-8；读入 JSON 时兼容 UTF-8 BOM，写入时明确指定 UTF-8。跨 Agent 不依赖 PowerShell 编码或参数转发；Python 子进程统一使用 `-X utf8`。
-- 新设备完整克隆后，如运行环境未提供兼容的 Playwright，先在 Skill 根目录执行 `npm install` 安装 `package.json` 声明的浏览器依赖；随后只运行一次 `python -X utf8 scripts/bootstrap.py --node <Node路径>`。启动器负责探测和验证，不代替依赖安装；验证通过后写入本地 `.runtime/verification.json`。同一版本再次运行只执行秒级 doctor，不重复跑完整测试。Git commit 或关键文件指纹变化时必须重新验证。若裸 `python` 不可用，使用 Agent 已知的真实 Python 可执行文件；不得把 Windows 商店占位符当作运行时。
-- 正式项目必须先用 `scripts/init_report_workspace.py` 创建空白工作目录，再完成并填写 `report-data.json`、`equity-evidence.json`、`research-ledger.json`、`policy-search-ledger.json` 和 `policy-evidence.json` 五份同轮台账。不得复制飞科示例作为新企业底稿；飞科文件只用于显式 fixture 模式下的发布测试。
-- 正式流水线必须同时提供 `--equity-evidence`、`--research-ledger`、`--policy-search-ledger`、`--policy-evidence` 和 `--node`；不得绕过结构化数据、实时政策证据校验、股权证据校验、浏览器版式门禁或 HTML 渲染器直接手写报告。
+- 对外唯一命令入口是 `scripts/ppa.py`。新设备或版本升级只执行一次 `ppa.py setup`：它优先复用已验证兼容运行时，缺少时才安装项目依赖和 Chromium，按需安装 Word 组件并完成部署验证；日常任务不会重复下载或运行完整测试。Git commit 或关键文件指纹变化时必须重新部署。不得把 Windows 商店占位符当作运行时。
+- 每个正式项目只能由 `ppa.py start` 创建：它生成同轮五份台账和 `workflow-state.json`。不得复制飞科示例作为新企业底稿；飞科文件只用于显式 fixture 模式下的发布测试。
+- 工作流状态必须按顺序推进：环境就绪、主体确认、企业研究、股权与财务、产业目录、落地业务、实时政策研究、报告就绪、HTML验收、可选导出。任何跳过、台账不同目录或报告就绪后台账变更，都会阻断正式交付。
 - 以固定 Git commit 部署并记录 commit SHA；升级时重新执行上述部署门禁。PDF 和 Word 继续仅按用户要求生成。
 
 ## 核心运行顺序
@@ -34,7 +34,7 @@ description: Use when 招商人员只提供企业名称或基础资料，需要�
 8. **汇总成唯一事实源。** 将报告结论和 `policy_opportunity_radar` 写入符合 `schemas/report.schema.json` 的 `report-data.json`，股权证据写入 `equity-evidence.json`，业务链路写入 `research-ledger.json`，实时检索回执写入 `policy-search-ledger.json`。全部门禁通过后才渲染。
 
    企业基本情况必须按 `references/ranking-registry.json` 完成 Fortune Global 500、中国企业500强和中国民营企业500强的当前最新正式年度核验；状态只能为 `listed`、`group_listed`、`not_listed` 或 `research_incomplete`，并逐项绑定对应最新官方 E 类来源。注册表缺失、损坏或未核验时阻断，不得回退到硬编码旧年度。产业链仅按定位、同类企业、上游、下游、行业共性需求五段记录；行业共性需求仅为 `industry_inference`，不得作为企业事实或政策触发依据。无 `transaction_evidence=true` 时，不得将代表企业称为已确认供应商、客户或合作伙伴；不得加入产业集群启示或招商对象标签。
-9. **生成并复核交付物。** 先运行 `scripts/doctor.py --node <Node路径>`；再运行 `scripts/run_report_pipeline.py` 默认生成 HTML，仅在用户要求时附加 `--pdf` 或 `--word`。HTML 必须通过整页、表格和SVG版式验收；任一失败都禁止交付。
+9. **生成并复核交付物。** 通过 `ppa.py deliver` 默认生成 HTML；仅在用户要求时加 `--pdf` 或 `--word`。控制器先验证当前环境、五份同目录台账、报告就绪哈希和全部数据门禁，HTML再通过整页、表格和SVG版式验收；任一失败都禁止交付。
 
 ## 企业与落地业务判断
 
@@ -86,43 +86,36 @@ description: Use when 招商人员只提供企业名称或基础资料，需要�
 - `references/report-template.md`：七部分报告内容与表格。
 - `references/html-delivery.md`：HTML/PDF 与 Word 的同源交付、排版和质检。
 - `references/word-delivery.md`：仅在用户要求可编辑 Word 时读取的 Word 原生结构与页面复核规则。
-- `scripts/run_report_pipeline.py`：`数据及股权证据 validate → SVG → HTML → 浏览器全页版式门禁` 主入口，必须提供 `--equity-evidence` 和 `--node`；`--pdf` 和 `--word` 为预置的可选转换。
-- `scripts/init_report_workspace.py`：新企业唯一正式初始化入口；生成五份无业务结论的空白 JSON，默认拒绝覆盖已有目录。
+- `scripts/ppa.py`：唯一公开入口，负责一次性部署、工作区创建、阶段状态、受控推进和正式交付。
+- `scripts/workflow_state.py`：内部状态机；为每轮正式报告绑定阶段回执、版本指纹和五份台账哈希。
 - `scripts/collect_equity_provider.py`、`scripts/validate_equity_evidence.py`：商业平台网页标准化取证、确定性 fragment 输出与逐节点、逐连线证据门禁；浏览器登录态由 Agent 合法持有且不得写入 Skill 或证据文件。
 - `scripts/collect_web_evidence.py`、`scripts/validate_evidence.py`：可选的公开网页证据采集与台账门禁；只增强取证，不改变政策卡校验。
 - `scripts/validate_research_ledger.py`：强制校验企业事实—业务候选—主管部门—候选政策—正式政策卡的完整追溯链。
 - `scripts/validate_policy_search_coverage.py`：强制校验业务语义、部门角色、七条检索路径、附件状态和报告结论边界；任一 `research_incomplete` 都阻断交付。
 - `scripts/search_industry_catalog.py`、`scripts/build_industry_catalog_library.py`、`scripts/validate_industry_catalog_library.py`：按内资/外商投资企业分流召回目录候选、从统一工作簿重建结构化检索库，并校验条数、来源、界定指引及限制类/淘汰类冲突路由。
-- `scripts/bootstrap.py`、`scripts/doctor.py`：跨 Agent 安装与秒级运行前自检；只有首次安装或版本指纹变化时执行完整部署验证。
+- 运行时、初始化、验证和渲染脚本均为 `ppa.py` 的内部组件，不得作为另一个公开工作流调用。
 - `scripts/discover_current_policies.py`、`scripts/policy_cache.py`：按主管部门路由受控并发发现政策，并在每轮访问官方来源后复验缓存；不得用旧缓存冒充实时检索。
 - `scripts/validate_research_stop_gate.py`、`scripts/validate_policy_evidence.py`：分别阻断未完成企业必查事项的研究底稿，以及缺少本轮官方原文、哈希、效力和申报状态证据的前台政策。
 - `scripts/verify_skill.py`：维护者发布门禁；`--release` 运行预检和完整测试，`--smoke` 额外运行示例HTML，不得在每份报告前调用。
 - `scripts/preflight.py`：由部署门禁调用的目录、UTF-8、示例数据和政策预检；`--smoke` 同时生成示例 HTML 并进行浏览器全页版式验收。
-- `scripts/run_utf8.ps1`：仅供本机 PowerShell 需要改善终端显示时可选使用，不是跨 Agent 门禁。
 - `scripts/validate_report_data.py`、`scripts/validate_text_quality.py`：唯一事实源和文字质量校验。
 - `scripts/render_equity_chart.py`、`scripts/render_report_html.py`、`scripts/render_report_pdf.mjs`、`scripts/verify_html_layout.mjs`：图表、渲染器与浏览器版式验收。
 
 示例：
 
 ```powershell
-# 新企业：先创建空白五台账工作目录
-& $py -X utf8 scripts/init_report_workspace.py "企业法律全称" --out-dir work/company
+# 一次性部署或版本升级
+& $py -X utf8 scripts/ppa.py setup
 
-# 日常运行前秒级环境检查
-& $py -X utf8 scripts/doctor.py --node $node
+# 新企业工作区、阶段确认和默认 HTML 交付
+& $py -X utf8 scripts/ppa.py start "企业法律全称" --work-dir work/company
+& $py -X utf8 scripts/ppa.py advance --work-dir work/company
+& $py -X utf8 scripts/ppa.py status --work-dir work/company
+& $py -X utf8 scripts/ppa.py deliver --work-dir work/company --out-dir outputs/company
 
-# 默认：只生成 HTML，但必须通过浏览器版式验收
-& $py -X utf8 scripts/run_report_pipeline.py work/company/report-data.json --equity-evidence work/company/equity-evidence.json --research-ledger work/company/research-ledger.json --policy-search-ledger work/company/policy-search-ledger.json --policy-evidence work/company/policy-evidence.json --out-dir outputs/company --node $node
-
-# 如本次使用网页取证，先校验证据台账并接入主流水线
-& $py -X utf8 scripts/validate_evidence.py evidence/enterprise/evidence.json
-& $py -X utf8 scripts/run_report_pipeline.py report-data.json --equity-evidence equity-evidence.json --research-ledger research-ledger.json --policy-search-ledger policy-search-ledger.json --policy-evidence policy-evidence.json --evidence evidence/enterprise/evidence.json --out-dir outputs/company --node $node
-
-# 按需：HTML + PDF
-& $py -X utf8 scripts/run_report_pipeline.py report-data.json --equity-evidence equity-evidence.json --research-ledger research-ledger.json --policy-search-ledger policy-search-ledger.json --policy-evidence policy-evidence.json --out-dir outputs/company --pdf --node $node
-
-# 按需：HTML + 可编辑 Word
-& $py -X utf8 scripts/run_report_pipeline.py report-data.json --equity-evidence equity-evidence.json --research-ledger research-ledger.json --policy-search-ledger policy-search-ledger.json --policy-evidence policy-evidence.json --out-dir outputs/company --word --node $node
+# 按需：HTML + PDF 或可编辑 Word
+& $py -X utf8 scripts/ppa.py deliver --work-dir work/company --out-dir outputs/company --pdf
+& $py -X utf8 scripts/ppa.py deliver --work-dir work/company --out-dir outputs/company --word
 ```
 
 所有路径以 Skill 根目录相对定位；不得在 Skill、脚本或示例中写死本机用户目录、磁盘盘符或浏览器绝对路径。运行环境需要时通过 `REPORT_NODE_MODULES`、`REPORT_CHROME_EXECUTABLE` 等环境变量提供。

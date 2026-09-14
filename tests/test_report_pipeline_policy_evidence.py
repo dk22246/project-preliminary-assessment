@@ -33,6 +33,17 @@ class ReportPipelinePolicyEvidenceTests(unittest.TestCase):
             ])
         self.assertEqual(raised.exception.code, 2)
 
+    def test_formal_pipeline_requires_current_workflow_state(self):
+        from run_report_pipeline import main
+
+        with self.assertRaises(SystemExit) as raised:
+            main([
+                "report-data.json", "--equity-evidence", "equity-evidence.json",
+                "--research-ledger", "research-ledger.json", "--policy-search-ledger", "policy-search-ledger.json",
+                "--policy-evidence", "policy-evidence.json", "--out-dir", "outputs/test", "--node", "node.exe",
+            ])
+        self.assertEqual(raised.exception.code, 2)
+
     def test_fixture_mode_is_explicitly_forwarded_to_policy_evidence_validator(self):
         import run_report_pipeline as pipeline
 
@@ -50,7 +61,7 @@ class ReportPipelinePolicyEvidenceTests(unittest.TestCase):
                     "--research-ledger", "research-ledger.json", "--policy-search-ledger", "policy-search-ledger.json",
                     "--policy-evidence", "policy-evidence.json", "--fixture-mode",
                     "--out-dir", str(Path(value) / "out"), "--node", str(node),
-                ])
+                ], release_validation=True)
             self.assertEqual(result, 0)
             policy_command = next(command for command in commands if any(str(part).endswith("validate_policy_evidence.py") for part in command))
             self.assertIn("--fixture-mode", policy_command)
@@ -59,6 +70,18 @@ class ReportPipelinePolicyEvidenceTests(unittest.TestCase):
             self.assertFalse(metrics["full_release_tests_run"])
             self.assertIn("local_validation_seconds", metrics)
             self.assertIn("render_and_layout_seconds", metrics)
+
+    def test_fixture_mode_is_rejected_outside_internal_release_validation(self):
+        import run_report_pipeline as pipeline
+
+        with self.assertRaises(SystemExit) as raised:
+            pipeline.main([
+                "report-data.json", "--equity-evidence", "equity-evidence.json",
+                "--research-ledger", "research-ledger.json", "--policy-search-ledger", "policy-search-ledger.json",
+                "--policy-evidence", "policy-evidence.json", "--fixture-mode",
+                "--out-dir", "outputs/test", "--node", "node.exe",
+            ])
+        self.assertEqual(raised.exception.code, 2)
 
 
 if __name__ == "__main__":

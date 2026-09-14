@@ -1,19 +1,27 @@
-`SKILL.md` is the sole authority; deploy only by fully cloning or copying the complete Skill directory.
+`SKILL.md` is the business authority. Deploy only by fully cloning or copying the complete Skill directory at one fixed Git commit.
 
-## Required workflow
+## Public command surface
 
-- If no compatible Playwright runtime is already available, run `npm install` in the Skill root before bootstrap.
-- On first deployment or fingerprint change, run:
-  `python -X utf8 scripts/bootstrap.py --node <node-path>`
-- For every normal task, first run:
-  `python -X utf8 scripts/doctor.py --node <node-path>`
-- Start every new enterprise from a blank workspace, never from the Flyco release fixture:
-  `python -X utf8 scripts/init_report_workspace.py "<legal-enterprise-name>" --out-dir <work-dir>`
-- After entity resolution, populate `research-ledger.json.enterprise_profile` with the confirmed analysis entity and exactly one route: `listed / listed_disclosure` or `nonlisted / nonlisted_public_evidence`. The route changes enterprise evidence sources and stop conditions only; it must not change report structure or policy research.
-- Then run:
-  `python -X utf8 scripts/run_report_pipeline.py <report-data.json> --equity-evidence <equity-evidence.json> --research-ledger <research-ledger.json> --policy-search-ledger <policy-search-ledger.json> --policy-evidence <policy-evidence.json> --out-dir <output-dir> --node <node-path>`
-- Deliver HTML by default; generate PDF or Word only when requested.
-- For every report, verify current policy in real time against official sources.
-- Populate all five ledgers from the same run. The packaged Flyco files are release fixtures only and require explicit fixture mode.
-- Read current 500-ranking years and source contracts from `references/ranking-registry.json`; never hard-code ranking years in an Agent prompt.
-- If required capability, evidence, or validation is unavailable, stop and name the gap; never silently downgrade.
+Agents and users must invoke only `scripts/ppa.py`; all other scripts are internal implementation and must not be called as an alternative workflow.
+
+```powershell
+# 一次性部署或版本升级；--with-word 仅在确需 Word 时使用
+& <python-path> -X utf8 scripts/ppa.py setup [--with-word]
+
+# 创建受控的企业工作区
+& <python-path> -X utf8 scripts/ppa.py start "企业法律全称" --work-dir work/company
+
+# 完成每个真实研究阶段后，严格按下一阶段推进
+& <python-path> -X utf8 scripts/ppa.py advance --work-dir work/company
+& <python-path> -X utf8 scripts/ppa.py status --work-dir work/company
+
+# 只有 report_ready 后才可交付；HTML 默认，PDF/Word按需
+& <python-path> -X utf8 scripts/ppa.py deliver --work-dir work/company --out-dir outputs/company [--pdf] [--word]
+```
+
+- `setup` 优先复用已验证兼容运行时；缺少时才安装项目依赖和项目 Chromium，并完成一次部署验证。日常运行不会重复下载或运行完整测试。
+- `start` 创建五份同轮台账和 `workflow-state.json`。不得复制 Flyco fixture 作为新企业底稿。
+- 研究人员填充五份台账后，只能按状态机顺序推进。`report_ready` 会写入五份台账哈希；任意文件变更都必须重新完成该阶段。
+- `deliver` 只接受同一工作区内的五份台账和当前状态回执。缺少能力、证据或实时政策核验时必须停止并说明缺口，不得降级交付。
+- 报告修改导致台账哈希变化时，再运行一次 `advance` 重新完成最终门禁；不得手工编辑 `workflow-state.json`。
+- 主体确认后，`research-ledger.json.enterprise_profile` 必须标记 `listed / listed_disclosure` 或 `nonlisted / nonlisted_public_evidence`；两条路线只改变来源与停止条件，不改变报告结构或实时政策检索。

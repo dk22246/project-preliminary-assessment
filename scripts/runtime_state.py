@@ -68,12 +68,44 @@ def resolve_node_modules(node: Path | None) -> Path | None:
     return None
 
 
-def resolve_chrome(explicit: str | None = None) -> Path | None:
+def resolve_playwright_chromium(node: Path | None, modules: Path | None) -> Path | None:
+    """Ask the installed Playwright package for its own browser executable."""
+    if not node or not modules:
+        return None
+    env = dict(os.environ)
+    env["NODE_PATH"] = str(modules)
+    script = "const {chromium}=require('playwright'); process.stdout.write(chromium.executablePath());"
+    try:
+        result = subprocess.run(
+            [str(node), "-e", script], cwd=ROOT, env=env, capture_output=True,
+            text=True, encoding="utf-8", errors="replace", timeout=10, check=False,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return None
+    candidate = result.stdout.strip() if result.returncode == 0 else ""
+    return Path(candidate).resolve() if candidate and Path(candidate).is_file() else None
+
+
+def resolve_chrome(explicit: str | None = None, node: Path | None = None, modules: Path | None = None) -> Path | None:
     candidates = [explicit, os.environ.get("REPORT_CHROME_EXECUTABLE")]
+    playwright_browser = resolve_playwright_chromium(node, modules)
+    if playwright_browser:
+        candidates.append(str(playwright_browser))
     if sys.platform == "win32":
         for base in (os.environ.get("PROGRAMFILES"), os.environ.get("PROGRAMFILES(X86)"), os.environ.get("LOCALAPPDATA")):
             if base:
                 candidates.append(str(Path(base) / "Google" / "Chrome" / "Application" / "chrome.exe"))
+        browser_paths = [os.environ.get("PLAYWRIGHT_BROWSERS_PATH")]
+        local_data = os.environ.get("LOCALAPPDATA")
+        if local_data:
+            browser_paths.append(str(Path(local_data) / "ms-playwright"))
+        for browser_path in browser_paths:
+            playwright_root = Path(browser_path).expanduser() if browser_path else None
+            if playwright_root and playwright_root.is_dir():
+                for browser in sorted(playwright_root.glob("chromium-*"), reverse=True):
+                    candidates.append(str(browser / "chrome-win" / "chrome.exe"))
+                for browser in sorted(playwright_root.glob("chrome-headless-shell-*"), reverse=True):
+                    candidates.append(str(browser / "chrome-win" / "headless_shell.exe"))
     elif sys.platform == "darwin":
         candidates.append("/Applications/Google Chrome.app/Contents/MacOS/Google Chrome")
     else:
@@ -95,7 +127,7 @@ def _version(command: list[str]) -> str:
 def discover(node: str | None = None, chrome: str | None = None) -> dict:
     node_path = resolve_node(node)
     modules = resolve_node_modules(node_path)
-    chrome_path = resolve_chrome(chrome)
+    chrome_path = resolve_chrome(chrome, node_path, modules)
     return {
         "fingerprint": package_fingerprint(),
         "python": {"path": str(Path(sys.executable).resolve()), "version": sys.version.split()[0]},
@@ -120,11 +152,11 @@ def capability_errors(state: dict, *, need_node: bool = True, need_word: bool = 
     if need_node and state.get("node", {}).get("path") and (not node_match or int(node_match.group(1)) < 18):
         errors.append(f"Node.js版本不满足>=18：{node_version or '无法识别'}")
     if need_node and not state.get("playwright"):
-        errors.append("未找到Playwright；请在Skill根目录运行 npm install，或设置 REPORT_NODE_MODULES")
+        errors.append("未找到项目Playwright；请运行 scripts/ppa.py setup，或设置 REPORT_NODE_MODULES")
     if need_node and not state.get("chrome", {}).get("path"):
-        errors.append("未找到Google Chrome/Chromium；请安装浏览器或设置 REPORT_CHROME_EXECUTABLE")
+        errors.append("未找到Google Chrome/Chromium；请运行 scripts/ppa.py setup，或设置 REPORT_CHROME_EXECUTABLE")
     if need_word and not state.get("python_docx"):
-        errors.append("生成Word需要python-docx；请安装 requirements-word.txt")
+        errors.append("生成Word需要python-docx；请运行 scripts/ppa.py setup --with-word")
     return errors
 
 

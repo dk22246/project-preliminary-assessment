@@ -9,6 +9,8 @@ import sys
 from time import perf_counter
 
 from doctor import check as check_runtime
+from runtime_state import package_fingerprint
+import workflow_state
 
 
 ROOT = Path(__file__).parents[1]
@@ -38,8 +40,13 @@ def main(argv: list[str] | None = None, *, release_validation: bool = False) -> 
     parser.add_argument("--research-ledger", required=True, help="validated business discovery and policy routing ledger")
     parser.add_argument("--policy-search-ledger", required=True, help="validated dynamic policy-search coverage ledger")
     parser.add_argument("--policy-evidence", required=True, help="fresh official policy evidence ledger for this report run")
+    parser.add_argument("--workflow-state", help="machine workflow state from the same formal workspace")
     parser.add_argument("--fixture-mode", action="store_true", help="allow packaged fixture evidence only for explicit tests and release verification")
     args = parser.parse_args(argv)
+    if args.fixture_mode and not release_validation:
+        parser.error("--fixture-mode仅允许内部发布验证调用，不能作为正式报告绕过路径")
+    if not args.fixture_mode and not args.workflow_state:
+        parser.error("正式报告必须提供 --workflow-state；只有显式 --fixture-mode 可绕过")
     runtime, runtime_errors = check_runtime(
         node=args.node,
         need_word=args.word,
@@ -56,6 +63,22 @@ def main(argv: list[str] | None = None, *, release_validation: bool = False) -> 
     out = Path(args.out_dir)
     out.mkdir(parents=True, exist_ok=True)
     data = Path(args.report_data)
+    if not args.fixture_mode:
+        work_dir = Path(args.workflow_state).resolve().parent
+        expected_state = work_dir / workflow_state.STATE_FILE
+        if Path(args.workflow_state).resolve() != expected_state:
+            raise SystemExit("--workflow-state 必须是正式工作区的 workflow-state.json")
+        supplied = {
+            "report-data.json": data,
+            "equity-evidence.json": args.equity_evidence,
+            "research-ledger.json": args.research_ledger,
+            "policy-search-ledger.json": args.policy_search_ledger,
+            "policy-evidence.json": args.policy_evidence,
+        }
+        workflow_errors = workflow_state.artifact_path_errors(work_dir, supplied)
+        workflow_errors.extend(workflow_state.ready_state_errors(work_dir, package_fingerprint()))
+        if workflow_errors:
+            raise SystemExit("工作流状态校验失败：\n" + "\n".join(f"- {error}" for error in workflow_errors))
     validation_started = perf_counter()
     if args.evidence:
         run(python_command(SCRIPTS / "validate_evidence.py", args.evidence))
@@ -110,6 +133,14 @@ def main(argv: list[str] | None = None, *, release_validation: bool = False) -> 
         "render_and_layout_seconds": round(perf_counter() - render_started, 3),
         "full_release_tests_run": False,
     }
+    if args.workflow_state:
+        state = workflow_state.load(Path(args.workflow_state).resolve().parent)
+        metrics.update({
+            "run_id": state.get("run_id"),
+            "skill_fingerprint": state.get("skill_fingerprint"),
+            "workflow_stage": state.get("current_stage"),
+            "artifact_hashes": state.get("ready_artifact_hashes"),
+        })
     (out / "run-metrics.json").write_text(json.dumps(metrics, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     return 0
 

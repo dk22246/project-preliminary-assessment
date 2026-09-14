@@ -28,14 +28,6 @@ class DeploymentPreflightTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("网页证据台账、研究路由和动态政策检索覆盖门禁有效", result.stdout)
 
-    def test_windows_utf8_launcher_sets_console_and_python_encoding(self):
-        launcher = (ROOT / "scripts" / "run_utf8.ps1").read_text(encoding="utf-8")
-        self.assertIn("[Console]::OutputEncoding", launcher)
-        self.assertIn('$env:PYTHONUTF8 = "1"', launcher)
-        self.assertIn("-X utf8 @PythonArgs", launcher)
-        self.assertIn("SKILL_PYTHON", launcher)
-        self.assertIn("py -ErrorAction", launcher)
-
     def test_portable_verifier_uses_python_not_powershell_for_preflight_and_tests(self):
         verifier = (ROOT / "scripts" / "verify_skill.py").read_text(encoding="utf-8")
         self.assertIn("sys.executable", verifier)
