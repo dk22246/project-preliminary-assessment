@@ -12,7 +12,7 @@ description: Use when 招商人员只提供企业名称或基础资料，需要�
 - 对外唯一命令入口是 `scripts/ppa.py`；其他脚本只属于内部实现，不得形成第二套运行路径。
 - 首次部署或 Skill 版本变化时运行一次 `ppa.py setup`。日常项目不得重复下载依赖或运行完整发布测试。
 - 每个项目由 `ppa.py start` 创建五份同轮台账和 `workflow-state.json`，不得复制示例企业底稿。
-- 填写台账后运行 `ppa.py advance`；控制器按顺序连续通过全部已满足阶段，停在第一个真实缺口。到达 `report_ready` 后绑定五份台账SHA-256，台账变化必须重新通过该门禁。
+- 两份精简输入完成后运行 `ppa.py compile`，再由 `ppa.py finalize` 对机器生成的五份台账执行唯一一次完整门禁。到达 `report_ready` 后绑定五份台账SHA-256，台账变化必须重新通过该门禁。`advance`仅保留为兼容别名。
 - 默认只生成由 `report-data.json` 驱动的HTML。用户明确要求时，才由同一数据附加PDF或可编辑Word；不得分别撰写三套内容。
 
 ## 固定工作流
@@ -95,7 +95,7 @@ HTML、PDF和Word必须读取同一 `report-data.json`。股权图、表格、�
 & $py -X utf8 scripts/ppa.py start "企业法律全称" --work-dir work/company
 & $py -X utf8 scripts/ppa.py research-plan --work-dir work/company
 & $py -X utf8 scripts/ppa.py compile --work-dir work/company
-& $py -X utf8 scripts/ppa.py advance --work-dir work/company
+& $py -X utf8 scripts/ppa.py finalize --work-dir work/company
 & $py -X utf8 scripts/ppa.py deliver --work-dir work/company --out-dir outputs/company
 
 # 按需取证、检索和导出

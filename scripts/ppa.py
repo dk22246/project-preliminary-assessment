@@ -312,44 +312,104 @@ def _validate_stage(work_dir: Path, stage: str) -> dict:
     raise ValueError(f"阶段不允许由advance完成：{stage}")
 
 
-def command_advance(args: argparse.Namespace) -> int:
+def _validate_lightweight_stage(work_dir: Path, stage: str) -> dict:
+    """Check stage presence only; formal semantic validators run once in finalize."""
+    report = _load_json(work_dir / "report-data.json")
+    research = _load_json(work_dir / "research-ledger.json")
+    if stage == "entity_confirmed":
+        entity = report.get("entity_resolution", {})
+        profile = research.get("enterprise_profile", {})
+        required = ("name_type", "legal_entity", "analysis_entity", "financial_scope", "risk_scope")
+        missing = [field for field in required if not str(entity.get(field, "")).strip()]
+        if missing:
+            raise ValueError("主体确认未完成，缺少：" + "、".join(missing))
+        if (profile.get("listing_status"), profile.get("research_route")) not in {
+            ("listed", "listed_disclosure"), ("nonlisted", "nonlisted_public_evidence")
+        }:
+            raise ValueError("上市/非上市研究路由尚未锁定")
+        return {"analysis_entity": entity["analysis_entity"], "research_route": profile["research_route"]}
+    if stage == "enterprise_research_complete":
+        if not research.get("fact_ledger") or not research.get("business_candidates"):
+            raise ValueError("企业事实或业务候选尚未编译")
+        return {"compiled": True, "fact_count": len(research["fact_ledger"])}
+    if stage == "equity_financial_complete":
+        if len(report.get("financials", [])) != 3:
+            raise ValueError("最近三个完整年度财务尚未完成")
+        return {"compiled": True, "financial_years": [row.get("year") for row in report["financials"]]}
+    if stage == "industry_catalog_complete":
+        if not report.get("encouraged_industry_assessment"):
+            raise ValueError("鼓励类产业目录判断尚未完成")
+        return {"compiled": True}
+    if stage == "landing_businesses_complete":
+        landings = report.get("landing_businesses", [])
+        required = ("id", "business", "fact_basis", "sanya_path", "value", "feasibility", "policy_departments")
+        if not landings or any(any(not item.get(field) for field in required) for item in landings):
+            raise ValueError("三亚落地业务及承接路径尚未完整填写")
+        return {"compiled": True, "landing_business_ids": [item["id"] for item in landings]}
+    if stage == "policy_research_complete":
+        coverage = _load_json(work_dir / "policy-search-ledger.json")
+        evidence = _load_json(work_dir / "policy-evidence.json")
+        if not coverage.get("searches") or not coverage.get("researched_at"):
+            raise ValueError("实时政策检索结果尚未编译")
+        if not evidence.get("records"):
+            raise ValueError("正式政策证据尚未编译")
+        return {"compiled": True, "search_count": len(coverage["searches"]), "evidence_count": len(evidence["records"])}
+    raise ValueError(f"未知轻量阶段：{stage}")
+
+
+def _validate_final_suite(work_dir: Path) -> dict:
+    """Run every formal semantic gate exactly once and bind the five ledgers."""
+    report = work_dir / "report-data.json"
+    equity = work_dir / "equity-evidence.json"
+    research = work_dir / "research-ledger.json"
+    search = work_dir / "policy-search-ledger.json"
+    policy = work_dir / "policy-evidence.json"
+    _validator("validate_report_data.py", str(report))
+    _validator("validate_text_quality.py", str(report))
+    _validator("validate_encouraged_industry_assessment.py", str(report))
+    _validator("validate_equity_evidence.py", str(equity), "--report-data", str(report), "--research-ledger", str(research))
+    _validator("validate_research_ledger.py", str(research), "--report-data", str(report))
+    _validator("validate_research_stop_gate.py", str(research), "--report-data", str(report))
+    _validator("validate_policy_search_coverage.py", str(search), "--research-ledger", str(research), "--report-data", str(report))
+    _validator("validate_policy_evidence.py", str(policy), "--report-data", str(report), "--policy-search-ledger", str(search))
+    _validator("validate_business_policy_ledger.py", str(report))
+    with tempfile.TemporaryDirectory() as temporary:
+        cards = Path(temporary) / "policy-cards.json"
+        _validator("export_policy_cards.py", str(report), "--out", str(cards))
+        _validator("validate_policy_scope.py", str(cards))
+    return workflow_state.artifact_hashes(work_dir)
+
+
+def command_finalize(args: argparse.Namespace) -> int:
     require_ready_runtime(args.node, args.chrome)
     work_dir = Path(args.work_dir).resolve()
     state = workflow_state.load(work_dir)
     if state.get("skill_fingerprint") != package_fingerprint():
-        raise ValueError("该项目由其他Skill版本创建；为防旧规则混入，请用当前版本重新start正式工作区")
-    if state.get("current_stage") in {"report_ready", "html_accepted"}:
+        raise ValueError("该项目由其他Skill版本创建；请用当前版本重新start正式工作区")
+    current = str(state.get("current_stage", ""))
+    if current in {"report_ready", "html_accepted"}:
         stale = workflow_state.ready_state_errors(work_dir, package_fingerprint())
-        changed = any("发生变化" in error or "五台账指纹" in error for error in stale)
-        if changed:
-            receipt = _validate_stage(work_dir, "report_ready")
-            workflow_state.refresh_report_ready(work_dir, receipt)
-            print("通过：修订后的五份台账已重新完成report_ready门禁；下一步：ppa.py deliver")
+        if not stale:
+            print("通过：最终门禁及五台账哈希仍然有效；下一步：ppa.py deliver")
             return 0
-    completed: list[str] = []
-    while True:
-        stage = workflow_state.next_stage(workflow_state.load(work_dir))
-        if stage is None:
-            break
-        if stage == "html_accepted":
-            break
-        try:
-            receipt = _validate_stage(work_dir, stage)
-        except ValueError as error:
-            prefix = f"已连续通过：{'、'.join(completed)}\n" if completed else ""
-            raise ValueError(prefix + f"当前停在{stage}：{error}") from error
-        workflow_state.complete_stage(work_dir, stage, receipt)
-        completed.append(stage)
-        if stage == "report_ready":
-            break
-    following = workflow_state.next_stage(workflow_state.load(work_dir))
-    if completed:
-        print(f"通过：{'、'.join(completed)}" + (f"；下一阶段：{following}" if following else ""))
-    elif following == "html_accepted":
-        print("当前已到report_ready；下一步：ppa.py deliver")
+    receipts: list[tuple[str, dict]] = []
+    current_index = workflow_state.STAGES.index(current)
+    for stage in workflow_state.STAGES[current_index + 1: workflow_state.STAGES.index("report_ready")]:
+        receipts.append((stage, _validate_lightweight_stage(work_dir, stage)))
+    hashes = _validate_final_suite(work_dir)
+    if current in {"report_ready", "html_accepted"}:
+        workflow_state.refresh_report_ready(work_dir, hashes)
     else:
-        print("流程已经完成")
+        for stage, receipt in receipts:
+            workflow_state.complete_stage(work_dir, stage, receipt)
+        workflow_state.complete_stage(work_dir, "report_ready", hashes)
+    print("通过：一次最终完整门禁已完成并绑定五份台账；下一步：ppa.py deliver")
     return 0
+
+
+def command_advance(args: argparse.Namespace) -> int:
+    print("提示：advance为兼容别名，当前执行一次最终门禁finalize")
+    return command_finalize(args)
 
 
 def command_status(args: argparse.Namespace) -> int:
@@ -428,6 +488,11 @@ def build_parser() -> argparse.ArgumentParser:
     advance.add_argument("--node")
     advance.add_argument("--chrome")
     advance.set_defaults(handler=command_advance)
+    finalize = sub.add_parser("finalize", help="对编译后的五份台账执行唯一一次完整正式门禁")
+    finalize.add_argument("--work-dir", required=True)
+    finalize.add_argument("--node")
+    finalize.add_argument("--chrome")
+    finalize.set_defaults(handler=command_finalize)
     compile_command = sub.add_parser("compile", help="将两份精简输入原子编译为五份正式台账")
     compile_command.add_argument("--work-dir", required=True)
     compile_command.set_defaults(handler=command_compile)
