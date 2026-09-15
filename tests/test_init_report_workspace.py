@@ -16,6 +16,8 @@ FILES = {
     "research-ledger.json",
     "policy-search-ledger.json",
     "policy-evidence.json",
+    "enterprise-findings.json",
+    "policy-findings.json",
 }
 
 
@@ -29,7 +31,7 @@ class InitReportWorkspaceTests(unittest.TestCase):
             check=False,
         )
 
-    def test_creates_five_parseable_blank_ledgers_without_fixture_content(self):
+    def test_creates_five_ledgers_and_two_lean_inputs_without_fixture_content(self):
         with tempfile.TemporaryDirectory() as tmp:
             out = Path(tmp) / "catl"
             result = self.run_init("宁德时代新能源科技股份有限公司", out)

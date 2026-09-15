@@ -96,6 +96,28 @@ def build_payloads(enterprise: str) -> dict[str, dict]:
     }
 
 
+def build_findings(enterprise: str) -> dict[str, dict]:
+    return {
+        "enterprise-findings.json": {
+            "version": "1.0",
+            "enterprise": enterprise,
+            "report": {"entity_resolution": {}, "enterprise_overview": {}, "businesses": [], "landing_businesses": []},
+            "research": {"enterprise_profile": {}, "research_stop_gate": {}, "facts": [], "business_candidates": [], "department_routes": []},
+            "equity": {"provider_attempts": [], "sources": [], "nodes": [], "edges": [], "conflicts": [], "review_status": "incomplete"},
+            "sources": [],
+        },
+        "policy-findings.json": {
+            "version": "1.0",
+            "enterprise": enterprise,
+            "researched_at": "",
+            "report": {"policy_research": [], "policy_opportunity_radar": {"signals": []}, "policies": []},
+            "search": {"landing_business_hypotheses": [], "department_scan_profiles": [], "searches": [], "policy_candidates": []},
+            "evidence": [],
+            "sources": [],
+        },
+    }
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="initialize a blank project-preliminary-assessment workspace")
     parser.add_argument("enterprise")
@@ -115,7 +137,7 @@ def main() -> int:
     else:
         out.mkdir(parents=True)
 
-    for name, payload in build_payloads(enterprise).items():
+    for name, payload in {**build_payloads(enterprise), **build_findings(enterprise)}.items():
         _write(out / name, payload)
     print(f"已初始化空白项目：{out}")
     return 0

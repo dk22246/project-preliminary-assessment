@@ -26,7 +26,7 @@ class WorkflowControllerTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         for command in (
             "setup", "start", "status", "advance", "collect-web",
-            "collect-equity", "search-catalog", "discover-policies", "deliver",
+            "collect-equity", "search-catalog", "discover-policies", "compile", "deliver",
         ):
             self.assertIn(command, result.stdout)
 
@@ -46,6 +46,8 @@ class WorkflowControllerTests(unittest.TestCase):
                     "research-ledger.json",
                     "policy-search-ledger.json",
                     "policy-evidence.json",
+                    "enterprise-findings.json",
+                    "policy-findings.json",
                     "workflow-state.json",
                 },
             )

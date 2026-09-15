@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Lean realtime policy findings",
+  "type": "object",
+  "required": ["version", "enterprise", "researched_at", "report", "search", "evidence", "sources"],
+  "properties": {
+    "version": {"const": "1.0"},
+    "enterprise": {"type": "string", "minLength": 1},
+    "researched_at": {"type": "string", "minLength": 1},
+    "report": {"type": "object"},
+    "search": {"type": "object"},
+    "evidence": {"type": "array"},
+    "sources": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["key", "type", "name"],
+        "properties": {
+          "key": {"type": "string", "minLength": 1},
+          "type": {"type": "string", "minLength": 1},
+          "name": {"type": "string", "minLength": 1}
+        }
+      }
+    }
+  },
+  "additionalProperties": false
+}

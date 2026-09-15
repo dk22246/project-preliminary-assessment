@@ -12,7 +12,7 @@ import sys
 import tempfile
 
 from doctor import check as check_runtime
-from init_report_workspace import build_payloads
+from init_report_workspace import build_findings, build_payloads
 from runtime_state import capability_errors, discover, load_verified_state, package_fingerprint, resolve_node, state_is_current
 import workflow_state
 
@@ -135,7 +135,7 @@ def command_start(args: argparse.Namespace) -> int:
         raise ValueError(f"工作目录已存在，拒绝覆盖：{work_dir}")
     work_dir.mkdir(parents=True)
     try:
-        for name, payload in build_payloads(enterprise).items():
+        for name, payload in {**build_payloads(enterprise), **build_findings(enterprise)}.items():
             _write_json(work_dir / name, payload)
         workflow_state.create(work_dir, enterprise, str(runtime.get("fingerprint") or package_fingerprint()))
     except Exception:
@@ -206,6 +206,15 @@ def command_search_catalog(args: argparse.Namespace) -> int:
 
     result = search(args.query, args.subject_type, args.limit, not args.no_conflicts)
     print(json.dumps(result, ensure_ascii=False, indent=2))
+    return 0
+
+
+def command_compile(args: argparse.Namespace) -> int:
+    from compile_workspace import compile_workspace
+
+    work_dir, _ = _current_workspace(args.work_dir)
+    compiled = compile_workspace(work_dir)
+    print(json.dumps({"work_dir": str(work_dir), "generated": sorted(compiled)}, ensure_ascii=False))
     return 0
 
 
@@ -409,6 +418,9 @@ def build_parser() -> argparse.ArgumentParser:
     advance.add_argument("--node")
     advance.add_argument("--chrome")
     advance.set_defaults(handler=command_advance)
+    compile_command = sub.add_parser("compile", help="将两份精简输入原子编译为五份正式台账")
+    compile_command.add_argument("--work-dir", required=True)
+    compile_command.set_defaults(handler=command_compile)
     collect_web = sub.add_parser("collect-web", help="采集并校验公开网页证据")
     collect_web.add_argument("enterprise")
     collect_web.add_argument("topic")

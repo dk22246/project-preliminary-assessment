@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Lean enterprise research findings",
+  "type": "object",
+  "required": ["version", "enterprise", "report", "research", "equity", "sources"],
+  "properties": {
+    "version": {"const": "1.0"},
+    "enterprise": {"type": "string", "minLength": 1},
+    "report": {"type": "object"},
+    "research": {"type": "object"},
+    "equity": {"type": "object"},
+    "sources": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["key", "type", "name"],
+        "properties": {
+          "key": {"type": "string", "minLength": 1},
+          "type": {"type": "string", "minLength": 1},
+          "name": {"type": "string", "minLength": 1}
+        }
+      }
+    }
+  },
+  "additionalProperties": false
+}
