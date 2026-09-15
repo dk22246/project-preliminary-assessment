@@ -148,7 +148,7 @@
 全部正式门禁统一通过公开控制器运行：
 
 ```powershell
-& $py -X utf8 scripts/ppa.py advance --work-dir work/company
+& $py -X utf8 scripts/ppa.py finalize --work-dir work/company
 ```
 
 控制器依次核验政策正式性、地域、现行状态、办理状态、企业承接路径、动态检索回执和业务—政策关联；任一失败均停在当前阶段。校验通过只说明政策卡具备正式报告所需证据，不等于企业已经取得认定、批准、备案或兑现资格。全部门禁通过后才能用 `ppa.py deliver` 生成同源HTML，并按用户要求附加PDF或Word。

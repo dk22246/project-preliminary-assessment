@@ -142,7 +142,7 @@ def command_start(args: argparse.Namespace) -> int:
         if work_dir.exists() and not any(path for path in work_dir.iterdir() if path.name not in {*workflow_state.REPORT_ARTIFACTS, workflow_state.STATE_FILE}):
             shutil.rmtree(work_dir)
         raise
-    print(f"已创建正式项目：{work_dir}\n当前阶段：environment_ready；下一步：完成主体确认后运行 ppa.py advance")
+    print(f"已创建正式项目：{work_dir}\n当前阶段：environment_ready；下一步：在 enterprise-findings.json 确认主体和研究路由，再运行 ppa.py research-plan")
     return 0
 
 
@@ -242,74 +242,6 @@ def command_discover_policies(args: argparse.Namespace) -> int:
     merge_discovery_fragment(work_dir / "policy-findings.json", out_dir / "policy-findings-fragment.json")
     print(json.dumps({"out_dir": str(out_dir), **result["metrics"]}, ensure_ascii=False))
     return 0 if not result["metrics"]["failed_requests"] else 1
-
-
-def _validate_stage(work_dir: Path, stage: str) -> dict:
-    report = work_dir / "report-data.json"
-    equity = work_dir / "equity-evidence.json"
-    research = work_dir / "research-ledger.json"
-    search = work_dir / "policy-search-ledger.json"
-    policy = work_dir / "policy-evidence.json"
-    data = _load_json(report)
-    ledger = _load_json(research)
-    if stage == "entity_confirmed":
-        entity = data.get("entity_resolution", {})
-        required = ("name_type", "legal_entity", "analysis_entity", "financial_scope", "risk_scope")
-        missing = [field for field in required if not str(entity.get(field, "")).strip()]
-        profile = ledger.get("enterprise_profile", {})
-        if missing:
-            raise ValueError("主体确认未完成，缺少：" + "、".join(missing))
-        if profile.get("analysis_entity") != entity.get("analysis_entity"):
-            raise ValueError("research-ledger分析主体与report-data不一致")
-        if (profile.get("listing_status"), profile.get("research_route")) not in {
-            ("listed", "listed_disclosure"), ("nonlisted", "nonlisted_public_evidence")
-        }:
-            raise ValueError("上市/非上市研究路由尚未锁定")
-        return {"analysis_entity": entity["analysis_entity"], "research_route": profile["research_route"]}
-    if stage == "enterprise_research_complete":
-        _validator("validate_research_stop_gate.py", str(research))
-        if not ledger.get("fact_ledger"):
-            raise ValueError("企业事实台账为空")
-        return {"validator": "validate_research_stop_gate.py", "fact_count": len(ledger["fact_ledger"])}
-    if stage == "equity_financial_complete":
-        _validator("validate_equity_evidence.py", str(equity), "--report-data", str(report), "--research-ledger", str(research))
-        financials = data.get("financials", [])
-        if len(financials) != 3:
-            raise ValueError("必须完成最近三个完整年度的财务行或明确未公开状态")
-        allowed = {"available", "partial", "not_public", "inaccessible"}
-        if any(str(row.get("data_status", "")) not in allowed or not str(row.get("year", "")).strip() for row in financials):
-            raise ValueError("财务年度或data_status未完成")
-        return {"validator": "validate_equity_evidence.py", "financial_years": [row["year"] for row in financials]}
-    if stage == "industry_catalog_complete":
-        _validator("validate_encouraged_industry_assessment.py", str(report))
-        return {"validator": "validate_encouraged_industry_assessment.py"}
-    if stage == "landing_businesses_complete":
-        landings = data.get("landing_businesses", [])
-        required = ("id", "business", "fact_basis", "sanya_path", "value", "feasibility", "policy_departments")
-        if not landings or any(any(not item.get(field) for field in required) for item in landings):
-            raise ValueError("三亚落地业务及承接路径尚未完整填写")
-        return {"landing_business_ids": [item["id"] for item in landings]}
-    if stage == "policy_research_complete":
-        _validator("validate_policy_search_coverage.py", str(search), "--research-ledger", str(research), "--report-data", str(report))
-        _validator("validate_policy_evidence.py", str(policy), "--report-data", str(report), "--policy-search-ledger", str(search))
-        _validator("validate_business_policy_ledger.py", str(report))
-        return {"validators": ["validate_policy_search_coverage.py", "validate_policy_evidence.py", "validate_business_policy_ledger.py"]}
-    if stage == "report_ready":
-        _validator("validate_report_data.py", str(report))
-        _validator("validate_text_quality.py", str(report))
-        _validator("validate_encouraged_industry_assessment.py", str(report))
-        _validator("validate_equity_evidence.py", str(equity), "--report-data", str(report), "--research-ledger", str(research))
-        _validator("validate_research_ledger.py", str(research), "--report-data", str(report))
-        _validator("validate_research_stop_gate.py", str(research), "--report-data", str(report))
-        _validator("validate_policy_search_coverage.py", str(search), "--research-ledger", str(research), "--report-data", str(report))
-        _validator("validate_policy_evidence.py", str(policy), "--report-data", str(report), "--policy-search-ledger", str(search))
-        _validator("validate_business_policy_ledger.py", str(report))
-        with tempfile.TemporaryDirectory() as temporary:
-            cards = Path(temporary) / "policy-cards.json"
-            _validator("export_policy_cards.py", str(report), "--out", str(cards))
-            _validator("validate_policy_scope.py", str(cards))
-        return workflow_state.artifact_hashes(work_dir)
-    raise ValueError(f"阶段不允许由advance完成：{stage}")
 
 
 def _validate_lightweight_stage(work_dir: Path, stage: str) -> dict:
@@ -483,7 +415,7 @@ def build_parser() -> argparse.ArgumentParser:
     status.add_argument("--chrome")
     status.add_argument("--word", action="store_true")
     status.set_defaults(handler=command_status)
-    advance = sub.add_parser("advance", help="按顺序连续通过全部已满足阶段并停在第一个缺口")
+    advance = sub.add_parser("advance", help="兼容旧调用；等同于 finalize，不再逐阶段运行正式校验")
     advance.add_argument("--work-dir", required=True)
     advance.add_argument("--node")
     advance.add_argument("--chrome")

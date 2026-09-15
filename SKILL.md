@@ -33,7 +33,7 @@ description: Use when 招商人员只提供企业名称或基础资料，需要�
 
 用户只给企业名称时，先判断是集团、上市公司、品牌还是具体经营主体。能够唯一识别时直接继续；存在同名、集团与上市主体混淆、品牌与公司主体混淆时，列出2—4个明确选项确认，确认前不得混用信息。
 
-主体确认后，在 `research-ledger.json.enterprise_profile` 只选择一条企业研究路由：
+主体确认后，在 `enterprise-findings.json.enterprise_profile` 只选择一条企业研究路由：
 
 - `listed / listed_disclosure`：以最新年度报告为集中主资料，一次提取主体、业务、产品、近三年财务、国内外收入、股权、政府补助和重大风险；以前年度报告只补历史缺口，企业官网和政府监管只补当前业务、最近一年变化和未解决风险。法定披露已经明确的事实不再用媒体或商业平台重复证明。
 - `nonlisted / nonlisted_public_evidence`：跳过无依据的交易所和年报检索。第一层读取企业官网、官方公众号或正式材料中的产品、服务、解决方案和项目；第二层只用政府项目/备案/许可、政府采购/招投标及客户或合作方正式公告验证经营事实；另行核验公开登记、股权和四类官方风险。完成固定路径和一次定向缺口补查后停止，不得无限泛搜。
@@ -90,7 +90,7 @@ HTML、PDF和Word必须读取同一 `report-data.json`。股权图、表格、�
 ## 命令
 
 ```powershell
-# 一次性部署；创建项目；自动推进至首个缺口；默认HTML交付
+# 一次性部署；创建项目；生成路由计划；编译后执行一次最终门禁；默认HTML交付
 & $py -X utf8 scripts/ppa.py setup
 & $py -X utf8 scripts/ppa.py start "企业法律全称" --work-dir work/company
 & $py -X utf8 scripts/ppa.py research-plan --work-dir work/company

@@ -54,7 +54,7 @@
 报告 `equity.nodes` 和 `equity.edges` 的每一项都必须填写 `evidence_source_ids`。先运行：
 
 ```powershell
-& $py -X utf8 scripts/ppa.py advance --work-dir work/company
+& $py -X utf8 scripts/ppa.py finalize --work-dir work/company
 ```
 
 凡连接线展示持股比例，必须同时写入数值型 `ownership_percent`。`data_status=available` 时，同一被投资主体已展示的直接股东比例必须合计100%；无法可靠拆分剩余股东但同一可靠来源明确给出剩余合计时，才可使用“其他股东合计”节点补足。`data_status=partial` 时只画已核实的关系和比例，未知部分不得补造，连接线比例未知时须明确写“比例未公开”。

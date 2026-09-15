@@ -15,6 +15,17 @@ sys.path.insert(0, str(ROOT / "scripts"))
 
 
 class WorkflowControllerTests(unittest.TestCase):
+    def test_agent_instructions_use_lean_inputs_and_single_final_gate(self):
+        skill = (ROOT / "SKILL.md").read_text(encoding="utf-8")
+        agents = (ROOT / "AGENTS.md").read_text(encoding="utf-8")
+        combined = skill + "\n" + agents
+        self.assertIn("enterprise-findings.json", combined)
+        self.assertIn("policy-findings.json", combined)
+        self.assertIn("ppa.py compile", combined)
+        self.assertIn("ppa.py finalize", combined)
+        self.assertNotIn("研究人员填充五份台账", combined)
+        self.assertNotIn("下一步：完成主体确认后运行 ppa.py advance", combined)
+
     def test_public_cli_exposes_one_setup_and_report_entry(self):
         result = subprocess.run(
             [sys.executable, "-X", "utf8", str(ROOT / "scripts" / "ppa.py"), "--help"],

@@ -76,7 +76,8 @@
 完成正式台账后只运行：
 
 ```powershell
-& $py -X utf8 scripts/ppa.py advance --work-dir work/company
+& $py -X utf8 scripts/ppa.py compile --work-dir work/company
+& $py -X utf8 scripts/ppa.py finalize --work-dir work/company
 ```
 
-控制器会按当前状态连续执行全部已满足门禁，并停在第一个缺失阶段；不得直接调用内部校验器形成另一套流程。
+`compile` 将两份精简输入原子编译为五份正式台账；`finalize` 对同一批台账执行唯一一次完整门禁。不得直接调用内部校验器形成第二套流程。
