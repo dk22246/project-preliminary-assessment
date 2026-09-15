@@ -34,6 +34,30 @@ def _now() -> str:
     return datetime.now(timezone.utc).isoformat()
 
 
+def _parse_time(value: object) -> datetime | None:
+    try:
+        parsed = datetime.fromisoformat(str(value or "").replace("Z", "+00:00"))
+    except ValueError:
+        return None
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=timezone.utc)
+    return parsed.astimezone(timezone.utc)
+
+
+def phase_seconds(payload: dict, start_stage: str, end_stage: str) -> float:
+    """Return wall-clock workflow time between two completed stage receipts."""
+    completed = {
+        str(row.get("stage", "")): _parse_time(row.get("completed_at"))
+        for row in payload.get("history", [])
+        if isinstance(row, dict)
+    }
+    start = completed.get(start_stage)
+    end = completed.get(end_stage)
+    if not start or not end:
+        return 0.0
+    return round(max(0.0, (end - start).total_seconds()), 3)
+
+
 def state_path(work_dir: Path | str) -> Path:
     return Path(work_dir).resolve() / STATE_FILE
 
@@ -112,9 +136,18 @@ def complete_stage(work_dir: Path | str, stage: str, receipt: dict) -> dict:
     if expected != stage:
         raise ValueError(f"不得跳步或重复完成；当前阶段为{payload.get('current_stage')}，下一阶段只能是{expected or '无'}")
     now = _now()
+    previous_completed_at = payload.get("history", [{}])[-1].get("completed_at", payload.get("created_at", now))
+    started = _parse_time(previous_completed_at) or datetime.now(timezone.utc)
+    completed = _parse_time(now) or started
     payload["current_stage"] = stage
     payload.setdefault("completed_stages", []).append(stage)
-    payload.setdefault("history", []).append({"stage": stage, "completed_at": now, "receipt": receipt})
+    payload.setdefault("history", []).append({
+        "stage": stage,
+        "started_at": previous_completed_at,
+        "completed_at": now,
+        "elapsed_seconds": round(max(0.0, (completed - started).total_seconds()), 3),
+        "receipt": receipt,
+    })
     payload["updated_at"] = now
     if stage == "report_ready":
         expected_names = set(REPORT_ARTIFACTS)

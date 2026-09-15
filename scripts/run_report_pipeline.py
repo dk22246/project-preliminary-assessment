@@ -144,10 +144,19 @@ def main(
             run([args.node, str(SCRIPTS / "render_svg_png.mjs"), str(out / "equity-chart.svg"), str(image)], env=env)
             word_command.extend(["--equity-image", str(image)])
         run(word_command)
+    state = workflow_state.load(Path(args.workflow_state).resolve().parent) if args.workflow_state else {}
+    phase_metrics = {
+        "enterprise_research": workflow_state.phase_seconds(state, "entity_confirmed", "enterprise_research_complete"),
+        "equity_financial": workflow_state.phase_seconds(state, "enterprise_research_complete", "equity_financial_complete"),
+        "industry_and_landing": workflow_state.phase_seconds(state, "equity_financial_complete", "landing_businesses_complete"),
+        "policy_discovery": workflow_state.phase_seconds(state, "landing_businesses_complete", "policy_research_complete"),
+        "final_validation": workflow_state.phase_seconds(state, "policy_research_complete", "report_ready"),
+    }
     metrics = {
         "deployment_mode": "fixture" if args.fixture_mode else "verified_render_path" if trusted_workflow else "internal_full_validation",
-        "enterprise_research_seconds": 0,
-        "policy_discovery_seconds": 0,
+        "enterprise_research_seconds": phase_metrics["enterprise_research"],
+        "policy_discovery_seconds": phase_metrics["policy_discovery"],
+        "phase_seconds": phase_metrics,
         "policy_network_requests": 0,
         "policy_cache_revalidated": 0,
         "local_validation_seconds": round(validation_seconds, 3),
@@ -155,7 +164,6 @@ def main(
         "full_release_tests_run": False,
     }
     if args.workflow_state:
-        state = workflow_state.load(Path(args.workflow_state).resolve().parent)
         metrics.update({
             "run_id": state.get("run_id"),
             "skill_fingerprint": state.get("skill_fingerprint"),
