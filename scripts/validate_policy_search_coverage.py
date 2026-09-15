@@ -20,6 +20,21 @@ DISCOVERY_PATHS = (
     "invalidity_catalog",
     "document_graph",
 )
+CORE_DISCOVERY_PATHS = (
+    "theme_search",
+    "department_documents",
+    "normative_documents",
+    "invalidity_catalog",
+)
+ROLE_DISCOVERY_PATHS = {
+    "primary_regulator": ("application_notices",),
+    "funding_authority": ("application_notices", "award_publicity"),
+    "application_authority": ("application_notices",),
+    "execution_authority": ("application_notices",),
+    "co_issuer": (),
+    "provincial_counterpart": (),
+    "municipal_counterpart": (),
+}
 RUN_STATUSES = {"complete", "not_available", "failed", "partial"}
 SEARCH_STATUSES = {"complete", "research_incomplete"}
 DEPARTMENT_ROLES = {
@@ -72,8 +87,13 @@ def _report_items(report_data: dict) -> dict[tuple[str, str], dict]:
     return items
 
 
+def required_paths_for_role(role: str) -> tuple[str, ...]:
+    """Return evidence routes that are material for this department role."""
+    return tuple(dict.fromkeys((*CORE_DISCOVERY_PATHS, *ROLE_DISCOVERY_PATHS.get(role, ()))))
+
+
 def validate_policy_search_coverage(coverage: dict, research_ledger: dict, report_data: dict, *, allow_stale_fixture: bool = False) -> list[str]:
-    """Validate semantic expansion, seven-path receipts and report conclusion boundaries."""
+    """Validate semantic expansion, role-aware receipts and report conclusion boundaries."""
     errors: list[str] = []
     for field in ("enterprise", "researched_at", "search_mode", "landing_business_hypotheses", "searches", "policy_candidates"):
         if field not in coverage or coverage.get(field) is None or (field != "policy_candidates" and not coverage.get(field)):
@@ -213,7 +233,8 @@ def validate_policy_search_coverage(coverage: dict, research_ledger: dict, repor
                 errors.append(f"{department_label}: 缺少department")
                 continue
             department_names.add(department)
-            if _text(department_search.get("department_role")) not in DEPARTMENT_ROLES:
+            department_role = _text(department_search.get("department_role"))
+            if department_role not in DEPARTMENT_ROLES:
                 errors.append(f"{department_label}: 缺少或错误的部门角色")
             if not _text(department_search.get("routing_basis")):
                 errors.append(f"{department_label}: 缺少路由依据")
@@ -234,14 +255,19 @@ def validate_policy_search_coverage(coverage: dict, research_ledger: dict, repor
                     errors.append(f"{department_label}: 存在非对象的检索回执")
                     continue
                 path = _text(run.get("path"))
+                if path not in DISCOVERY_PATHS:
+                    errors.append(f"{department_label}: 未知检索路径：{path or '空'}")
+                    continue
                 if path in run_by_path:
                     errors.append(f"{department_label}: 检索路径重复：{path}")
                 run_by_path[path] = run
-            for path in DISCOVERY_PATHS:
+            required_paths = required_paths_for_role(department_role) if department_role in DEPARTMENT_ROLES else CORE_DISCOVERY_PATHS
+            for path in required_paths:
                 run = run_by_path.get(path)
                 if not run:
-                    errors.append(f"{department_label}: 缺少强制检索路径：{path}")
+                    errors.append(f"{department_label}: 缺少该部门角色的必需检索路径：{path}")
                     continue
+            for path, run in run_by_path.items():
                 run_label = f"{department_label} / {path}"
                 run_status = _text(run.get("status"))
                 if run_status not in RUN_STATUSES:
@@ -269,7 +295,7 @@ def validate_policy_search_coverage(coverage: dict, research_ledger: dict, repor
                 elif run_status == "not_available":
                     if not _text(run.get("not_available_basis")):
                         errors.append(f"{run_label}: not_available 必须说明官方路径不存在或不适用的依据")
-                else:
+                elif path in required_paths:
                     errors.append(f"{run_label}: {run_status}，必须标记 research_incomplete，禁止生成正式报告")
         missing_departments = expected_departments - department_names
         for department in sorted(missing_departments):

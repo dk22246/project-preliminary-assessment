@@ -1,64 +1,82 @@
-# 动态政策检索覆盖台账
+# 业务触发的实时政策检索
 
-## 目的
+## 目的与时效
 
-将“发现业务”与“确认没有政策”之间的检索过程变成可校验记录。不得把网页搜索结果、单个新闻、主管部门首页或采集工具失败，写成“未发现政策”。
+政策检索必须从已确认的企业事实、相邻经营活动和三亚落地业务出发，不能用固定政策清单反向虚构业务，也不能把一次网页失败写成“没有政策”。
 
-每次报告必须写入带时区的 `researched_at` 并标记 `search_mode: realtime`，与 `report-data.json.meta.policy_researched_at` 完全一致。正式报告的检索记录超过24小时即失效，必须重新检查官方原文、有效状态、申报通知和失效目录。只有 Skill 内置且路径完全匹配的飞科验收夹具可由预检程序跳过时间窗口；报告数据本身不得声明或绕过时效门禁。
+每轮正式报告都要在 `policy-search-ledger.json` 写入带时区的 `researched_at` 和 `search_mode: realtime`，并与 `report-data.json.meta.policy_researched_at` 完全一致。报告超过24小时未交付时，重新核验正式原文、有效状态和当前申报或办理状态。只有发布测试使用的固定夹具可以跳过时间窗口。
 
-## 先做业务语义展开
+## 业务语义展开
 
-先完成 `policy_opportunity_radar` 的事实信号和机会主题处置，再对每项可承接业务建立一条 `landing_business_hypotheses`，至少写入：
+先完成 `policy_opportunity_radar`，再为每项可承接业务建立 `landing_business_hypotheses`，记录：
 
-- `fact_ids`：企业公开事实；
-- `actions`、`roles`、`forms`、`effects`；
-- `government_matters`：每项必须 `route` 到已有路由，或 `exclude` 并写明依据；
-- `policy_instruments`：可能的税收、资金、认定、便利、账户、备案或奖励工具。
+- 企业事实编号；
+- 经营动作、企业角色、活动载体和预期贡献；
+- 需要路由或明确排除的政府管理事项；
+- 可能涉及的税收、资金、认定、账户、备案或办理工具。
 
-按事实层、上位事项层、相邻事项层三轮展开。示例：企业“主办电竞嘉年华”不能只检索“电竞”，还应展开为体育赛事、大型活动、文化旅游、消费促进等管理事项，并由部门职责和正式路由决定是否纳入。
+按照“企业事实—相邻经营活动—政府事项—主管部门—政策工具”展开。相邻活动必须能回溯到企业事实，不得根据海南已有政策创造企业没有的业务。每个观察到的事实信号都要在机会雷达中获得展示、合并、排除、失效、待补证或检索未完成处置。
 
-每个观察到的事实信号必须在机会雷达中获得展示、合并、排除、失效、非现行、待补证或检索未完成处置。海外业务信号的七类相邻主题按 `references/policy-opportunity-radar.md` 强制逐项处置，但不要求每项都进入正式报告。
+## 主管部门路由与检索路径
 
-## 部门角色和七路径
+优先使用 `references/department-routing.json`。陌生复合业务可以依据部门职责、权责清单或正式文件建立本项目动态路由，但不得自动改写通用路由表。
 
-每个 `department_searches` 必须记录一个角色：`primary_regulator`、`funding_authority`、`co_issuer`、`application_authority`、`execution_authority`、`provincial_counterpart` 或 `municipal_counterpart`，以及 `routing_basis`。
+每条部门检索记录必须写明角色和 `routing_basis`。角色只能为：
 
-每个已确认部门必须逐条记录以下 `runs`：
+- `primary_regulator`
+- `funding_authority`
+- `co_issuer`
+- `application_authority`
+- `execution_authority`
+- `provincial_counterpart`
+- `municipal_counterpart`
 
-1. `theme_search`
-2. `department_documents`
-3. `normative_documents`
-4. `application_notices`
-5. `award_publicity`
-6. `invalidity_catalog`
-7. `document_graph`
+检索路径按部门角色触发，不再要求所有部门机械完成七条路径：
+
+| 适用对象 | 必需路径 |
+| --- | --- |
+| 所有主管部门 | `theme_search`、`department_documents`、`normative_documents`、`invalidity_catalog` |
+| `primary_regulator` | 另查 `application_notices` |
+| `funding_authority` | 另查 `application_notices`、`award_publicity` |
+| `application_authority`、`execution_authority` | 另查 `application_notices` |
+| `co_issuer`、省市协同部门 | 无额外路径 |
+
+`document_graph` 是找到候选政策后追溯原文、实施细则、办理指南和关联文件的方法，不是每个部门都必须重复执行的独立证据路径。非资金主管部门不强制检索奖补公示。可以记录额外路径，但额外路径失败不替代本角色必需路径的完成状态。
 
 每条回执只能为：
 
-- `complete`：必须有具体官方入口地址、回执编号和结果摘要；目录扫描不得只填主管部门首页。
-- `not_available`：必须写明官方路径不存在或该部门不发布该类材料的依据。
-- `failed` / `partial`：自动将该搜索任务视为 `research_incomplete`，不得生成正式报告。
+- `complete`：记录具体官方入口、检索词、检查时间、回执编号、结果数量、来源编号、证据编号和摘要；
+- `not_available`：写明该部门不发布此类材料或官方路径不存在的依据；
+- `failed` / `partial`：本角色必需路径出现该状态时，必须标记 `research_incomplete` 并停止交付。
 
-`collect_web_evidence.py` 只负责网页和附件取证；它不是完整的政策发现器。无论使用浏览器、搜索引擎、网页采集器还是人工目录检索，结果都必须写入同一份 `policy-search-ledger.json`。
+主管部门首页不能代替文件目录或具体检索入口。新闻、规划、行动方案和招商宣传只用于发现线索，不能替代正式政策原文。
 
-每条 `complete` 回执还必须记录本轮 `query`、`checked_at`、`result_count`、`result_source_ids` 和 `evidence_record_ids`。同一目录入口可复用，但每条路径仍须保留自身检索词、结果数量和处置结果，不得复制“已完成检索”摘要代替实际回执。
+## 受控批量发现
 
-主管部门级批量检索优先使用 `scripts/discover_current_policies.py`：任务只能来自已确认的落地业务和主管部门路由；同一部门同一入口单次只抓取一次，不同政府域名最多并发4路，同域名并发1路。429、502、503、504最多指数退避重试2次；登录、验证码、403或付费墙不得绕过，直接标记 `research_incomplete`。缓存仅允许在本轮访问官方来源并获得复验回执后复用，申报通知、失效目录和动态公示必须重新获取。
-
-## 结论状态边界
-
-- 发现现行政策、企业资格尚缺事实：`conditional_opportunity`。
-- 发现现行政策、已确认企业不满足条件：`not_applicable`。
-- 没有业务事实触发该事项：`not_triggered`。
-- 路径、附件或目录检索未完成：`research_incomplete`，停止交付。
-- 仅在所有相关部门七路径完成且无现行候选政策时：`no_current_policy`。
-
-不得用企业资格不明、附件无法取得或网页访问失败来替代 `no_current_policy`。
-
-## 校验
+完成落地业务和主管部门路由后，可通过唯一公开入口生成非破坏性的政策发现草案：
 
 ```powershell
-& $py -X utf8 scripts/validate_policy_search_coverage.py policy-search-ledger.json --research-ledger research-ledger.json --report-data report-data.json
+& $py -X utf8 scripts/ppa.py discover-policies --work-dir work/company
 ```
 
-正式流水线必须传入 `--policy-search-ledger policy-search-ledger.json`。校验失败时，不得生成 HTML、PDF 或 Word。
+该命令只在 `work/company/evidence/policy-discovery/` 写入草案和抓取证据，不覆盖正式的 `policy-search-ledger.json` 或 `policy-evidence.json`。草案只完成主管部门入口的实时复验；Agent仍须定位政策原文、实施细则、申报通知和效力依据，再将核验结果写入正式台账。
+
+同一部门同一入口每轮只请求一次；不同官方域名最多并发4路，同域名并发1路。429、502、503、504最多退避重试2次。登录、验证码、403和付费墙不得绕过。缓存只有在本轮重新访问官方来源并留下复验回执后才可使用；动态申报通知、失效目录和公示必须重新获取。
+
+## 结论边界
+
+- 发现现行政策但企业资格尚缺事实：`conditional_opportunity`；
+- 已核验企业不满足现行政策条件：`not_applicable`；
+- 没有企业事实触发该事项：`not_triggered`；
+- 本角色必需路径、政策附件或正式原文未完成：`research_incomplete`，停止交付；
+- 所有相关部门的角色必需路径完成且没有现行候选政策：`no_current_policy`。
+
+不得以资格未知、附件无法取得、网页失败或缓存过期替代 `no_current_policy`。只有现行、已纳入并取得正式来源的候选政策可以进入正式政策表；过期、续期不明、排除和待补证内容只留后台。
+
+完成正式台账后只运行：
+
+```powershell
+& $py -X utf8 scripts/ppa.py advance --work-dir work/company
+```
+
+控制器会按当前状态连续执行全部已满足门禁，并停在第一个缺失阶段；不得直接调用内部校验器形成另一套流程。

@@ -19,9 +19,9 @@
 
 ## 企业事实信号、相邻活动与政策的一一映射
 
-在政策检索前，先按 `references/policy-opportunity-radar.md` 处置企业事实信号和相邻经营活动，再按 `references/policy-discovery.md` 将进入检索的活动拆成政府管理事项并路由到主管部门。优先匹配 `references/department-routing.json` 的通用事项规则；陌生业务以部门职责依据建立动态路由。不得以“电竞”“拳击”等行业名称直接假设主管部门或政策。
+在政策检索前，先按 `references/policy-opportunity-radar.md` 处置企业事实信号和相邻经营活动，再按 `references/policy-search-coverage.md` 将进入检索的活动拆成政府管理事项并路由到主管部门。优先匹配 `references/department-routing.json` 的通用事项规则；陌生业务以部门职责依据建立动态路由。不得以“电竞”“拳击”等行业名称直接假设主管部门或政策。
 
-每个已确认主管部门必须按 `references/policy-search-coverage.md` 完成动态语义展开和七路径检索回执；候选政策必须记录状态与纳入/合并/排除处置。正式政策卡只能来自现行且已纳入的候选政策，现有地域、正式性、有效状态和企业承接路径门禁保持不变。
+每个已确认主管部门必须按 `references/policy-search-coverage.md` 完成动态语义展开和与部门角色相匹配的必需检索回执；候选政策必须记录状态与纳入/合并/排除处置。正式政策卡只能来自现行且已纳入的候选政策，现有地域、正式性、有效状态和企业承接路径门禁保持不变。
 
 完成企业研究后，先建立事实信号、相邻活动和拟落地业务清单，再开始政策检索。每项进入检索的活动至少写明：
 
@@ -38,7 +38,7 @@
 - `not_triggered`：政策主题存在，但本轮没有企业事实支持其触发；
 - `not_applicable`：已取得现行政策并核验企业不符合适用条件；
 - `research_incomplete`：检索路径、目录或相关附件未完成，必须停止正式交付；
-- `no_current_policy`：全部相关主管部门七路径已完成，未发现可进入报告的现行正式海南岛内政策。
+- `no_current_policy`：全部相关主管部门的角色必需路径已完成，未发现可进入报告的现行正式海南岛内政策。
 
 不得将上述动态台账退化为企业所得税、个税、EF、ODI等固定清单。也不得在事实不足时删去主题；应保留“暂未触发”“不适用”“检索未完成”或“未发现现行政策”的真实理由。不得以资格未知、网页失败或附件无法取得替代“未发现现行政策”。
 
@@ -145,19 +145,10 @@
 
 ## 执行门禁
 
-对全部拟写入报告的政策卡运行：
+全部正式门禁统一通过公开控制器运行：
 
 ```powershell
-& $py scripts/validate_policy_scope.py policies.json
+& $py -X utf8 scripts/ppa.py advance --work-dir work/company
 ```
 
-返回码为 1 时，修正或移除该卡；不得绕过校验。校验通过仅说明卡片具备最低证据字段，不等于企业已经取得认定、批准、备案或兑现资格。
-
-在所有拟写入报告的政策卡通过校验后，运行：
-
-```powershell
-& $py scripts/validate_policy_search_coverage.py policy-search-ledger.json --research-ledger research-ledger.json --report-data report-data.json
-& $py scripts/validate_business_policy_ledger.py report-data.json
-```
-
-前一校验要求每项拟落地业务、主管部门和检索路径均有可审计回执，并在 `research_incomplete` 时停止流程；后一校验核对政策卡、`P` 类来源和企业业务的关联。两项校验均通过后才可形成同源 HTML/PDF 报告；用户需要可编辑文件时再同步生成 Word。
+控制器依次核验政策正式性、地域、现行状态、办理状态、企业承接路径、动态检索回执和业务—政策关联；任一失败均停在当前阶段。校验通过只说明政策卡具备正式报告所需证据，不等于企业已经取得认定、批准、备案或兑现资格。全部门禁通过后才能用 `ppa.py deliver` 生成同源HTML，并按用户要求附加PDF或Word。

@@ -168,6 +168,24 @@ class PolicySearchCoverageTests(unittest.TestCase):
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("department_documents", result.stdout)
 
+    def test_nonfunding_role_does_not_require_award_publicity_or_document_graph(self):
+        ledger = coverage_ledger()
+        runs = ledger["searches"][0]["department_searches"][0]["runs"]
+        ledger["searches"][0]["department_searches"][0]["runs"] = [
+            item for item in runs if item["path"] not in {"award_publicity", "document_graph"}
+        ]
+        result = run_validation(report(), research_ledger(), ledger)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+
+    def test_funding_authority_requires_award_publicity(self):
+        ledger = coverage_ledger()
+        department = ledger["searches"][0]["department_searches"][0]
+        department["department_role"] = "funding_authority"
+        department["runs"] = [item for item in department["runs"] if item["path"] != "award_publicity"]
+        result = run_validation(report(), research_ledger(), ledger)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("award_publicity", result.stdout)
+
     def test_rejects_no_current_policy_when_current_policy_exists_but_eligibility_is_unknown(self):
         ledger = coverage_ledger()
         result = run_validation(report("no_current_policy"), research_ledger(), ledger)

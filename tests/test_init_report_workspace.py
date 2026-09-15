@@ -39,6 +39,9 @@ class InitReportWorkspaceTests(unittest.TestCase):
             for name in FILES:
                 payload = json.loads((out / name).read_text(encoding="utf-8"))
                 combined += json.dumps(payload, ensure_ascii=False)
+                if name == "policy-search-ledger.json":
+                    self.assertIn("department_scan_profiles", payload)
+                    self.assertNotIn("department_search_profiles", payload)
             self.assertNotIn("飞科", combined)
             self.assertNotIn("剃须刀", combined)
             self.assertNotIn("示例：已完成", combined)

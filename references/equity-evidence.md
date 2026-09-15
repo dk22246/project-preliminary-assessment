@@ -4,7 +4,7 @@
 
 股权图只呈现有证据的节点和连线。先锁定准确法律主体、统一社会信用代码和登记状态，再查询股东；不得用品牌名、集团简称或证券简称拼接不同主体的数据。
 
-法定披露优先：上市公司以交易所公告、年度报告、招股说明书和控制权变更公告等法定披露定案。上市路由默认不访问企查查或天眼查，也不要求商业平台尝试回执；商业平台只有在用户提供可验证导出材料，或当前Agent确有合法可访问页面时才作为可选差异复核来源。非上市公司的现行商业平台要求暂按本文件原规则执行，关键控制关系仍应尽量与国家企业信用信息公示系统、企业正式材料或监管文件交叉核验。
+法定披露优先：上市公司以交易所公告、年度报告、招股说明书和控制权变更公告等法定披露定案。企查查和天眼查对上市、非上市两条路线均不是强制入口；商业平台只有在用户提供可验证导出材料，或当前Agent确有合法可访问页面时才作为可选差异复核来源。非上市公司优先使用公开登记、企业正式材料、政府监管、许可备案、司法文书等可定位来源核验股权；商业平台不可访问时不再制造失败回执。
 
 ## 上市公司法定披露路径
 
@@ -21,8 +21,8 @@
 3. 每个平台的可见结果分别保存为符合 `schemas/equity-web-capture.schema.json` 的标准化 JSON，并运行：
 
 ```powershell
-& $py -X utf8 scripts/collect_equity_provider.py "法律主体" --provider qcc-web --input-json qcc-capture.json --out-dir evidence/qcc
-& $py -X utf8 scripts/collect_equity_provider.py "法律主体" --provider tianyancha-web --input-json tianyancha-capture.json --out-dir evidence/tianyancha
+& $py -X utf8 scripts/ppa.py collect-equity "法律主体" --provider qcc-web --input-json qcc-capture.json --out-dir evidence/qcc
+& $py -X utf8 scripts/ppa.py collect-equity "法律主体" --provider tianyancha-web --input-json tianyancha-capture.json --out-dir evidence/tianyancha
 ```
 
 4. 每次成功采集必须同时生成 `provider-query-bundle.json` 和 `normalized-equity-fragment.json`。后者至少包含 `provider`、`legal_entity`、`source`、`nodes`、`edges`、`captured_at`；每个节点和连线必须携带来源编号、断言类型、数据时点和页面内定位。
@@ -46,7 +46,7 @@
 归一化 fragment 只作为后续合并输入，不会自动升级为最终结论。合并后的 `equity-evidence.json` 必须符合 `schemas/equity-evidence.schema.json`，并至少记录：
 
 - 精确法律主体及统一社会信用代码；
-- 非上市路由现阶段至少一项 `qcc_web` 或 `tianyancha_web` 的真实尝试状态、查询时间和失败原因；上市路由不要求该回执；
+- 实际访问企查查或天眼查时才登记 `provider_attempts`；未访问时保持空数组，两条路由均不得为了通过门禁制造尝试回执；
 - 每条成功网页来源的页面 URL、采集时间、记录数量、可定位位置及可验证的 `artifact_path`、`artifact_sha256`、`bundle_path`、`bundle_sha256`；CLI 从 `equity-evidence.json` 目录校验 capture 与 query bundle 的文件、哈希、主体、提供方、时点、URL 和记录数一致；
 - 每个节点和连线的名称、关系、断言类型、数据时点和 `E` 类来源编号；
 - 网页之间、网页与法定披露之间的冲突及处理状态。
@@ -54,10 +54,12 @@
 报告 `equity.nodes` 和 `equity.edges` 的每一项都必须填写 `evidence_source_ids`。先运行：
 
 ```powershell
-& $py -X utf8 scripts/validate_equity_evidence.py equity-evidence.json --report-data report-data.json --research-ledger research-ledger.json
+& $py -X utf8 scripts/ppa.py advance --work-dir work/company
 ```
 
-凡连接线展示持股比例，必须同时写入数值型 `ownership_percent`。同一被投资主体已展示的直接股东比例必须合计100%；无法可靠拆分剩余股东时，使用“其他股东合计”节点和 `is_remainder: true` 的连接线补足，仍绑定同一法定披露来源，禁止与已单列股东重复计算。
+凡连接线展示持股比例，必须同时写入数值型 `ownership_percent`。`data_status=available` 时，同一被投资主体已展示的直接股东比例必须合计100%；无法可靠拆分剩余股东但同一可靠来源明确给出剩余合计时，才可使用“其他股东合计”节点补足。`data_status=partial` 时只画已核实的关系和比例，未知部分不得补造，连接线比例未知时须明确写“比例未公开”。
+
+完成非上市固定来源阶梯后仍无法取得任何可靠股权关系时，`equity-evidence.json.review_status` 填 `not_public` 或 `inaccessible`，并记录 `availability_note`；报告 `equity.data_status` 使用同一状态、`nodes` 和 `edges` 保持空数组、`search_source_ids` 列出实际查验来源。此时HTML、PDF和Word均省略股权图，显示“股权公开信息不足”及需企业补充的材料，不阻断其他章节。不得用企业名称、自称集团关系、注册资本或平台搜索摘要生成占位股权图。
 
 报告正文只显示“股权来源：资料名称（E编号），数据时点YYYY-MM-DD”。企查查、天眼查的尝试、失败原因、artifact和哈希全部保留在 `equity-evidence.json`，不在报告堆叠。只有存在实质来源差异时，才在图下显示“股权数据差异说明”。
 
@@ -78,4 +80,4 @@
 
 ## 降级规则
 
-非上市路由访问商业平台时，如受登录状态、验证码、付费限制、访问控制或页面故障影响，必须保留 `unavailable` 或 `error` 回执及真实原因，再使用法定披露或官方登记材料。上市路由默认不发起商业平台访问，直接以法定披露形成 `complete` 证据链，不得写成平台访问失败或降级。只有实际发起商业平台访问但失败、且替代来源能够逐节点、逐连线支撑报告股权图时，才可将 `review_status` 标为 `fallback_complete`；“查不到”不得转换成“没有股东/没有风险”。
+实际访问商业平台时，如受登录状态、验证码、付费限制、访问控制或页面故障影响，必须保留 `unavailable` 或 `error` 回执及真实原因，再使用法定披露或官方登记材料；未访问商业平台不属于降级。只有实际发起商业平台访问但失败、且替代来源能够逐节点、逐连线支撑报告股权图时，才可将 `review_status` 标为 `fallback_complete`。“未公开”只表示规定来源未取得可靠股权关系，不得转换成“没有股东/没有控制人”。

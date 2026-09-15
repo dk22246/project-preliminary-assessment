@@ -38,4 +38,4 @@
 
 统一底稿为 `references/catalogs/hainan-ftz-encouraged-industry-complete-library.xlsx`，可移植检索库为同目录下的 `complete-industry-catalog-library.json`。工作簿同时保留产业结构目录1005项、外商投资全国目录619项、地区目录1060项、海南地区视图102项、海南新增176项及其352条界定指引细项；`海南适用检索` Sheet只做主体分流后的快速索引，不代替正式原文。
 
-`references/catalogs/source-metadata.json` 声明三条正式目录路径、版本和国家发展改革委来源。运行 `scripts/search_industry_catalog.py --subject-type domestic|foreign <关键词>` 只召回对应主体的正向候选，并将限制类、淘汰类冲突单列；召回结果的 `decision` 固定为空，仍由AI结合企业事实判断。统一工作簿或JSON变化后必须运行 `scripts/build_industry_catalog_library.py` 重建，再运行 `scripts/validate_industry_catalog_library.py`；校验失败不得进入报告生产。
+`references/catalogs/source-metadata.json` 声明三条正式目录路径、版本和国家发展改革委来源。通过 `scripts/ppa.py search-catalog --subject-type domestic|foreign <关键词>` 只召回对应主体的正向候选，并将限制类、淘汰类冲突单列；召回结果的 `decision` 固定为空，仍由AI结合企业事实判断。统一工作簿或JSON变化后的重建与校验属于维护者发布流程，不是每份报告的公开命令；部署校验失败不得进入报告生产。

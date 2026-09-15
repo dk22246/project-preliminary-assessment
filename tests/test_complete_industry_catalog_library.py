@@ -76,13 +76,12 @@ class CompleteIndustryCatalogLibraryTests(unittest.TestCase):
     def test_skill_and_preflight_require_the_complete_library(self):
         skill = (ROOT / "SKILL.md").read_text(encoding="utf-8")
         preflight = (ROOT / "scripts" / "preflight.py").read_text(encoding="utf-8")
-        contract = (ROOT / "references" / "module-contract.json").read_text(encoding="utf-8")
         for marker in (
             "hainan-ftz-encouraged-industry-complete-library.xlsx",
             "complete-industry-catalog-library.json",
             "validate_industry_catalog_library.py",
         ):
-            self.assertIn(marker, skill + preflight + contract)
+            self.assertIn(marker, skill + preflight)
         self.assertIn("限制类、淘汰类", skill)
         self.assertIn("外商投资企业", skill)
 

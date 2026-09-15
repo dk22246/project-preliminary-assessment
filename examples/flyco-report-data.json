@@ -44,6 +44,7 @@
     {"ranking_name": "china_private_enterprise_500", "ranking_label": "中国民营企业500强", "year": 2025, "status": "not_listed", "rank": null, "listed_entity": null, "relationship_to_target": "not_applicable", "relationship_source_ids": [], "relationship_evidence": null, "reason": null, "source_ids": ["E92"]}
   ],
   "equity": {
+    "data_status": "available",
     "nodes": [
       {
         "id": "controller",

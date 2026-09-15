@@ -31,11 +31,14 @@
     },
     "equity": {
       "type": "object",
-      "required": ["nodes", "edges", "conflict_disclosures", "evidence_summary"],
+      "required": ["data_status", "nodes", "edges", "conflict_disclosures"],
       "properties": {
+        "data_status": {"enum": ["available", "partial", "not_public", "inaccessible"]},
+        "availability_note": {"type": "string", "minLength": 1},
+        "search_source_ids": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "pattern": "^E"}},
         "nodes": {
           "type": "array",
-          "minItems": 1,
+          "minItems": 0,
           "items": {
             "type": "object",
             "required": ["id", "name", "entity_type", "role", "evidence_source_ids"],
@@ -46,7 +49,7 @@
         },
         "edges": {
           "type": "array",
-          "minItems": 1,
+          "minItems": 0,
           "items": {
             "type": "object",
             "required": ["from", "to", "relationship", "evidence_source_ids"],
@@ -80,7 +83,24 @@
             "as_of_date": {"type": "string", "minLength": 1}
           }
         }
-      }
+      },
+      "allOf": [{
+        "if": {"properties": {"data_status": {"enum": ["not_public", "inaccessible"]}}},
+        "then": {
+          "required": ["availability_note", "search_source_ids"],
+          "properties": {
+            "nodes": {"maxItems": 0},
+            "edges": {"maxItems": 0}
+          }
+        },
+        "else": {
+          "required": ["evidence_summary"],
+          "properties": {
+            "nodes": {"minItems": 1},
+            "edges": {"minItems": 1}
+          }
+        }
+      }]
     },
     "businesses": {
       "type": "array",

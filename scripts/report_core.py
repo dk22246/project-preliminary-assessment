@@ -38,6 +38,7 @@ EQUITY_CONFLICT_FIELDS = (
 EQUITY_CONFLICT_SEVERITIES = {"general", "material_local", "subject_critical"}
 EQUITY_CONFLICT_STATUSES = {"resolved", "unresolved"}
 EQUITY_GRAPH_ACTIONS = {"keep_confirmed_part", "omit_disputed_part"}
+EQUITY_DATA_STATUSES = {"available", "partial", "not_public", "inaccessible"}
 OPPORTUNITY_DISPOSITIONS = {"surfaced", "merged", "excluded", "expired", "not_current", "pending_evidence", "research_incomplete"}
 OVERSEAS_OPPORTUNITY_TOPICS = {
     "foreign_trade",
@@ -125,11 +126,23 @@ def validate_report_data(data: dict) -> list[str]:
         if not str(overview.get(field, "")).strip():
             errors.append(f"企业概况缺少{field}")
     equity = data.get("equity", {})
+    equity_status = str(equity.get("data_status", "")).strip()
+    if equity_status not in EQUITY_DATA_STATUSES:
+        errors.append("股权数据缺少有效data_status：只能为available、partial、not_public或inaccessible")
     nodes = equity.get("nodes", [])
     edges = equity.get("edges", [])
     node_ids = {node.get("id") for node in nodes}
-    if not nodes or not edges:
-        errors.append("股权关系至少需要节点和连接线")
+    has_graph = bool(nodes or edges)
+    if equity_status in {"available", "partial"} and (not nodes or not edges):
+        errors.append("股权data_status为available或partial时至少需要一个已核实节点和一条连接线")
+    if equity_status in {"not_public", "inaccessible"}:
+        if has_graph:
+            errors.append("股权公开信息不足时不得生成占位节点或连接线")
+        if not str(equity.get("availability_note", "")).strip():
+            errors.append("股权公开信息不足时必须填写availability_note")
+        search_source_ids = equity.get("search_source_ids", [])
+        if not search_source_ids:
+            errors.append("股权公开信息不足时必须列出实际查验的search_source_ids")
     for node in nodes:
         for field in ("id", "name", "entity_type", "role"):
             if not str(node.get(field, "")).strip():
@@ -145,7 +158,8 @@ def validate_report_data(data: dict) -> list[str]:
             errors.append(f"股权连接缺少evidence_source_ids：{edge}")
         relationship = str(edge.get("relationship", ""))
         if any(marker in relationship.lower() for marker in ("持股", "股东", "shareholder", "ownership")) and "ownership_percent" not in edge:
-            errors.append(f"直接股东或持股连接必须提供ownership_percent：{edge}")
+            if equity_status != "partial" or "比例未公开" not in relationship:
+                errors.append(f"直接股东或持股连接必须提供ownership_percent；部分披露时须明确写比例未公开：{edge}")
         if "ownership_percent" in edge:
             try:
                 percentage = float(edge["ownership_percent"])
@@ -163,7 +177,7 @@ def validate_report_data(data: dict) -> list[str]:
             total = sum(float(edge["ownership_percent"]) for edge in ownership_edges)
         except (TypeError, ValueError):
             continue
-        if abs(total - 100.0) > 0.02:
+        if equity_status == "available" and abs(total - 100.0) > 0.02:
             target_name = next((str(node.get("name")) for node in nodes if node.get("id") == target), target)
             errors.append(f"股权比例未闭合：{target_name}已展示直接股东合计{total:.2f}%，必须补充其他股东合计或修正重复计算")
     report_source_ids = {str(item.get("id", "")).strip() for item in data.get("sources", [])}
@@ -171,12 +185,15 @@ def validate_report_data(data: dict) -> list[str]:
         for source_id in item.get("evidence_source_ids", []):
             if source_id not in report_source_ids or not str(source_id).startswith("E"):
                 errors.append(f"股权证据不是有效E类参考资料：{source_id}")
+    for source_id in equity.get("search_source_ids", []):
+        if source_id not in report_source_ids or not str(source_id).startswith("E"):
+            errors.append(f"股权检索依据不是有效E类参考资料：{source_id}")
     if "conflict_disclosures" not in equity or not isinstance(equity.get("conflict_disclosures"), list):
         errors.append("股权数据必须包含conflict_disclosures数组；无差异时填写空数组")
     evidence_summary = equity.get("evidence_summary")
-    if not isinstance(evidence_summary, dict):
-        errors.append("股权数据必须包含evidence_summary并显示采用来源")
-    else:
+    if equity_status in {"available", "partial"} and not isinstance(evidence_summary, dict):
+        errors.append("有股权图时必须包含evidence_summary并显示采用来源")
+    elif isinstance(evidence_summary, dict):
         for field in ("display_source_id", "display_source_title", "as_of_date"):
             if not str(evidence_summary.get(field, "")).strip():
                 errors.append(f"股权取证口径缺少{field}")
@@ -692,6 +709,8 @@ def _svg_text(class_name: str, x: int, first_y: int, lines: list[str], line_heig
 def equity_svg(equity: dict) -> str:
     """Build a responsive, wrapped ownership chart that cannot escape its panel."""
     nodes = equity["nodes"]
+    if not nodes or not equity.get("edges"):
+        return ""
     levels: dict[int, list[dict]] = {}
     node_width, horizontal_gap, margin, max_columns = 250, 30, 55, 2
     node_layout: dict[str, dict] = {}

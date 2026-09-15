@@ -83,6 +83,40 @@ class ReportPipelinePolicyEvidenceTests(unittest.TestCase):
             ])
         self.assertEqual(raised.exception.code, 2)
 
+    def test_trusted_workflow_renders_without_repeating_report_ready_validators(self):
+        import run_report_pipeline as pipeline
+
+        with tempfile.TemporaryDirectory() as value:
+            work = Path(value) / "work"
+            out = Path(value) / "out"
+            work.mkdir()
+            names = ("report-data.json", "equity-evidence.json", "research-ledger.json", "policy-search-ledger.json", "policy-evidence.json")
+            for name in names:
+                (work / name).write_text("{}\n", encoding="utf-8")
+            state = work / "workflow-state.json"
+            state.write_text("{}\n", encoding="utf-8")
+            node = Path(value) / "node.exe"
+            node.write_text("placeholder", encoding="utf-8")
+            commands = []
+
+            class Result:
+                returncode = 0
+
+            args = [
+                str(work / "report-data.json"), "--equity-evidence", str(work / "equity-evidence.json"),
+                "--research-ledger", str(work / "research-ledger.json"), "--policy-search-ledger", str(work / "policy-search-ledger.json"),
+                "--policy-evidence", str(work / "policy-evidence.json"), "--workflow-state", str(state),
+                "--out-dir", str(out), "--node", str(node),
+            ]
+            with patch.object(pipeline, "check_runtime", return_value=({"node": {"path": str(node)}}, [])), patch.object(pipeline.workflow_state, "artifact_path_errors", return_value=[]), patch.object(pipeline.workflow_state, "ready_state_errors", return_value=[]), patch.object(pipeline.workflow_state, "load", return_value={}), patch.object(pipeline, "run", side_effect=lambda command, **_: commands.append(command)), patch.object(pipeline.subprocess, "run", return_value=Result()):
+                result = pipeline.main(args, trusted_workflow=True)
+            self.assertEqual(result, 0)
+            flattened = "\n".join(" ".join(map(str, command)) for command in commands)
+            self.assertNotIn("validate_report_data.py", flattened)
+            self.assertNotIn("validate_policy_search_coverage.py", flattened)
+            self.assertNotIn("validate_policy_scope.py", flattened)
+            self.assertIn("render_report_html.py", flattened)
+
 
 if __name__ == "__main__":
     unittest.main()

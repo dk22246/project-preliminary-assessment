@@ -129,6 +129,24 @@ def equity_evidence_summary(equity: dict) -> str:
     )
 
 
+def equity_block(equity: dict, narrative: str) -> str:
+    if equity.get("data_status") in {"not_public", "inaccessible"}:
+        note = str(equity.get("availability_note", "本轮公开检索未发现可靠股权数据，需企业补充。"))
+        source_ids = "、".join(str(item) for item in equity.get("search_source_ids", [])) or "未记录"
+        return (
+            '<div class="summary-note equity-unavailable">'
+            '<p><strong>股权公开信息不足：</strong>' + escape(note) + '</p>'
+            '<p><strong>本轮检索依据：</strong>' + escape(source_ids) + '</p>'
+            '</div>'
+        )
+    return (
+        '<div class="svg-wrap">' + equity_svg(equity) + '</div>'
+        + paragraph(narrative)
+        + equity_evidence_summary(equity)
+        + equity_conflict_disclosures(equity.get("conflict_disclosures", []))
+    )
+
+
 def industry_position_text(value: object) -> str:
     if isinstance(value, dict):
         category = str(value.get("category", "相关行业")).strip()
@@ -279,7 +297,7 @@ def main() -> int:
     ]
     overview_text = '<div class="summary-note"><p><strong>企业概况：</strong>' + escape(overview["profile"]) + '</p><p><strong>经营表现：</strong>' + escape(overview["operating_summary"]) + '</p><p><strong>员工规模：</strong>' + escape(overview["employee_scale"]) + '</p><p><strong>行业地位：</strong>' + escape(industry_position_text(data.get("industry_position", {}))) + "</p></div>"
     business_rows = [[item[key] for key in ("segment", "products", "entity", "sales_channels", "footprint")] for item in data["businesses"]]
-    basic = "<h2>（一）企业主体认定与企业概况</h2>" + report_table(["基本事项", "企业情况"], entity_rows, "entity-table", [18, 82]) + overview_text + "<h2>（二）500强核验</h2>" + top500_table(data["top500_status"]) + "<h2>（三）股权架构拆解</h2><div class=\"svg-wrap\">" + equity_svg(data["equity"]) + "</div>" + paragraph(entity.get("equity_summary", "需企业补充")) + equity_evidence_summary(data["equity"]) + equity_conflict_disclosures(data["equity"].get("conflict_disclosures", [])) + "<h2>（四）主要业务及产品拆解</h2>" + report_table(["业务板块", "主要产品或服务", "主要承载主体", "销售渠道", "国内外业务布局"], business_rows, "wide business-table", [14, 25, 20, 23, 18]) + "<h2>（五）海南自由贸易港鼓励类产业目录匹配</h2>" + encouraged_industry_table(data["encouraged_industry_assessment"]) + "<h2>（六）产业链上下游</h2>" + industry_chain_block(data["industry_chain"])
+    basic = "<h2>（一）企业主体认定与企业概况</h2>" + report_table(["基本事项", "企业情况"], entity_rows, "entity-table", [18, 82]) + overview_text + "<h2>（二）500强核验</h2>" + top500_table(data["top500_status"]) + "<h2>（三）股权架构拆解</h2>" + equity_block(data["equity"], entity.get("equity_summary", "需企业补充")) + "<h2>（四）主要业务及产品拆解</h2>" + report_table(["业务板块", "主要产品或服务", "主要承载主体", "销售渠道", "国内外业务布局"], business_rows, "wide business-table", [14, 25, 20, 23, 18]) + "<h2>（五）海南自由贸易港鼓励类产业目录匹配</h2>" + encouraged_industry_table(data["encouraged_industry_assessment"]) + "<h2>（六）产业链上下游</h2>" + industry_chain_block(data["industry_chain"])
     sections.append(section("一、企业基本情况", basic))
     financial_rows = [[item.get(key, "未公开披露") for key in ("year", "revenue", "revenue_change", "profit", "profit_change", "tax_value", "tax_basis", "government_support", "source")] for item in data["financials"]]
     support_rows = [[item.get(key, "未公开披露") for key in ("year", "name", "department", "amount", "purpose", "conditions", "source")] for item in data.get("government_support", [])] or [["—", "本轮公开检索未发现可确认的政府补助明细", "—", "—", "需企业补充", "需企业补充", "—"]]

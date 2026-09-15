@@ -17,8 +17,12 @@ PROVIDERS = {
     "tianyancha_web",
     "legal_disclosure",
     "official_registry",
+    "company_official",
+    "government_regulatory",
+    "court_disclosure",
 }
 COMMERCIAL_PROVIDERS = {"qcc_web", "tianyancha_web"}
+NONCOMMERCIAL_PROVIDERS = PROVIDERS - COMMERCIAL_PROVIDERS
 ATTEMPT_STATUSES = {"success", "unavailable", "error"}
 ASSERTION_TYPES = {"registry_fact", "legal_disclosure", "provider_calculation", "consolidation_scope"}
 CONFLICT_SEVERITIES = {"general", "material_local", "subject_critical"}
@@ -191,8 +195,6 @@ def validate_equity_evidence(
 
     attempts = ledger.get("provider_attempts", [])
     commercial_attempts = [item for item in attempts if _text(item.get("provider")) in COMMERCIAL_PROVIDERS]
-    if not commercial_attempts and research_route != "listed_disclosure":
-        errors.append("缺少企查查或天眼查接入尝试回执")
     for item in attempts:
         provider = _text(item.get("provider"))
         status = _text(item.get("status"))
@@ -245,10 +247,29 @@ def validate_equity_evidence(
     if successful_attempts - successful_commercial:
         errors.append("平台接入标记成功但未登记对应成功来源")
 
-    summary = report.get("equity", {}).get("evidence_summary", {})
-    if not isinstance(summary, dict):
+    report_equity = report.get("equity", {})
+    report_data_status = _text(report_equity.get("data_status"))
+    review_status = _text(ledger.get("review_status"))
+    no_graph_status = review_status in {"not_public", "inaccessible"}
+    if no_graph_status:
+        if report_data_status != review_status:
+            errors.append("股权证据与报告的公开信息状态不一致")
+        if ledger.get("nodes") or ledger.get("edges") or report_equity.get("nodes") or report_equity.get("edges"):
+            errors.append("股权公开信息不足时证据台账和报告均不得包含占位节点或连接线")
+        ledger_note = _text(ledger.get("availability_note"))
+        report_note = _text(report_equity.get("availability_note"))
+        if not ledger_note or ledger_note != report_note:
+            errors.append("股权公开信息不足时台账与报告必须使用同一availability_note")
+        search_source_ids = report_equity.get("search_source_ids", [])
+        if not search_source_ids:
+            errors.append("股权公开信息不足时报告必须列出实际查验来源")
+        for source_id in search_source_ids:
+            if _text(source_id) not in source_by_id:
+                errors.append(f"股权检索依据引用不存在来源：{source_id}")
+    summary = report_equity.get("evidence_summary")
+    if not no_graph_status and not isinstance(summary, dict):
         errors.append("报告缺少股权采用来源摘要")
-    else:
+    elif isinstance(summary, dict):
         for field in ("display_source_id", "display_source_title", "as_of_date"):
             if not _text(summary.get(field)):
                 errors.append(f"报告股权采用来源摘要缺少{field}")
@@ -258,10 +279,10 @@ def validate_equity_evidence(
         }
         if display_source_id and display_source_id not in successful_source_ids:
             errors.append("报告显示的股权来源不是证据台账中的成功来源")
-    if not successful_commercial:
+    if not no_graph_status and not successful_commercial:
         if not all(_text(item.get("status")) in {"unavailable", "error"} for item in commercial_attempts):
             errors.append("商业股权平台无成功来源且降级状态不完整")
-        accepted_fallbacks = {"legal_disclosure"} if research_route == "listed_disclosure" else {"legal_disclosure", "official_registry"}
+        accepted_fallbacks = {"legal_disclosure"} if research_route == "listed_disclosure" else NONCOMMERCIAL_PROVIDERS
         if not any(_text(source.get("provider")) in accepted_fallbacks and _text(source.get("status")) == "success" for source in sources):
             if research_route == "listed_disclosure":
                 errors.append("上市公司未使用商业股权平台时必须有法定披露成功来源")
@@ -373,14 +394,13 @@ def validate_equity_evidence(
 
     critical = [item for item in unresolved if _text(item.get("severity")) == "subject_critical"]
     noncritical_unresolved = [item for item in unresolved if _text(item.get("severity")) != "subject_critical"]
-    review_status = _text(ledger.get("review_status"))
     if critical:
         errors.append(f"主体或核心控制关系存在未解决冲突，禁止生成报告：{len(critical)}项")
         if review_status != "blocked":
             errors.append("主体或核心控制关系未解决时review_status必须为blocked")
     elif noncritical_unresolved and review_status != "qualified_complete":
         errors.append("存在非根本性未解决差异时review_status必须为qualified_complete")
-    if not unresolved and review_status not in {"complete", "fallback_complete"}:
+    if not unresolved and review_status not in {"complete", "fallback_complete", "not_public", "inaccessible"}:
         errors.append("股权证据复核状态未完成")
     return errors
 

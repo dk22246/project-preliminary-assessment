@@ -24,7 +24,10 @@ class WorkflowControllerTests(unittest.TestCase):
             check=False,
         )
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
-        for command in ("setup", "start", "status", "advance", "deliver"):
+        for command in (
+            "setup", "start", "status", "advance", "collect-web",
+            "collect-equity", "search-catalog", "discover-policies", "deliver",
+        ):
             self.assertIn(command, result.stdout)
 
     def test_start_creates_five_ledgers_and_machine_state(self):
@@ -136,16 +139,38 @@ class WorkflowControllerTests(unittest.TestCase):
                 ppa.command_setup(args)
 
     def test_agent_instructions_expose_only_the_controller_as_public_entry(self):
-        instructions = (ROOT / "AGENTS.md").read_text(encoding="utf-8")
+        instructions = "\n".join(
+            path.read_text(encoding="utf-8-sig")
+            for path in (ROOT / "SKILL.md", ROOT / "AGENTS.md", *sorted((ROOT / "references").glob("*.md")))
+        )
         self.assertIn("scripts/ppa.py", instructions)
-        for legacy_command in (
-            "python -X utf8 scripts/bootstrap.py",
-            "python -X utf8 scripts/doctor.py",
-            "python -X utf8 scripts/init_report_workspace.py",
-            "python -X utf8 scripts/run_report_pipeline.py",
-            "npm install",
-        ):
-            self.assertNotIn(legacy_command, instructions)
+        import re
+
+        public_commands = re.findall(r"(?:&\s+\S+|python(?:\.exe)?)\s+(?:-X\s+utf8\s+)?scripts/([\w.-]+\.py)", instructions)
+        self.assertTrue(public_commands)
+        self.assertEqual(set(public_commands), {"ppa.py"})
+
+    def test_advance_continues_across_ready_stages_until_report_ready(self):
+        import ppa
+        import workflow_state
+
+        with tempfile.TemporaryDirectory() as tmp:
+            work_dir = Path(tmp)
+            workflow_state.create(work_dir, "测试企业有限公司", "fingerprint")
+            passed = []
+
+            def validate_stage(_, stage):
+                passed.append(stage)
+                return workflow_state.artifact_hashes(work_dir) if stage == "report_ready" else {"stage": stage}
+
+            for name in workflow_state.REPORT_ARTIFACTS:
+                (work_dir / name).write_text("{}\n", encoding="utf-8")
+            args = argparse.Namespace(work_dir=str(work_dir), node=None, chrome=None)
+            with patch.object(ppa, "require_ready_runtime"), patch.object(ppa, "package_fingerprint", return_value="fingerprint"), patch.object(ppa, "_validate_stage", side_effect=validate_stage):
+                result = ppa.command_advance(args)
+            self.assertEqual(result, 0)
+            self.assertEqual(workflow_state.load(work_dir)["current_stage"], "report_ready")
+            self.assertEqual(passed, list(workflow_state.STAGES[1:-1]))
 
     def test_packaged_runtime_is_locked_and_not_described_as_optional(self):
         package = json.loads((ROOT / "package.json").read_text(encoding="utf-8"))

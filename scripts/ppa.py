@@ -160,6 +160,71 @@ def _validator(script: str, *arguments: str) -> None:
     _run([sys.executable, "-X", "utf8", str(SCRIPTS / script), *arguments], capture=True)
 
 
+def _current_workspace(work_dir: str | Path, *, minimum_stage: str | None = None) -> tuple[Path, dict]:
+    root = Path(work_dir).resolve()
+    state = workflow_state.load(root)
+    if state.get("skill_fingerprint") != package_fingerprint():
+        raise ValueError("该项目由其他Skill版本创建；为防旧规则混入，请用当前版本重新start正式工作区")
+    current = str(state.get("current_stage", ""))
+    if minimum_stage and (
+        current not in workflow_state.STAGES
+        or workflow_state.STAGES.index(current) < workflow_state.STAGES.index(minimum_stage)
+    ):
+        raise ValueError(f"当前阶段为{current or '空'}；此操作至少需要完成{minimum_stage}")
+    return root, state
+
+
+def command_collect_web(args: argparse.Namespace) -> int:
+    command = [
+        sys.executable, "-X", "utf8", str(SCRIPTS / "collect_web_evidence.py"),
+        args.enterprise, args.topic, "--out-dir", str(Path(args.out_dir).resolve()),
+        "--purpose", args.purpose, "--timeout", str(args.timeout), "--retries", str(args.retries),
+    ]
+    for url in args.url:
+        command.extend(["--url", url])
+    for domain in args.allow_domain:
+        command.extend(["--allow-domain", domain])
+    result = _run(command, capture=True)
+    ledger = Path(args.out_dir).resolve() / "evidence.json"
+    _validator("validate_evidence.py", str(ledger))
+    print((result.stdout or str(ledger)).strip())
+    return 0
+
+
+def command_collect_equity(args: argparse.Namespace) -> int:
+    _run([
+        sys.executable, "-X", "utf8", str(SCRIPTS / "collect_equity_provider.py"),
+        args.legal_entity, "--provider", args.provider, "--input-json", str(Path(args.input_json).resolve()),
+        "--out-dir", str(Path(args.out_dir).resolve()),
+    ])
+    print(Path(args.out_dir).resolve() / "normalized-equity-fragment.json")
+    return 0
+
+
+def command_search_catalog(args: argparse.Namespace) -> int:
+    from search_industry_catalog import search
+
+    result = search(args.query, args.subject_type, args.limit, not args.no_conflicts)
+    print(json.dumps(result, ensure_ascii=False, indent=2))
+    return 0
+
+
+def command_discover_policies(args: argparse.Namespace) -> int:
+    from discover_current_policies import discover_current_policies
+
+    work_dir, _ = _current_workspace(args.work_dir, minimum_stage="landing_businesses_complete")
+    out_dir = Path(args.out_dir).resolve() if args.out_dir else work_dir / "evidence" / "policy-discovery"
+    result = discover_current_policies(
+        _load_json(work_dir / "research-ledger.json"),
+        _load_json(work_dir / "report-data.json"),
+        out_dir,
+        max_concurrency=args.max_concurrency,
+        max_retries=args.max_retries,
+    )
+    print(json.dumps({"out_dir": str(out_dir), **result["metrics"]}, ensure_ascii=False))
+    return 0 if not result["metrics"]["failed_requests"] else 1
+
+
 def _validate_stage(work_dir: Path, stage: str) -> dict:
     report = work_dir / "report-data.json"
     equity = work_dir / "equity-evidence.json"
@@ -216,7 +281,7 @@ def _validate_stage(work_dir: Path, stage: str) -> dict:
         _validator("validate_encouraged_industry_assessment.py", str(report))
         _validator("validate_equity_evidence.py", str(equity), "--report-data", str(report), "--research-ledger", str(research))
         _validator("validate_research_ledger.py", str(research), "--report-data", str(report))
-        _validator("validate_research_stop_gate.py", str(research))
+        _validator("validate_research_stop_gate.py", str(research), "--report-data", str(report))
         _validator("validate_policy_search_coverage.py", str(search), "--research-ledger", str(research), "--report-data", str(report))
         _validator("validate_policy_evidence.py", str(policy), "--report-data", str(report), "--policy-search-ledger", str(search))
         _validator("validate_business_policy_ledger.py", str(report))
@@ -242,16 +307,29 @@ def command_advance(args: argparse.Namespace) -> int:
             workflow_state.refresh_report_ready(work_dir, receipt)
             print("通过：修订后的五份台账已重新完成report_ready门禁；下一步：ppa.py deliver")
             return 0
-    stage = workflow_state.next_stage(state)
-    if stage is None:
-        print("流程已经完成")
-        return 0
-    if stage == "html_accepted":
-        raise ValueError("HTML验收只能由ppa.py deliver在浏览器版式门禁通过后写入")
-    receipt = _validate_stage(work_dir, stage)
-    workflow_state.complete_stage(work_dir, stage, receipt)
+    completed: list[str] = []
+    while True:
+        stage = workflow_state.next_stage(workflow_state.load(work_dir))
+        if stage is None:
+            break
+        if stage == "html_accepted":
+            break
+        try:
+            receipt = _validate_stage(work_dir, stage)
+        except ValueError as error:
+            prefix = f"已连续通过：{'、'.join(completed)}\n" if completed else ""
+            raise ValueError(prefix + f"当前停在{stage}：{error}") from error
+        workflow_state.complete_stage(work_dir, stage, receipt)
+        completed.append(stage)
+        if stage == "report_ready":
+            break
     following = workflow_state.next_stage(workflow_state.load(work_dir))
-    print(f"通过：{stage}" + (f"；下一阶段：{following}" if following else ""))
+    if completed:
+        print(f"通过：{'、'.join(completed)}" + (f"；下一阶段：{following}" if following else ""))
+    elif following == "html_accepted":
+        print("当前已到report_ready；下一步：ppa.py deliver")
+    else:
+        print("流程已经完成")
     return 0
 
 
@@ -287,7 +365,7 @@ def command_deliver(args: argparse.Namespace) -> int:
         call.append("--pdf")
     if args.word:
         call.append("--word")
-    result = pipeline(call)
+    result = pipeline(call, trusted_workflow=True)
     if result:
         return result
     state = workflow_state.mark_html_accepted(work_dir, out / "report.html")
@@ -326,11 +404,39 @@ def build_parser() -> argparse.ArgumentParser:
     status.add_argument("--chrome")
     status.add_argument("--word", action="store_true")
     status.set_defaults(handler=command_status)
-    advance = sub.add_parser("advance", help="只校验并完成当前唯一下一阶段")
+    advance = sub.add_parser("advance", help="按顺序连续通过全部已满足阶段并停在第一个缺口")
     advance.add_argument("--work-dir", required=True)
     advance.add_argument("--node")
     advance.add_argument("--chrome")
     advance.set_defaults(handler=command_advance)
+    collect_web = sub.add_parser("collect-web", help="采集并校验公开网页证据")
+    collect_web.add_argument("enterprise")
+    collect_web.add_argument("topic")
+    collect_web.add_argument("--url", action="append", required=True)
+    collect_web.add_argument("--out-dir", required=True)
+    collect_web.add_argument("--allow-domain", action="append", default=[])
+    collect_web.add_argument("--purpose", default="企业或政策公开事实核验")
+    collect_web.add_argument("--timeout", type=int, default=15)
+    collect_web.add_argument("--retries", type=int, default=1)
+    collect_web.set_defaults(handler=command_collect_web)
+    collect_equity = sub.add_parser("collect-equity", help="归一化可合法访问的企查查或天眼查网页取证")
+    collect_equity.add_argument("legal_entity")
+    collect_equity.add_argument("--provider", required=True, choices=("qcc-web", "tianyancha-web"))
+    collect_equity.add_argument("--input-json", required=True)
+    collect_equity.add_argument("--out-dir", required=True)
+    collect_equity.set_defaults(handler=command_collect_equity)
+    catalog = sub.add_parser("search-catalog", help="按主体性质召回鼓励类目录候选并列出冲突")
+    catalog.add_argument("query", nargs="+")
+    catalog.add_argument("--subject-type", choices=("domestic", "foreign"), required=True)
+    catalog.add_argument("--limit", type=int, default=12)
+    catalog.add_argument("--no-conflicts", action="store_true")
+    catalog.set_defaults(handler=command_search_catalog)
+    discover_policy = sub.add_parser("discover-policies", help="按已确认落地业务和主管部门路由实时抓取政策入口草案")
+    discover_policy.add_argument("--work-dir", required=True)
+    discover_policy.add_argument("--out-dir")
+    discover_policy.add_argument("--max-concurrency", type=int, default=4)
+    discover_policy.add_argument("--max-retries", type=int, default=2)
+    discover_policy.set_defaults(handler=command_discover_policies)
     deliver = sub.add_parser("deliver", help="在全部阶段和五台账指纹通过后生成报告")
     deliver.add_argument("--work-dir", required=True)
     deliver.add_argument("--out-dir", required=True)

@@ -188,7 +188,7 @@ class EquityEvidenceTests(unittest.TestCase):
             [],
         )
 
-    def test_nonlisted_route_still_requires_commercial_platform_attempt(self):
+    def test_nonlisted_route_accepts_official_registry_without_commercial_platform_attempt(self):
         validator = importlib.import_module("validate_equity_evidence")
         report = copy.deepcopy(REPORT)
         ledger = evidence_ledger()
@@ -199,12 +199,63 @@ class EquityEvidenceTests(unittest.TestCase):
             "record_locator": "企业登记股东信息",
         })
         attach_graph(ledger, report)
-        errors = validator.validate_equity_evidence(
-            ledger,
-            report,
-            research_ledger=research_route("nonlisted_public_evidence"),
+        self.assertEqual(
+            validator.validate_equity_evidence(
+                ledger,
+                report,
+                research_ledger=research_route("nonlisted_public_evidence"),
+            ),
+            [],
         )
-        self.assertTrue(any("缺少企查查或天眼查接入尝试回执" in item for item in errors), errors)
+
+    def test_nonlisted_route_delivers_without_graph_when_public_equity_is_unavailable(self):
+        validator = importlib.import_module("validate_equity_evidence")
+        report = copy.deepcopy(REPORT)
+        report["equity"] = {
+            "data_status": "not_public",
+            "availability_note": "本轮公开检索未发现可靠股权数据，需企业补充最新股东名册或公司章程。",
+            "search_source_ids": ["E01"],
+            "nodes": [],
+            "edges": [],
+            "conflict_disclosures": [],
+        }
+        ledger = evidence_ledger()
+        ledger["provider_attempts"] = []
+        ledger["sources"][0] = {
+            "id": "E01",
+            "provider": "official_registry",
+            "method": "official_registry_query",
+            "queried_at": "2026-08-02T12:00:00+08:00",
+            "query": REPORT["entity_resolution"]["legal_entity"],
+            "status": "success",
+            "record_locator": "国家企业信用信息公示系统/企业登记页，未取得可核验股东明细",
+        }
+        ledger["nodes"] = []
+        ledger["edges"] = []
+        ledger["availability_note"] = report["equity"]["availability_note"]
+        ledger["review_status"] = "not_public"
+        self.assertEqual(validate_report_data(report), [])
+        self.assertEqual(
+            validator.validate_equity_evidence(
+                ledger,
+                report,
+                research_ledger=research_route("nonlisted_public_evidence"),
+            ),
+            [],
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            report_path = Path(directory) / "report-data.json"
+            html_path = Path(directory) / "report.html"
+            report_path.write_text(json.dumps(report, ensure_ascii=False), encoding="utf-8")
+            result = subprocess.run(
+                [sys.executable, "-X", "utf8", str(ROOT / "scripts" / "render_report_html.py"), str(report_path), "--out", str(html_path)],
+                cwd=ROOT, capture_output=True, text=True, encoding="utf-8", errors="replace", check=False,
+            )
+            self.assertEqual(result.returncode, 0, result.stderr)
+            html = html_path.read_text(encoding="utf-8")
+            equity_section = html.split("股权架构拆解", 1)[1].split("主要业务及产品拆解", 1)[0]
+            self.assertIn("股权公开信息不足", equity_section)
+            self.assertNotIn("<svg", equity_section)
 
     def test_report_data_requires_evidence_ids_on_every_equity_node_and_edge(self):
         data = copy.deepcopy(REPORT)
@@ -437,8 +488,8 @@ class EquityEvidenceTests(unittest.TestCase):
         reference_path = ROOT / "references" / "equity-evidence.md"
         self.assertTrue(reference_path.is_file(), "缺少股权证据接入规则")
         reference = reference_path.read_text(encoding="utf-8")
-        self.assertIn("上市公司默认直接使用交易所", skill)
-        self.assertIn("不访问企查查或天眼查", skill)
+        self.assertIn("企查查和天眼查对两类路由都不是强制入口", skill)
+        self.assertIn("公开资料无法支持任何关系时省略图形", skill)
         self.assertIn("equity-evidence.json", skill)
         self.assertIn("不得把平台计算结果直接写成已确认的实际控制人", reference)
         self.assertIn("法定披露优先", reference)

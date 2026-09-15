@@ -28,7 +28,12 @@ def python_command(script: Path, *args: str) -> list[str]:
     return [sys.executable, "-X", "utf8", str(script), *args]
 
 
-def main(argv: list[str] | None = None, *, release_validation: bool = False) -> int:
+def main(
+    argv: list[str] | None = None,
+    *,
+    release_validation: bool = False,
+    trusted_workflow: bool = False,
+) -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("report_data")
     parser.add_argument("--out-dir", required=True)
@@ -82,34 +87,42 @@ def main(argv: list[str] | None = None, *, release_validation: bool = False) -> 
     validation_started = perf_counter()
     if args.evidence:
         run(python_command(SCRIPTS / "validate_evidence.py", args.evidence))
-    report_validation_args = [str(data)]
-    if args.fixture_mode:
-        report_validation_args.append("--fixture-mode")
-    run(python_command(SCRIPTS / "validate_report_data.py", *report_validation_args))
-    run(python_command(SCRIPTS / "validate_text_quality.py", str(data)))
-    run(python_command(SCRIPTS / "validate_encouraged_industry_assessment.py", str(data)))
-    run(python_command(
-        SCRIPTS / "validate_equity_evidence.py",
-        args.equity_evidence,
-        "--report-data", str(data),
-        "--research-ledger", args.research_ledger,
-    ))
-    run(python_command(SCRIPTS / "validate_research_ledger.py", args.research_ledger, "--report-data", str(data)))
-    run(python_command(SCRIPTS / "validate_research_stop_gate.py", args.research_ledger))
-    run(python_command(SCRIPTS / "validate_policy_search_coverage.py", args.policy_search_ledger, "--research-ledger", args.research_ledger, "--report-data", str(data)))
-    policy_evidence_args = [args.policy_evidence, "--report-data", str(data), "--policy-search-ledger", args.policy_search_ledger]
-    if args.fixture_mode:
-        policy_evidence_args.append("--fixture-mode")
-    run(python_command(SCRIPTS / "validate_policy_evidence.py", *policy_evidence_args))
-    run(python_command(SCRIPTS / "validate_business_policy_ledger.py", str(data)))
+    # ppa.py has already completed the same validators and bound all five ledgers
+    # to report_ready SHA-256 values. Direct/internal pipeline use and release
+    # fixtures still run the full validation suite.
+    if not trusted_workflow or args.fixture_mode:
+        report_validation_args = [str(data)]
+        if args.fixture_mode:
+            report_validation_args.append("--fixture-mode")
+        run(python_command(SCRIPTS / "validate_report_data.py", *report_validation_args))
+        run(python_command(SCRIPTS / "validate_text_quality.py", str(data)))
+        run(python_command(SCRIPTS / "validate_encouraged_industry_assessment.py", str(data)))
+        run(python_command(
+            SCRIPTS / "validate_equity_evidence.py",
+            args.equity_evidence,
+            "--report-data", str(data),
+            "--research-ledger", args.research_ledger,
+        ))
+        run(python_command(SCRIPTS / "validate_research_ledger.py", args.research_ledger, "--report-data", str(data)))
+        run(python_command(SCRIPTS / "validate_research_stop_gate.py", args.research_ledger, "--report-data", str(data)))
+        run(python_command(SCRIPTS / "validate_policy_search_coverage.py", args.policy_search_ledger, "--research-ledger", args.research_ledger, "--report-data", str(data)))
+        policy_evidence_args = [args.policy_evidence, "--report-data", str(data), "--policy-search-ledger", args.policy_search_ledger]
+        if args.fixture_mode:
+            policy_evidence_args.append("--fixture-mode")
+        run(python_command(SCRIPTS / "validate_policy_evidence.py", *policy_evidence_args))
+        run(python_command(SCRIPTS / "validate_business_policy_ledger.py", str(data)))
     validation_seconds = perf_counter() - validation_started
     if not args.node:
         raise SystemExit("所有数据与政策校验通过后，仍必须提供 --node 运行 HTML 版式验收。")
     render_started = perf_counter()
     cards = out / "policy-cards.json"
     run(python_command(SCRIPTS / "export_policy_cards.py", str(data), "--out", str(cards)))
-    run(python_command(SCRIPTS / "validate_policy_scope.py", str(cards)))
-    run(python_command(SCRIPTS / "render_equity_chart.py", str(data), "--out", str(out / "equity-chart.svg")))
+    if not trusted_workflow or args.fixture_mode:
+        run(python_command(SCRIPTS / "validate_policy_scope.py", str(cards)))
+    report_payload = json.loads(data.read_text(encoding="utf-8-sig")) if data.is_file() else {"equity": {"data_status": "available"}}
+    equity_has_graph = report_payload.get("equity", {}).get("data_status") in {"available", "partial"}
+    if equity_has_graph:
+        run(python_command(SCRIPTS / "render_equity_chart.py", str(data), "--out", str(out / "equity-chart.svg")))
     html = out / "report.html"
     run(python_command(SCRIPTS / "render_report_html.py", str(data), "--out", str(html)))
     node_path = Path(args.node).resolve()
@@ -125,11 +138,14 @@ def main(argv: list[str] | None = None, *, release_validation: bool = False) -> 
     if args.pdf:
         run([args.node, str(SCRIPTS / "render_report_pdf.mjs"), str(html), str(out / "report.pdf")], env=env)
     if args.word:
-        image = out / "equity-chart.png"
-        run([args.node, str(SCRIPTS / "render_svg_png.mjs"), str(out / "equity-chart.svg"), str(image)], env=env)
-        run(python_command(SCRIPTS / "render_report_word.py", str(data), "--out", str(out / "report.docx"), "--equity-image", str(image)))
+        word_command = python_command(SCRIPTS / "render_report_word.py", str(data), "--out", str(out / "report.docx"))
+        if equity_has_graph:
+            image = out / "equity-chart.png"
+            run([args.node, str(SCRIPTS / "render_svg_png.mjs"), str(out / "equity-chart.svg"), str(image)], env=env)
+            word_command.extend(["--equity-image", str(image)])
+        run(word_command)
     metrics = {
-        "deployment_mode": "fixture" if args.fixture_mode else "fast_path",
+        "deployment_mode": "fixture" if args.fixture_mode else "verified_render_path" if trusted_workflow else "internal_full_validation",
         "enterprise_research_seconds": 0,
         "policy_discovery_seconds": 0,
         "policy_network_requests": 0,

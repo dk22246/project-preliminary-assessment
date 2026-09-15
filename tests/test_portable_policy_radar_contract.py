@@ -53,6 +53,20 @@ class PortablePolicyRadarContractTests(unittest.TestCase):
         errors = validate_report_data(data)
         self.assertTrue(any("必须提供ownership_percent" in error for error in errors), errors)
 
+    def test_partial_equity_keeps_only_verified_relation_without_inventing_remainder(self):
+        data = copy.deepcopy(REPORT)
+        data["equity"]["data_status"] = "partial"
+        data["equity"]["nodes"] = [
+            node for node in data["equity"]["nodes"] if node["id"] in {"holding", "listed"}
+        ]
+        data["equity"]["edges"] = [{
+            "from": "holding",
+            "to": "listed",
+            "relationship": "股东关系（比例未公开）",
+            "evidence_source_ids": ["E01"],
+        }]
+        self.assertFalse(any("股权比例未闭合" in error or "ownership_percent" in error for error in validate_report_data(data)))
+
     def test_industry_position_rejects_unqualified_reputation_language(self):
         data = copy.deepcopy(REPORT)
         data["industry_position"] = {

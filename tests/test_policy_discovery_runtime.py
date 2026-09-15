@@ -43,7 +43,16 @@ class PolicyDiscoveryRuntimeTests(unittest.TestCase):
             return {"status": 200, "final_url": url, "body": b"official policy directory", "headers": {"Content-Type": "text/html"}}
 
         with tempfile.TemporaryDirectory() as directory:
-            result = discover_current_policies(research_ledger(), report_data(), Path(directory), fetch=fetch)
+            out = Path(directory) / "discovery"
+            formal_search = Path(directory) / "policy-search-ledger.json"
+            formal_evidence = Path(directory) / "policy-evidence.json"
+            formal_search.write_text('{"formal": true}', encoding="utf-8")
+            formal_evidence.write_text('{"formal": true}', encoding="utf-8")
+            result = discover_current_policies(research_ledger(), report_data(), out, fetch=fetch)
+            self.assertTrue((out / "policy-search-ledger-draft.json").is_file())
+            self.assertTrue((out / "policy-evidence-draft.json").is_file())
+            self.assertEqual(formal_search.read_text(encoding="utf-8"), '{"formal": true}')
+            self.assertEqual(formal_evidence.read_text(encoding="utf-8"), '{"formal": true}')
 
         self.assertEqual(calls, ["https://dofcom.hainan.gov.cn/dofcom/Policys/list.shtml"])
         self.assertEqual(result["metrics"]["requests"], 1)
@@ -51,6 +60,7 @@ class PolicyDiscoveryRuntimeTests(unittest.TestCase):
         runs = result["policy_search_ledger"]["searches"]
         self.assertEqual(len(runs), 2)
         for item in runs:
+            self.assertEqual(item["department_searches"][0]["department_role"], "primary_regulator")
             run = item["department_searches"][0]["runs"][0]
             self.assertEqual(run["query"], item["topic"])
             self.assertIn("checked_at", run)

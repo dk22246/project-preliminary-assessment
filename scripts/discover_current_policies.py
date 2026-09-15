@@ -155,16 +155,21 @@ def discover_current_policies(
             searches.append({
                 "id": search_id, "landing_business_id": item["landing_id"], "topic": item["topic"],
                 "route_ids": [str(item["route"].get("id", ""))], "department_searches": [{
-                    "department": task["department"], "department_role": "routed_department", "routing_basis": "研究底稿主管部门路由", "runs": [run],
+                    "department": task["department"],
+                    "department_role": str(item["route"].get("department_role") or "primary_regulator"),
+                    "routing_basis": str(item["route"].get("routing_basis") or item["route"].get("route_rule_id") or "研究底稿主管部门路由"),
+                    "runs": [run],
                 }], "candidate_policy_ids": [], "coverage_status": "research_incomplete",
             })
     result = {
         "policy_evidence": {"version": "1.0", "enterprise": research_ledger.get("enterprise", ""), "researched_at": _timestamp(), "mode": "formal", "records": evidence_records},
-        "policy_search_ledger": {"version": "1.0", "enterprise": research_ledger.get("enterprise", ""), "researched_at": _timestamp(), "search_mode": "realtime", "landing_business_hypotheses": [], "searches": searches, "policy_candidates": []},
+        "policy_search_ledger": {"version": "1.0", "enterprise": research_ledger.get("enterprise", ""), "researched_at": _timestamp(), "search_mode": "realtime", "draft_only": True, "landing_business_hypotheses": [], "department_scan_profiles": [], "searches": searches, "policy_candidates": []},
         "metrics": metrics,
     }
-    (out_dir.parent / "policy-evidence.json").write_text(json.dumps(result["policy_evidence"], ensure_ascii=False, indent=2), encoding="utf-8")
-    (out_dir.parent / "policy-search-ledger.json").write_text(json.dumps(result["policy_search_ledger"], ensure_ascii=False, indent=2), encoding="utf-8")
+    # Discovery is a non-destructive first pass. It must never overwrite the
+    # formal ledgers maintained in the project root.
+    (out_dir / "policy-evidence-draft.json").write_text(json.dumps(result["policy_evidence"], ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    (out_dir / "policy-search-ledger-draft.json").write_text(json.dumps(result["policy_search_ledger"], ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     return result
 
 
@@ -174,8 +179,6 @@ def main() -> int:
     parser.add_argument("--report-data", required=True)
     parser.add_argument("--out-dir", required=True)
     parser.add_argument("--max-concurrency", type=int, default=4)
-    parser.add_argument("--connect-timeout", type=int, default=10)
-    parser.add_argument("--read-timeout", type=int, default=30)
     parser.add_argument("--max-retries", type=int, default=2)
     args = parser.parse_args()
     result = discover_current_policies(load_data(args.research_ledger), load_data(args.report_data), Path(args.out_dir), max_concurrency=args.max_concurrency, max_retries=args.max_retries)

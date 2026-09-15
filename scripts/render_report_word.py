@@ -142,15 +142,16 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("report_data")
     parser.add_argument("--out", required=True)
-    parser.add_argument("--equity-image", required=True)
+    parser.add_argument("--equity-image")
     args = parser.parse_args()
     data = load_data(args.report_data)
     errors = validate_report_data(data) + validate_text(data)
     if errors:
         raise SystemExit("\n".join(errors))
-    image = Path(args.equity_image)
-    if not image.exists():
-        raise SystemExit("缺少股权图 PNG，Word 不得用文本框替代图形")
+    equity_has_graph = data["equity"].get("data_status") in {"available", "partial"}
+    image = Path(args.equity_image) if args.equity_image else None
+    if equity_has_graph and (image is None or not image.exists()):
+        raise SystemExit("有股权关系时缺少股权图 PNG，Word 不得用文本框替代图形")
     doc = Document()
     configure_report_document(doc, data["meta"].get("report_short_name", "招商项目整体落地研判报告"))
     add_cover_line(doc, data["meta"]["report_title"], title=True)
@@ -174,7 +175,12 @@ def main() -> int:
         industry_text = str(industry or "需企业补充")
     add_body(doc, "行业地位：" + industry_text)
     add_heading(doc, "（二）500强核验", 2); add_standard_table(doc, ["榜单", "年度", "状态", "名次/入选主体", "与研究对象关系", "来源"], top500_rows(data["top500_status"]), [2.7, 1.1, 1.6, 3.3, 4.3, 1.9])
-    add_heading(doc, "（三）股权架构拆解", 2); doc.add_picture(str(image), width=Cm(15)); add_body(doc, entity.get("equity_summary", "需企业补充")); add_equity_evidence_summary(doc, data["equity"]); add_equity_conflict_disclosures(doc, data["equity"].get("conflict_disclosures", []))
+    add_heading(doc, "（三）股权架构拆解", 2)
+    if equity_has_graph:
+        doc.add_picture(str(image), width=Cm(15)); add_body(doc, entity.get("equity_summary", "需企业补充")); add_equity_evidence_summary(doc, data["equity"]); add_equity_conflict_disclosures(doc, data["equity"].get("conflict_disclosures", []))
+    else:
+        add_body(doc, "股权公开信息不足：" + data["equity"].get("availability_note", "本轮公开检索未发现可靠股权数据，需企业补充。"))
+        add_body(doc, "本轮检索依据：" + ("、".join(str(item) for item in data["equity"].get("search_source_ids", [])) or "未记录"))
     add_heading(doc, "（四）主要业务及产品拆解", 2); add_standard_table(doc, ["业务板块", "主要产品或服务", "主要承载主体", "销售渠道", "国内外业务布局"], rows(data["businesses"], ("segment", "products", "entity", "sales_channels", "footprint")), [2.4, 3.5, 3.0, 3.8, 3.2])
     add_heading(doc, "（五）海南自由贸易港鼓励类产业目录匹配", 2); add_body(doc, "总体判断：" + data["encouraged_industry_assessment"].get("summary", "未说明")); add_standard_table(doc, ["企业具体经营活动", "匹配结论", "对应目录条目", "判断依据", "相近可能或待核事项"], encouraged_industry_rows(data["encouraged_industry_assessment"]), [2.5, 1.7, 4.0, 4.8, 3.0])
     add_heading(doc, "（六）产业链上下游", 2); add_industry_chain(doc, data["industry_chain"])

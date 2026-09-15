@@ -5,20 +5,7 @@
     "legal_entity": "上海飞科电器股份有限公司",
     "unified_social_credit_code": "91310000735470911B"
   },
-  "provider_attempts": [
-    {
-      "provider": "qcc_web",
-      "status": "unavailable",
-      "queried_at": "2026-08-02T12:00:00+08:00",
-      "reason": "离线部署示例没有本轮合法浏览器网页成功回执，使用法定披露进行门禁验证"
-    },
-    {
-      "provider": "tianyancha_web",
-      "status": "unavailable",
-      "queried_at": "2026-08-02T12:00:00+08:00",
-      "reason": "离线部署示例没有本轮合法浏览器网页成功回执，使用法定披露进行门禁验证"
-    }
-  ],
+  "provider_attempts": [],
   "sources": [
     {
       "id": "E01",
@@ -48,5 +35,5 @@
     {"from": "listed", "to": "supply", "relationship": "直接控制", "assertion_type": "consolidation_scope", "as_of_date": "2025-12-31", "evidence_source_ids": ["E01"]}
   ],
   "conflicts": [],
-  "review_status": "fallback_complete"
+  "review_status": "complete"
 }
