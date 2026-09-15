@@ -40,6 +40,8 @@ description: Use when 招商人员只提供企业名称或基础资料，需要�
 
 两条路由改变来源、动作和停止条件，不改变报告结构、鼓励类产业目录判断、三亚落地分析或实时政策检索。上市母公司材料只能补充非上市分析主体的关系背景，不得把集团合并数据改写为该主体自身数据。详细来源和停止门禁见 `references/evidence-intake.md`、`references/business-discovery.md`。
 
+主体和路由写入 `enterprise-findings.json` 后，运行 `ppa.py research-plan` 生成本轮最小行动清单。只读取 `references/research-route-index.md` 中与当前路由对应的一段；不得同时加载上市和非上市执行细则。进入产业目录、政策、Word/PDF或园区政策阶段时，才读取对应参考文件。
+
 两类主体都研究企业关系、主要业务与产品、代表性上下游、国内外业务、近三年经营数据、政府补助和重大风险。上市主体可以依据法定披露核验具体品类排名、市场份额和竞争位置。非上市主体的地位只核验Fortune Global 500、中国企业500强、中国民营企业500强及一项直接相关的行业500强，不扩展普通榜单或泛化荣誉；缺少可靠数据时明确写“本轮公开检索未发现可靠数据，需企业补充”，不得估算或虚构。
 
 ## 股权和财务边界
@@ -91,6 +93,8 @@ HTML、PDF和Word必须读取同一 `report-data.json`。股权图、表格、�
 # 一次性部署；创建项目；自动推进至首个缺口；默认HTML交付
 & $py -X utf8 scripts/ppa.py setup
 & $py -X utf8 scripts/ppa.py start "企业法律全称" --work-dir work/company
+& $py -X utf8 scripts/ppa.py research-plan --work-dir work/company
+& $py -X utf8 scripts/ppa.py compile --work-dir work/company
 & $py -X utf8 scripts/ppa.py advance --work-dir work/company
 & $py -X utf8 scripts/ppa.py deliver --work-dir work/company --out-dir outputs/company
 

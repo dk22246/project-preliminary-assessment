@@ -218,6 +218,15 @@ def command_compile(args: argparse.Namespace) -> int:
     return 0
 
 
+def command_research_plan(args: argparse.Namespace) -> int:
+    from research_plan import write_research_plan
+
+    work_dir, _ = _current_workspace(args.work_dir)
+    plan = write_research_plan(work_dir / "enterprise-findings.json", work_dir / "research-plan.json")
+    print(json.dumps({"work_dir": str(work_dir), "research_route": plan["research_route"], "actions": len(plan["actions"])}, ensure_ascii=False))
+    return 0
+
+
 def command_discover_policies(args: argparse.Namespace) -> int:
     from discover_current_policies import discover_current_policies
 
@@ -421,6 +430,9 @@ def build_parser() -> argparse.ArgumentParser:
     compile_command = sub.add_parser("compile", help="将两份精简输入原子编译为五份正式台账")
     compile_command.add_argument("--work-dir", required=True)
     compile_command.set_defaults(handler=command_compile)
+    research_plan = sub.add_parser("research-plan", help="按上市或非上市路由生成最小企业研究行动清单")
+    research_plan.add_argument("--work-dir", required=True)
+    research_plan.set_defaults(handler=command_research_plan)
     collect_web = sub.add_parser("collect-web", help="采集并校验公开网页证据")
     collect_web.add_argument("enterprise")
     collect_web.add_argument("topic")
