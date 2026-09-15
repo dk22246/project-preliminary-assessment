@@ -9,43 +9,9 @@ from pathlib import Path
 from urllib.parse import urlparse
 
 from report_core import load_data
-
-
-DISCOVERY_PATHS = (
-    "theme_search",
-    "department_documents",
-    "normative_documents",
-    "application_notices",
-    "award_publicity",
-    "invalidity_catalog",
-    "document_graph",
-)
-CORE_DISCOVERY_PATHS = (
-    "theme_search",
-    "department_documents",
-    "normative_documents",
-    "invalidity_catalog",
-)
-ROLE_DISCOVERY_PATHS = {
-    "primary_regulator": ("application_notices",),
-    "funding_authority": ("application_notices", "award_publicity"),
-    "application_authority": ("application_notices",),
-    "execution_authority": ("application_notices",),
-    "co_issuer": (),
-    "provincial_counterpart": (),
-    "municipal_counterpart": (),
-}
+from policy_roles import DEPARTMENT_ROLES, DISCOVERY_PATHS, CORE_DISCOVERY_PATHS, required_paths_for_role
 RUN_STATUSES = {"complete", "not_available", "failed", "partial"}
 SEARCH_STATUSES = {"complete", "research_incomplete"}
-DEPARTMENT_ROLES = {
-    "primary_regulator",
-    "funding_authority",
-    "co_issuer",
-    "application_authority",
-    "execution_authority",
-    "provincial_counterpart",
-    "municipal_counterpart",
-}
 CURRENT_POLICY_STATUSES = {"current", "current_open", "current_no_open_call", "current_conditional"}
 ELIGIBILITY_STATUSES = {"unknown", "eligible", "ineligible", "not_triggered"}
 
@@ -85,11 +51,6 @@ def _report_items(report_data: dict) -> dict[tuple[str, str], dict]:
         if all(key):
             items[key] = item
     return items
-
-
-def required_paths_for_role(role: str) -> tuple[str, ...]:
-    """Return evidence routes that are material for this department role."""
-    return tuple(dict.fromkeys((*CORE_DISCOVERY_PATHS, *ROLE_DISCOVERY_PATHS.get(role, ()))))
 
 
 def validate_policy_search_coverage(coverage: dict, research_ledger: dict, report_data: dict, *, allow_stale_fixture: bool = False) -> list[str]:

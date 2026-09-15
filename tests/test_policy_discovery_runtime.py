@@ -51,22 +51,28 @@ class PolicyDiscoveryRuntimeTests(unittest.TestCase):
             result = discover_current_policies(research_ledger(), report_data(), out, fetch=fetch)
             self.assertTrue((out / "policy-search-ledger-draft.json").is_file())
             self.assertTrue((out / "policy-evidence-draft.json").is_file())
+            self.assertTrue((out / "policy-findings-fragment.json").is_file())
             self.assertEqual(formal_search.read_text(encoding="utf-8"), '{"formal": true}')
             self.assertEqual(formal_evidence.read_text(encoding="utf-8"), '{"formal": true}')
 
         self.assertEqual(calls, ["https://dofcom.hainan.gov.cn/dofcom/Policys/list.shtml"])
         self.assertEqual(result["metrics"]["requests"], 1)
         self.assertEqual(result["metrics"]["successful_requests"], 1)
-        runs = result["policy_search_ledger"]["searches"]
-        self.assertEqual(len(runs), 2)
-        for item in runs:
+        searches = result["policy_search_ledger"]["searches"]
+        profiles = result["policy_search_ledger"]["department_scan_profiles"]
+        self.assertEqual(len(searches), 2)
+        self.assertEqual(len(profiles), 1)
+        self.assertEqual(len(profiles[0]["runs"]), 5)
+        for item in searches:
             self.assertEqual(item["department_searches"][0]["department_role"], "primary_regulator")
-            run = item["department_searches"][0]["runs"][0]
-            self.assertEqual(run["query"], item["topic"])
-            self.assertIn("checked_at", run)
-            self.assertIn("result_count", run)
-            self.assertIn("result_source_ids", run)
-            self.assertIn("evidence_record_ids", run)
+            self.assertEqual(item["department_searches"][0]["profile_id"], profiles[0]["id"])
+            self.assertNotIn("runs", item["department_searches"][0])
+        complete = next(run for run in profiles[0]["runs"] if run["path"] == "department_documents")
+        self.assertEqual(complete["status"], "complete")
+        self.assertIn("checked_at", complete)
+        self.assertIn("result_count", complete)
+        self.assertIn("result_source_ids", complete)
+        self.assertIn("evidence_record_ids", complete)
 
     def test_retries_transient_gateway_failure_at_most_two_times(self):
         self.assertIsNotNone(discover_current_policies, "discover_current_policies.py must provide discover_current_policies")

@@ -228,7 +228,7 @@ def command_research_plan(args: argparse.Namespace) -> int:
 
 
 def command_discover_policies(args: argparse.Namespace) -> int:
-    from discover_current_policies import discover_current_policies
+    from discover_current_policies import discover_current_policies, merge_discovery_fragment
 
     work_dir, _ = _current_workspace(args.work_dir, minimum_stage="landing_businesses_complete")
     out_dir = Path(args.out_dir).resolve() if args.out_dir else work_dir / "evidence" / "policy-discovery"
@@ -239,6 +239,7 @@ def command_discover_policies(args: argparse.Namespace) -> int:
         max_concurrency=args.max_concurrency,
         max_retries=args.max_retries,
     )
+    merge_discovery_fragment(work_dir / "policy-findings.json", out_dir / "policy-findings-fragment.json")
     print(json.dumps({"out_dir": str(out_dir), **result["metrics"]}, ensure_ascii=False))
     return 0 if not result["metrics"]["failed_requests"] else 1
 

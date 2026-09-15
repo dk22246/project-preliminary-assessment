@@ -59,7 +59,7 @@
 & $py -X utf8 scripts/ppa.py discover-policies --work-dir work/company
 ```
 
-该命令只在 `work/company/evidence/policy-discovery/` 写入草案和抓取证据，不覆盖正式的 `policy-search-ledger.json` 或 `policy-evidence.json`。草案只完成主管部门入口的实时复验；Agent仍须定位政策原文、实施细则、申报通知和效力依据，再将核验结果写入正式台账。
+该命令在 `work/company/evidence/policy-discovery/` 保存抓取证据，并把机器生成的部门扫描档案合并到 `policy-findings.json`；不会直接覆盖五份正式台账。相同部门和入口全报告只抓取一次，多个业务通过 `profile_id` 复用同一回执。机器未能完成的角色路径保留为 `partial`，Agent只补这些缺口，并定位政策原文、实施细则、申报通知和效力依据；完成后由 `ppa.py compile` 生成正式台账。
 
 同一部门同一入口每轮只请求一次；不同官方域名最多并发4路，同域名并发1路。429、502、503、504最多退避重试2次。登录、验证码、403和付费墙不得绕过。缓存只有在本轮重新访问官方来源并留下复验回执后才可使用；动态申报通知、失效目录和公示必须重新获取。
 

@@ -15,11 +15,14 @@ from urllib.parse import urlsplit
 from urllib.request import Request, urlopen
 
 from policy_cache import PolicyCache
+from policy_roles import required_paths_for_roles
 from report_core import load_data
 
 
 TRANSIENT_STATUS = {429, 502, 503, 504}
 BLOCKED_STATUS = {401, 403}
+ROOT = Path(__file__).resolve().parents[1]
+SOURCE_REGISTRY = ROOT / "references" / "policy-source-registry.json"
 
 
 def _timestamp() -> str:
@@ -60,20 +63,39 @@ def _request_with_retry(url: str, cache: PolicyCache, fetch: Callable, *, dynami
     return None, retries, "官方页面获取失败"
 
 
+def _source_registry() -> dict[str, dict]:
+    payload = json.loads(SOURCE_REGISTRY.read_text(encoding="utf-8-sig"))
+    return {str(row.get("department", "")).strip(): row for row in payload.get("departments", [])}
+
+
 def _route_tasks(research_ledger: dict, report_data: dict) -> list[dict]:
     landing_by_id = {str(item.get("id", "")): item for item in report_data.get("landing_businesses", [])}
+    candidates = {str(item.get("id", "")): item for item in research_ledger.get("business_candidates", [])}
+    registry = _source_registry()
     tasks: dict[tuple[str, str], dict] = {}
     for route in research_ledger.get("department_routes", []):
         landing_id = str(route.get("landing_business_id", "")).strip()
         department = str(route.get("department", "")).strip()
-        entry_url = str(route.get("entry_url") or route.get("department_entry_url") or "").strip()
+        registered = registry.get(department, {})
+        entry_url = str(route.get("entry_url") or route.get("department_entry_url") or registered.get("entry_url") or "").strip()
         if not landing_id or not department or not entry_url:
             continue
         business = landing_by_id.get(landing_id, {})
         topic = str(business.get("business") or business.get("name") or route.get("matter") or "政策检索")
         key = (department, entry_url)
-        task = tasks.setdefault(key, {"department": department, "entry_url": entry_url, "routes": []})
-        task["routes"].append({"route": route, "landing_id": landing_id, "topic": topic})
+        task = tasks.setdefault(key, {
+            "department": department,
+            "entry_url": entry_url,
+            "entry_kind": str(registered.get("entry_kind") or "policy_directory"),
+            "routes": [],
+            "roles": set(),
+        })
+        role = str(route.get("department_role") or "primary_regulator")
+        task["roles"].add(role)
+        fact_ids: set[str] = set()
+        for candidate_id in route.get("candidate_ids", []):
+            fact_ids.update(str(value) for value in candidates.get(str(candidate_id), {}).get("fact_ids", []))
+        task["routes"].append({"route": route, "landing_id": landing_id, "topic": topic, "fact_ids": sorted(fact_ids), "role": role})
     return list(tasks.values())
 
 
@@ -109,7 +131,8 @@ def discover_current_policies(
         for future in as_completed(future_map):
             outcomes[future_map[future]] = future.result()
     evidence_records: list[dict] = []
-    searches: list[dict] = []
+    scan_profiles: list[dict] = []
+    search_groups: dict[tuple[str, str], dict] = {}
     metrics = {"requests": 0, "successful_requests": 0, "failed_requests": 0, "retries": 0}
     source_counter = 0
     for task in tasks:
@@ -143,34 +166,106 @@ def discover_current_policies(
             })
         else:
             metrics["failed_requests"] += 1
-        for item in task["routes"]:
-            search_id = f"PS{len(searches) + 1:02d}"
-            run = {
-                "path": "department_documents", "status": "complete" if receipt else "failed", "entry_url": task["entry_url"],
-                "query": item["topic"], "checked_at": receipt.get("revalidated_at") if receipt else _timestamp(),
-                "result_count": 1 if receipt else 0, "result_source_ids": [source_id] if source_id else [],
-                "evidence_record_ids": [evidence_id] if evidence_id else [], "receipt_id": evidence_id or f"FAIL-{search_id}",
-                "result_summary": "已完成官方目录入口实时复验。" if receipt else failure,
-            }
-            searches.append({
-                "id": search_id, "landing_business_id": item["landing_id"], "topic": item["topic"],
-                "route_ids": [str(item["route"].get("id", ""))], "department_searches": [{
-                    "department": task["department"],
-                    "department_role": str(item["route"].get("department_role") or "primary_regulator"),
-                    "routing_basis": str(item["route"].get("routing_basis") or item["route"].get("route_rule_id") or "研究底稿主管部门路由"),
-                    "runs": [run],
-                }], "candidate_policy_ids": [], "coverage_status": "research_incomplete",
+        profile_id = f"DSP{len(scan_profiles) + 1:02d}"
+        required_paths = required_paths_for_roles(set(task["roles"]))
+        profile_runs: list[dict] = []
+        for path in required_paths:
+            is_machine_complete = bool(receipt) and path == "department_documents" and task["entry_kind"] != "homepage"
+            status = "complete" if is_machine_complete else "failed" if not receipt else "partial"
+            profile_runs.append({
+                "path": path,
+                "status": status,
+                "entry_url": task["entry_url"],
+                "query": "；".join(sorted({item["topic"] for item in task["routes"]})),
+                "checked_at": receipt.get("revalidated_at") if receipt else _timestamp(),
+                "result_count": 1 if is_machine_complete else 0,
+                "result_source_ids": [source_id] if is_machine_complete and source_id else [],
+                "evidence_record_ids": [evidence_id] if is_machine_complete and evidence_id else [],
+                "receipt_id": f"{profile_id}-{path}",
+                "result_summary": (
+                    "本轮已实时复验官方政策文件目录入口。"
+                    if is_machine_complete
+                    else failure or "统一入口已复验；该角色路径仍需定位具体官方目录或检索结果后补全。"
+                ),
             })
+        scan_profiles.append({"id": profile_id, "department": task["department"], "runs": profile_runs})
+        for item in task["routes"]:
+            group_key = (item["landing_id"], item["topic"])
+            group = search_groups.setdefault(group_key, {
+                "landing_business_id": item["landing_id"], "topic": item["topic"],
+                "route_ids": [], "fact_ids": [], "department_searches": [],
+                "candidate_policy_ids": [], "coverage_status": "research_incomplete",
+            })
+            route_id = str(item["route"].get("id", ""))
+            if route_id and route_id not in group["route_ids"]:
+                group["route_ids"].append(route_id)
+            for fact_id in item["fact_ids"]:
+                if fact_id not in group["fact_ids"]:
+                    group["fact_ids"].append(fact_id)
+            if not any(row.get("department") == task["department"] for row in group["department_searches"]):
+                group["department_searches"].append({
+                    "department": task["department"],
+                    "department_role": item["role"],
+                    "routing_basis": str(item["route"].get("routing_basis") or item["route"].get("route_rule_id") or "研究底稿主管部门路由"),
+                    "profile_id": profile_id,
+                })
+    searches = [{"id": f"PS{index:02d}", **row} for index, row in enumerate(search_groups.values(), 1)]
     result = {
         "policy_evidence": {"version": "1.0", "enterprise": research_ledger.get("enterprise", ""), "researched_at": _timestamp(), "mode": "formal", "records": evidence_records},
-        "policy_search_ledger": {"version": "1.0", "enterprise": research_ledger.get("enterprise", ""), "researched_at": _timestamp(), "search_mode": "realtime", "draft_only": True, "landing_business_hypotheses": [], "department_scan_profiles": [], "searches": searches, "policy_candidates": []},
+        "policy_search_ledger": {"version": "1.0", "enterprise": research_ledger.get("enterprise", ""), "researched_at": _timestamp(), "search_mode": "realtime", "draft_only": True, "landing_business_hypotheses": [], "department_scan_profiles": scan_profiles, "searches": searches, "policy_candidates": []},
         "metrics": metrics,
     }
     # Discovery is a non-destructive first pass. It must never overwrite the
     # formal ledgers maintained in the project root.
     (out_dir / "policy-evidence-draft.json").write_text(json.dumps(result["policy_evidence"], ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     (out_dir / "policy-search-ledger-draft.json").write_text(json.dumps(result["policy_search_ledger"], ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    (out_dir / "policy-findings-fragment.json").write_text(json.dumps({
+        "version": "1.0",
+        "enterprise": research_ledger.get("enterprise", ""),
+        "researched_at": result["policy_search_ledger"]["researched_at"],
+        "sources": [
+            {"key": record["policy_source_id"], "type": "policy_search_receipt", "name": record["title"], "issuer": record["issuer"], "date": record["published_at"], "location": record["final_url"], "used_in": "后台实时政策检索回执"}
+            for record in evidence_records
+        ],
+        "search": {
+            "department_scan_profiles": scan_profiles,
+            "searches": searches,
+            "policy_candidates": [],
+        },
+    }, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     return result
+
+
+def merge_discovery_fragment(policy_findings_path: Path, fragment_path: Path) -> dict:
+    """Merge machine scan receipts without overwriting Agent policy judgments."""
+    current = json.loads(Path(policy_findings_path).read_text(encoding="utf-8-sig"))
+    fragment = json.loads(Path(fragment_path).read_text(encoding="utf-8-sig"))
+    if str(current.get("enterprise", "")).strip() != str(fragment.get("enterprise", "")).strip():
+        raise ValueError("政策发现片段与policy-findings.json企业主体不一致")
+    current["researched_at"] = fragment["researched_at"]
+    retained_sources = [row for row in current.get("sources", []) if row.get("type") != "policy_search_receipt"]
+    current["sources"] = retained_sources + fragment.get("sources", [])
+    search = current.setdefault("search", {})
+    search["department_scan_profiles"] = fragment.get("search", {}).get("department_scan_profiles", [])
+    previous = {
+        (str(row.get("landing_business_key") or row.get("landing_business_id") or ""), str(row.get("topic", ""))): row
+        for row in search.get("searches", [])
+    }
+    refreshed = []
+    for row in fragment.get("search", {}).get("searches", []):
+        key = (str(row.get("landing_business_key") or row.get("landing_business_id") or ""), str(row.get("topic", "")))
+        old = previous.get(key, {})
+        if old.get("candidate_policy_keys"):
+            row["candidate_policy_keys"] = old["candidate_policy_keys"]
+        elif old.get("candidate_policy_ids"):
+            row["candidate_policy_ids"] = old["candidate_policy_ids"]
+        row["coverage_status"] = "research_incomplete"
+        refreshed.append(row)
+    search["searches"] = refreshed
+    temporary = Path(policy_findings_path).with_suffix(".tmp")
+    temporary.write_text(json.dumps(current, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    temporary.replace(policy_findings_path)
+    return current
 
 
 def main() -> int:
