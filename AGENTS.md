@@ -36,6 +36,7 @@ Optional evidence and search commands remain behind the same entrypoint:
 
 ## Non-negotiable execution rules
 
+- When the user requests Skill maintenance, an Agent may read and edit any tracked source, instruction, reference, schema, template, or test file needed for that maintenance. The input restrictions below apply only while producing an enterprise report; they are not a repository read-only policy.
 - `setup` is deployment-only. Daily report runs must not reinstall dependencies, redownload Chromium, or run the release suite.
 - `start` creates two editable inputs, five generated ledgers, and `workflow-state.json`. Never use an example company as a new report workspace.
 - Entity and listing route are written in `enterprise-findings.json.research.enterprise_profile`. Generate and follow only that route's `research-plan.json`; never run both listed and nonlisted research paths.
