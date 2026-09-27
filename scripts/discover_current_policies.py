@@ -43,7 +43,7 @@ def _timestamp() -> str:
     return datetime.now(timezone.utc).astimezone().isoformat()
 
 
-def _default_fetch(url: str, headers: dict[str, str], timeout: float = 10) -> dict:
+def _default_fetch(url: str, headers: dict[str, str], timeout: float = 20) -> dict:
     try:
         with urlopen(Request(url, headers=headers, method="GET"), timeout=timeout) as response:  # nosec B310
             if official_url(url) and not official_url(response.geturl()):
@@ -406,7 +406,7 @@ def discover_current_policies(
     max_concurrency: int = 4,
     max_retries: int = 2,
     sleep: Callable[[float], None] = default_sleep,
-    request_timeout: float = 10,
+    request_timeout: float = 20,
 ) -> dict:
     """Discover bounded same-host policy material with one fetch per URL per round."""
     out_dir = Path(out_dir)

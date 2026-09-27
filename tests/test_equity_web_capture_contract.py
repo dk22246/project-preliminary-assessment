@@ -83,7 +83,7 @@ def web_capture():
 
 class EquityWebCaptureContractTests(unittest.TestCase):
     def run_collector(self, provider, payload):
-        with tempfile.TemporaryDirectory(dir=ROOT) as directory:
+        with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             capture_path = root / "capture.json"
             out_dir = root / "out"
