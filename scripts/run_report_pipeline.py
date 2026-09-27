@@ -124,7 +124,10 @@ def main(
     if equity_has_graph:
         run(python_command(SCRIPTS / "render_equity_chart.py", str(data), "--out", str(out / "equity-chart.svg")))
     html = out / "report.html"
-    run(python_command(SCRIPTS / "render_report_html.py", str(data), "--out", str(html)))
+    html_command = python_command(SCRIPTS / "render_report_html.py", str(data), "--out", str(html))
+    if args.fixture_mode:
+        html_command.append("--fixture-mode")
+    run(html_command)
     node_path = Path(args.node).resolve()
     if not node_path.is_file():
         raise SystemExit(f"未找到 Node 可执行文件：{node_path}")
@@ -139,6 +142,8 @@ def main(
         run([args.node, str(SCRIPTS / "render_report_pdf.mjs"), str(html), str(out / "report.pdf")], env=env)
     if args.word:
         word_command = python_command(SCRIPTS / "render_report_word.py", str(data), "--out", str(out / "report.docx"))
+        if args.fixture_mode:
+            word_command.append("--fixture-mode")
         if equity_has_graph:
             image = out / "equity-chart.png"
             run([args.node, str(SCRIPTS / "render_svg_png.mjs"), str(out / "equity-chart.svg"), str(image)], env=env)

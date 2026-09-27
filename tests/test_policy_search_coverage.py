@@ -221,7 +221,7 @@ class PolicySearchCoverageTests(unittest.TestCase):
         self.assertIn("文化旅游", result.stdout)
 
     def test_pipeline_never_renders_html_when_dynamic_policy_search_is_incomplete(self):
-        ledger = json.loads((ROOT / "examples" / "flyco-policy-search-ledger.json").read_text(encoding="utf-8"))
+        ledger = json.loads((ROOT / "tests" / "fixtures" / "release" / "synthetic-policy-search-ledger.json").read_text(encoding="utf-8"))
         ledger["department_scan_profiles"][0]["runs"][0]["status"] = "failed"
         with tempfile.TemporaryDirectory() as directory:
             directory = Path(directory)
@@ -229,9 +229,9 @@ class PolicySearchCoverageTests(unittest.TestCase):
             output_dir = directory / "output"
             ledger_path.write_text(json.dumps(ledger, ensure_ascii=False), encoding="utf-8")
             pipeline_args = [
-                str(ROOT / "examples" / "flyco-report-data.json"),
-                "--equity-evidence", str(ROOT / "examples" / "flyco-equity-evidence.json"),
-                "--research-ledger", str(ROOT / "examples" / "flyco-research-ledger.json"),
+                str(ROOT / "tests" / "fixtures" / "release" / "synthetic-report-data.json"),
+                "--equity-evidence", str(ROOT / "tests" / "fixtures" / "release" / "synthetic-equity-evidence.json"),
+                "--research-ledger", str(ROOT / "tests" / "fixtures" / "release" / "synthetic-research-ledger.json"),
                 "--policy-search-ledger", str(ledger_path),
                 "--policy-evidence", str(directory / "policy-evidence.json"),
                 "--fixture-mode",

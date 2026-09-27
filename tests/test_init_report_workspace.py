@@ -44,7 +44,7 @@ class InitReportWorkspaceTests(unittest.TestCase):
                 if name == "policy-search-ledger.json":
                     self.assertIn("department_scan_profiles", payload)
                     self.assertNotIn("department_search_profiles", payload)
-            self.assertNotIn("飞科", combined)
+            self.assertNotIn("示例企业", combined)
             self.assertNotIn("剃须刀", combined)
             self.assertNotIn("示例：已完成", combined)
 
@@ -71,7 +71,7 @@ class InitReportWorkspaceTests(unittest.TestCase):
 
     def test_formal_validator_rejects_packaged_fixture_without_explicit_mode(self):
         result = subprocess.run(
-            [sys.executable, "-X", "utf8", str(ROOT / "scripts" / "validate_report_data.py"), str(ROOT / "examples" / "flyco-report-data.json")],
+            [sys.executable, "-X", "utf8", str(ROOT / "scripts" / "validate_report_data.py"), str(ROOT / "tests" / "fixtures" / "release" / "synthetic-report-data.json")],
             text=True,
             encoding="utf-8",
             capture_output=True,
@@ -79,7 +79,7 @@ class InitReportWorkspaceTests(unittest.TestCase):
         )
         self.assertNotEqual(result.returncode, 0)
         allowed = subprocess.run(
-            [sys.executable, "-X", "utf8", str(ROOT / "scripts" / "validate_report_data.py"), str(ROOT / "examples" / "flyco-report-data.json"), "--fixture-mode"],
+            [sys.executable, "-X", "utf8", str(ROOT / "scripts" / "validate_report_data.py"), str(ROOT / "tests" / "fixtures" / "release" / "synthetic-report-data.json"), "--fixture-mode"],
             text=True,
             encoding="utf-8",
             capture_output=True,

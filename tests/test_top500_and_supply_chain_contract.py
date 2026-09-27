@@ -11,7 +11,7 @@ sys.path.insert(0, str(ROOT / "scripts"))
 from report_core import validate_report_data
 
 
-REPORT = json.loads((ROOT / "examples" / "flyco-report-data.json").read_text(encoding="utf-8-sig"))
+REPORT = json.loads((ROOT / "tests" / "fixtures" / "release" / "synthetic-report-data.json").read_text(encoding="utf-8-sig"))
 TOP500_SOURCES = [
     {"id": "E90", "type": "官方榜单", "name": "Fortune Global 500 2026", "issuer": "Fortune", "date": "2026-08-01", "location": "https://fortune.com/ranking/global500/2026/", "used_in": "企业基本情况/500强核验"},
     {"id": "E91", "type": "权威转载榜单", "name": "2025中国企业500强", "issuer": "央视新闻客户端", "date": "2025-09-15", "location": "https://news.cnr.cn/native/gd/kx/20250915/t20250915_527362516.shtml", "used_in": "企业基本情况/500强核验"},

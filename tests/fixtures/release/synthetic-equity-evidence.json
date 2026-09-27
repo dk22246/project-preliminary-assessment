@@ -1,0 +1,163 @@
+{
+  "fixture_metadata": {
+    "fixture_only": true,
+    "fixture_name": "synthetic-release-test",
+    "fixture_notice": "自动化测试夹具，禁止作为企业报告交付"
+  },
+  "schema_version": "1.0",
+  "subject": {
+    "legal_entity": "示例测试企业股份有限公司",
+    "unified_social_credit_code": "91100000000000000X"
+  },
+  "provider_attempts": [],
+  "sources": [
+    {
+      "id": "E01",
+      "provider": "legal_disclosure",
+      "method": "annual_report",
+      "queried_at": "2026-08-02T12:00:00+08:00",
+      "query": "示例测试企业股份有限公司",
+      "status": "success",
+      "record_locator": "2025年年度报告：控股股东、实际控制人及主要子公司章节"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "controller",
+      "name": "测试控制人",
+      "entity_type": "实际控制人",
+      "assertion_type": "legal_disclosure",
+      "as_of_date": "2025-12-31",
+      "evidence_source_ids": [
+        "E01"
+      ]
+    },
+    {
+      "id": "holding",
+      "name": "示例控股有限公司",
+      "entity_type": "控股平台",
+      "assertion_type": "legal_disclosure",
+      "as_of_date": "2025-12-31",
+      "evidence_source_ids": [
+        "E01"
+      ]
+    },
+    {
+      "id": "other_shareholders",
+      "name": "其他股东合计",
+      "entity_type": "其他股东",
+      "assertion_type": "legal_disclosure",
+      "as_of_date": "2025-12-31",
+      "evidence_source_ids": [
+        "E01"
+      ]
+    },
+    {
+      "id": "listed",
+      "name": "示例测试企业股份有限公司",
+      "entity_type": "上市公司",
+      "assertion_type": "legal_disclosure",
+      "as_of_date": "2025-12-31",
+      "evidence_source_ids": [
+        "E01"
+      ]
+    },
+    {
+      "id": "wuhu",
+      "name": "示例制造有限公司",
+      "entity_type": "子公司",
+      "assertion_type": "consolidation_scope",
+      "as_of_date": "2025-12-31",
+      "evidence_source_ids": [
+        "E01"
+      ]
+    },
+    {
+      "id": "poree",
+      "name": "示例品牌运营有限公司",
+      "entity_type": "子公司",
+      "assertion_type": "consolidation_scope",
+      "as_of_date": "2025-12-31",
+      "evidence_source_ids": [
+        "E01"
+      ]
+    },
+    {
+      "id": "supply",
+      "name": "示例供应链有限公司",
+      "entity_type": "子公司",
+      "assertion_type": "consolidation_scope",
+      "as_of_date": "2025-12-31",
+      "evidence_source_ids": [
+        "E01"
+      ]
+    }
+  ],
+  "edges": [
+    {
+      "from": "controller",
+      "to": "holding",
+      "relationship": "实际控制",
+      "assertion_type": "legal_disclosure",
+      "as_of_date": "2025-12-31",
+      "evidence_source_ids": [
+        "E01"
+      ]
+    },
+    {
+      "from": "holding",
+      "to": "listed",
+      "relationship": "持股80.99%",
+      "ownership_percent": 80.99,
+      "assertion_type": "legal_disclosure",
+      "as_of_date": "2025-12-31",
+      "evidence_source_ids": [
+        "E01"
+      ]
+    },
+    {
+      "from": "other_shareholders",
+      "to": "listed",
+      "relationship": "合计持股19.01%",
+      "ownership_percent": 19.01,
+      "is_remainder": true,
+      "assertion_type": "legal_disclosure",
+      "as_of_date": "2025-12-31",
+      "evidence_source_ids": [
+        "E01"
+      ]
+    },
+    {
+      "from": "listed",
+      "to": "wuhu",
+      "relationship": "直接控制",
+      "assertion_type": "consolidation_scope",
+      "as_of_date": "2025-12-31",
+      "evidence_source_ids": [
+        "E01"
+      ]
+    },
+    {
+      "from": "listed",
+      "to": "poree",
+      "relationship": "直接控制",
+      "assertion_type": "consolidation_scope",
+      "as_of_date": "2025-12-31",
+      "evidence_source_ids": [
+        "E01"
+      ]
+    },
+    {
+      "from": "listed",
+      "to": "supply",
+      "relationship": "直接控制",
+      "assertion_type": "consolidation_scope",
+      "as_of_date": "2025-12-31",
+      "evidence_source_ids": [
+        "E01"
+      ]
+    }
+  ],
+  "conflicts": [],
+  "review_status": "complete"
+}

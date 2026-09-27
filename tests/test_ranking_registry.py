@@ -16,7 +16,7 @@ sys.path.insert(0, str(ROOT / "scripts"))
 from report_core import load_ranking_registry, validate_report_data
 
 
-REPORT = json.loads((ROOT / "examples" / "flyco-report-data.json").read_text(encoding="utf-8-sig"))
+REPORT = json.loads((ROOT / "tests" / "fixtures" / "release" / "synthetic-report-data.json").read_text(encoding="utf-8-sig"))
 
 
 class RankingRegistryTests(unittest.TestCase):

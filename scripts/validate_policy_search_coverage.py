@@ -332,8 +332,8 @@ def main() -> int:
     research_ledger = load_data(args.research_ledger)
     report_data = load_data(args.report_data)
     canonical_fixture = (
-        Path(args.policy_search_ledger).resolve() == (Path(__file__).resolve().parents[1] / "examples" / "flyco-policy-search-ledger.json").resolve()
-        and Path(args.report_data).resolve() == (Path(__file__).resolve().parents[1] / "examples" / "flyco-report-data.json").resolve()
+        Path(args.policy_search_ledger).resolve() == (Path(__file__).resolve().parents[1] / "tests" / "fixtures" / "release" / "synthetic-policy-search-ledger.json").resolve()
+        and Path(args.report_data).resolve() == (Path(__file__).resolve().parents[1] / "tests" / "fixtures" / "release" / "synthetic-report-data.json").resolve()
     )
     errors = validate_policy_search_coverage(
         coverage,

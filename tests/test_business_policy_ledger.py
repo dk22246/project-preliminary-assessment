@@ -12,11 +12,11 @@ sys.path.insert(0, str(ROOT / "scripts"))
 from report_core import validate_business_policy_ledger
 
 
-FLYCO = json.loads((ROOT / "examples" / "flyco-report-data.json").read_text(encoding="utf-8"))
+FIXTURE = json.loads((ROOT / "tests" / "fixtures" / "release" / "synthetic-report-data.json").read_text(encoding="utf-8"))
 
 
 def valid_data():
-    data = copy.deepcopy(FLYCO)
+    data = copy.deepcopy(FIXTURE)
     for index, item in enumerate(data["landing_businesses"], 1):
         item["id"] = f"L{index:02d}"
     for policy in data["policies"]:
@@ -112,7 +112,7 @@ class BusinessPolicyLedgerTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             output = Path(directory) / "report.html"
             result = subprocess.run(
-                [sys.executable, str(ROOT / "scripts" / "render_report_html.py"), str(ROOT / "examples" / "flyco-report-data.json"), "--out", str(output)],
+                [sys.executable, str(ROOT / "scripts" / "render_report_html.py"), str(ROOT / "tests" / "fixtures" / "release" / "synthetic-report-data.json"), "--out", str(output), "--fixture-mode"],
                 text=True,
                 capture_output=True,
             )
@@ -129,7 +129,7 @@ class BusinessPolicyLedgerTests(unittest.TestCase):
             self.assertNotIn("待核政策事项", policy_section)
             self.assertNotIn("海南省财政厅等五部门关于落实", policy_section)
             table_body = policy_section.split("<tbody>", 1)[1].split("</tbody>", 1)[0]
-            expected_groups = {item.get("report_group") or item["source_id"] for item in FLYCO["policies"]}
+            expected_groups = {item.get("report_group") or item["source_id"] for item in FIXTURE["policies"]}
             self.assertEqual(table_body.count("<tr>"), len(expected_groups))
             self.assertIn("官方原文", html)
 
@@ -140,7 +140,7 @@ class BusinessPolicyLedgerTests(unittest.TestCase):
     def test_equity_relationship_labels_have_an_opaque_halo(self):
         from report_core import equity_svg
 
-        svg = equity_svg(FLYCO["equity"])
+        svg = equity_svg(FIXTURE["equity"])
         self.assertIn("paint-order:stroke", svg)
 
     def test_equity_svg_wraps_long_node_text_and_deduplicates_shared_relationship_labels(self):

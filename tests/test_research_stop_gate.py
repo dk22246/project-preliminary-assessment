@@ -16,7 +16,7 @@ except ModuleNotFoundError:
 def complete_ledger():
     return {
         "enterprise_profile": {
-            "analysis_entity": "上海飞科电器股份有限公司",
+            "analysis_entity": "示例测试企业股份有限公司",
             "listing_status": "listed",
             "research_route": "listed_disclosure",
             "basis_source_ids": ["E01"],

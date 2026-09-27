@@ -20,12 +20,12 @@ from validate_research_stop_gate import validate_research_stop_gate
 
 
 ROOT = Path(__file__).resolve().parents[1]
-SAMPLE = ROOT / "examples" / "flyco-report-data.json"
-EVIDENCE_SAMPLE = ROOT / "examples" / "evidence-sample.json"
-EQUITY_SAMPLE = ROOT / "examples" / "flyco-equity-evidence.json"
-RESEARCH_SAMPLE = ROOT / "examples" / "flyco-research-ledger.json"
-POLICY_SEARCH_SAMPLE = ROOT / "examples" / "flyco-policy-search-ledger.json"
-POLICY_EVIDENCE_SAMPLE = ROOT / "examples" / "flyco-policy-evidence.json"
+SAMPLE = ROOT / "tests" / "fixtures" / "release" / "synthetic-report-data.json"
+EVIDENCE_SAMPLE = ROOT / "tests" / "fixtures" / "release" / "synthetic-web-evidence.json"
+EQUITY_SAMPLE = ROOT / "tests" / "fixtures" / "release" / "synthetic-equity-evidence.json"
+RESEARCH_SAMPLE = ROOT / "tests" / "fixtures" / "release" / "synthetic-research-ledger.json"
+POLICY_SEARCH_SAMPLE = ROOT / "tests" / "fixtures" / "release" / "synthetic-policy-search-ledger.json"
+POLICY_EVIDENCE_SAMPLE = ROOT / "tests" / "fixtures" / "release" / "synthetic-policy-evidence.json"
 REQUIRED = (
     "SKILL.md", "agents/openai.yaml", ".editorconfig", ".gitattributes",
     "README.md", "references/policy-scope.md", "references/report-template.md", "references/html-delivery.md",
@@ -36,8 +36,8 @@ REQUIRED = (
     "scripts/verify_skill.py", "scripts/bootstrap.py", "scripts/doctor.py", "scripts/runtime_state.py", "scripts/init_report_workspace.py", "scripts/compile_workspace.py", "scripts/research_plan.py", "scripts/policy_roles.py", "scripts/ppa.py", "scripts/workflow_state.py", "scripts/discover_current_policies.py", "scripts/policy_cache.py", "scripts/validate_policy_evidence.py", "scripts/validate_research_stop_gate.py", "runtime-requirements.json", "package-lock.json", "AGENTS.md",
     "scripts/evidence_collectors/__init__.py", "scripts/evidence_collectors/registry.py", "scripts/evidence_collectors/html_extract.py", "scripts/validate_research_ledger.py", "scripts/validate_policy_search_coverage.py",
     "scripts/validate_policy_scope.py", "scripts/validate_report_data.py", "scripts/validate_text_quality.py",
-    "tests/test_business_triggered_policy_logic.py", "examples/equity-web-capture-valid.json", SAMPLE.relative_to(ROOT).as_posix(),
-    EVIDENCE_SAMPLE.relative_to(ROOT).as_posix(), EQUITY_SAMPLE.relative_to(ROOT).as_posix(), RESEARCH_SAMPLE.relative_to(ROOT).as_posix(), POLICY_SEARCH_SAMPLE.relative_to(ROOT).as_posix(), POLICY_EVIDENCE_SAMPLE.relative_to(ROOT).as_posix(), "examples/evidence-sample/official-policy.md",
+    "tests/test_business_triggered_policy_logic.py", "tests/fixtures/equity-web-capture-valid.json", SAMPLE.relative_to(ROOT).as_posix(),
+    EVIDENCE_SAMPLE.relative_to(ROOT).as_posix(), EQUITY_SAMPLE.relative_to(ROOT).as_posix(), RESEARCH_SAMPLE.relative_to(ROOT).as_posix(), POLICY_SEARCH_SAMPLE.relative_to(ROOT).as_posix(), POLICY_EVIDENCE_SAMPLE.relative_to(ROOT).as_posix(), "tests/fixtures/release/official-policy.md",
 )
 TEXT_SUFFIXES = {".md", ".py", ".json", ".yaml", ".yml", ".mjs", ".ps1", ".html", ".css"}
 

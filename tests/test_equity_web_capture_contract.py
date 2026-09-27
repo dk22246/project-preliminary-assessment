@@ -12,14 +12,14 @@ from pathlib import Path
 ROOT = Path(__file__).parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 
-LEGAL_ENTITY = "上海飞科电器股份有限公司"
+LEGAL_ENTITY = "示例测试企业股份有限公司"
 CAPTURED_AT = "2026-08-08T10:30:00+08:00"
 
 
 def web_capture():
     return {
         "legal_entity": LEGAL_ENTITY,
-        "unified_social_credit_code": "91310000735470911B",
+        "unified_social_credit_code": "91100000000000000X",
         "registration_status": "存续",
         "page_url": "https://www.qcc.com/firm/example.html",
         "page_locator": "企业详情页：工商信息、股东信息、实际控制人、主要人员及变更记录",
@@ -28,7 +28,7 @@ def web_capture():
         "records": [
             {
                 "record_type": "current_shareholder",
-                "entity_name": "上海飞科投资有限公司",
+                "entity_name": "示例控股有限公司",
                 "entity_type": "企业股东",
                 "shareholding_ratio": "80.99%",
                 "data_as_of": "2026-08-08",
@@ -46,7 +46,7 @@ def web_capture():
             },
             {
                 "record_type": "actual_controller",
-                "entity_name": "李丐腾",
+                "entity_name": "测试控制人",
                 "entity_type": "自然人",
                 "relationship": "平台穿透推定实际控制人",
                 "data_as_of": "2026-08-08",
@@ -55,7 +55,7 @@ def web_capture():
             },
             {
                 "record_type": "subsidiary",
-                "entity_name": "芜湖飞科电器有限公司",
+                "entity_name": "示例制造有限公司",
                 "entity_type": "主要子公司",
                 "data_as_of": "2026-08-08",
                 "page_locator": "对外投资第1行",
@@ -226,7 +226,7 @@ class EquityWebCaptureContractTests(unittest.TestCase):
 
     def test_capture_legal_entity_must_match_command_anchor(self):
         payload = web_capture()
-        payload["legal_entity"] = "上海飞科个人护理电器有限公司"
+        payload["legal_entity"] = "示例测试个人护理电器有限公司"
         result, _ = self.run_collector("qcc_web", payload)
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("主体", result.stderr)
@@ -245,7 +245,6 @@ class EquityWebCaptureContractTests(unittest.TestCase):
             *sorted((ROOT / "references").glob("*.md")),
             *sorted((ROOT / "schemas").glob("*.json")),
             *sorted((ROOT / "scripts").glob("*.py")),
-            *sorted((ROOT / "examples").glob("*.json")),
         ]
         corpus = "\n".join(path.read_text(encoding="utf-8-sig") for path in runtime_files)
         forbidden = (
@@ -275,13 +274,13 @@ class EquityWebCaptureContractTests(unittest.TestCase):
         self.assertIn("schemas/equity-web-capture.schema.json", preflight)
 
     def test_valid_web_capture_example_is_packaged_and_collectible(self):
-        example_path = ROOT / "examples" / "equity-web-capture-valid.json"
+        example_path = ROOT / "tests" / "fixtures" / "equity-web-capture-valid.json"
         self.assertTrue(example_path.is_file(), "缺少合规网页取证示例")
         payload = json.loads(example_path.read_text(encoding="utf-8"))
         result, _ = self.run_collector("qcc_web", payload)
         self.assertEqual(result.returncode, 0, result.stderr)
         preflight = (ROOT / "scripts" / "preflight.py").read_text(encoding="utf-8")
-        self.assertIn("examples/equity-web-capture-valid.json", preflight)
+        self.assertIn("tests/fixtures/equity-web-capture-valid.json", preflight)
 
 
 if __name__ == "__main__":

@@ -1,4 +1,4 @@
-`SKILL.md` is the business authority. Deploy the complete Skill directory at one fixed Git commit; do not copy individual scripts or examples.
+`SKILL.md` is the business authority. Deploy the complete Skill directory at one fixed Git commit; do not copy individual scripts or maintenance fixtures.
 
 ## Public workflow
 
@@ -38,7 +38,7 @@ Optional evidence and search commands remain behind the same entrypoint:
 
 - When the user requests Skill maintenance, an Agent may read and edit any tracked source, instruction, reference, schema, template, or test file needed for that maintenance. The input restrictions below apply only while producing an enterprise report; they are not a repository read-only policy.
 - `setup` is deployment-only. Daily report runs must not reinstall dependencies, redownload Chromium, or run the release suite.
-- `start` creates two editable inputs, five generated ledgers, and `workflow-state.json`. Never use an example company as a new report workspace.
+- `start` creates two editable inputs, five generated ledgers, and `workflow-state.json`. Never use `tests/fixtures` as a new report workspace. Fixture data is maintenance-only and every public renderer must reject it unless an internal release test explicitly enables fixture mode.
 - Entity and listing route are written in `enterprise-findings.json.research.enterprise_profile`. Generate and follow only that route's `research-plan.json`; never run both listed and nonlisted research paths.
 - `prepare-enterprise` is independent of policy input and reaches `landing_businesses_complete` after the enterprise three-ledger and landing checks.
 - The catalog stage reads the existing Excel plus same-source JSON as the single built-in library; the matching stage references `catalog_entry_id` and zero-based `detail_index` (one detail may default to `0`; multiple details require an explicit choice), then later steps reference the derived result. AI judges business activity and technical conditions. Preserve version and official provenance; the local library is not proof of current policy validity, and official changes only prompt an update rather than an evidence-free edit.

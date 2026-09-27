@@ -1,9 +1,13 @@
 {
-  "fixture_metadata": {"fixture_only": true, "fixture_name": "flyco-release-test"},
+  "fixture_metadata": {
+    "fixture_only": true,
+    "fixture_name": "synthetic-release-test",
+    "fixture_notice": "自动化测试夹具，禁止作为企业报告交付"
+  },
   "meta": {
-    "report_title": "飞科电器招商项目整体落地研判报告",
+    "report_title": "【自动化测试夹具·禁止交付】示例企业招商研判报告",
     "generated_at": "2026年7月27日",
-    "reporting_entity": "上海飞科电器股份有限公司",
+    "reporting_entity": "示例测试企业股份有限公司",
     "policy_researched_at": "2026-08-10T10:00:00+08:00",
     "policy_search_mode": "realtime",
     "unit": "三亚中央商务区招商研判组",
@@ -12,25 +16,25 @@
     "financial_unit": "亿元"
   },
   "entity_resolution": {
-    "user_input": "飞科电器",
+    "user_input": "示例测试企业",
     "name_type": "上市公司",
-    "legal_entity": "上海飞科电器股份有限公司",
-    "security": "飞科电器（603868）",
-    "direct_shareholder": "上海飞科投资有限公司（80.99%）",
-    "ultimate_controller": "李丐腾",
-    "core_operators": "上海飞科电器股份有限公司、芜湖飞科电器有限公司、浙江博锐个护电器有限公司、飞科供应链有限公司",
-    "analysis_entity": "上海飞科电器股份有限公司",
+    "legal_entity": "示例测试企业股份有限公司",
+    "security": "示例测试企业（000000）",
+    "direct_shareholder": "示例控股有限公司（80.99%）",
+    "ultimate_controller": "测试控制人",
+    "core_operators": "示例测试企业股份有限公司、示例制造有限公司、示例品牌运营有限公司、示例供应链有限公司",
+    "analysis_entity": "示例测试企业股份有限公司",
     "financial_scope": "上市公司合并口径",
     "risk_scope": "上市公司及控股股东、实际控制人公开披露范围",
-    "equity_summary": "上海飞科电器股份有限公司为本轮分析主体；生产、供应链和电商销售功能由相关子公司承担。上海飞科投资有限公司主要为控股平台，不以其单体数据判断经营实力。"
+    "equity_summary": "示例测试企业股份有限公司为本轮分析主体；生产、供应链和电商销售功能由相关子公司承担。示例控股有限公司主要为控股平台，不以其单体数据判断经营实力。"
   },
   "enterprise_overview": {
     "established_at": "2011年2月18日",
     "registered_location": "上海市松江区广富林东路555号",
-    "listing_status": "上交所主板上市公司（证券简称：飞科电器，代码：603868）",
+    "listing_status": "上交所主板上市公司（证券简称：示例测试企业，代码：000000）",
     "main_business": "个人护理电器及生活电器的研发、设计、生产和销售，核心产品包括电动剃须刀、电吹风、电动牙刷、理发器等",
     "employee_scale": "截至2025年末，母公司及主要子公司在职员工合计3,794人，其中母公司850人、主要子公司2,944人。［E01］",
-    "profile": "上海飞科电器股份有限公司是一家以个人护理电器为核心、兼营生活电器的品牌型制造企业，形成了研发设计、生产制造、供应链管理、经销渠道和自营电商相结合的经营体系。［E01］",
+    "profile": "示例测试企业股份有限公司是一家以个人护理电器为核心、兼营生活电器的品牌型制造企业，形成了研发设计、生产制造、供应链管理、经销渠道和自营电商相结合的经营体系。［E01］",
     "operating_summary": "2025年公司实现营业收入38.61亿元，同比下降6.90%；归母净利润5.12亿元，同比增长11.84%。收入仍处调整期，但利润同比回升，经营规模和盈利能力仍具备较强招商基础。［F01］",
     "source_ids": [
       "E01",
@@ -39,16 +43,58 @@
     ]
   },
   "top500_status": [
-    {"ranking_name": "fortune_global_500", "ranking_label": "Fortune Global 500", "year": 2026, "status": "not_listed", "rank": null, "listed_entity": null, "relationship_to_target": "not_applicable", "relationship_source_ids": [], "relationship_evidence": null, "reason": null, "source_ids": ["E90"]},
-    {"ranking_name": "china_enterprise_500", "ranking_label": "中国企业500强", "year": 2025, "status": "not_listed", "rank": null, "listed_entity": null, "relationship_to_target": "not_applicable", "relationship_source_ids": [], "relationship_evidence": null, "reason": null, "source_ids": ["E91"]},
-    {"ranking_name": "china_private_enterprise_500", "ranking_label": "中国民营企业500强", "year": 2025, "status": "not_listed", "rank": null, "listed_entity": null, "relationship_to_target": "not_applicable", "relationship_source_ids": [], "relationship_evidence": null, "reason": null, "source_ids": ["E92"]}
+    {
+      "ranking_name": "fortune_global_500",
+      "ranking_label": "Fortune Global 500",
+      "year": 2026,
+      "status": "not_listed",
+      "rank": null,
+      "listed_entity": null,
+      "relationship_to_target": "not_applicable",
+      "relationship_source_ids": [],
+      "relationship_evidence": null,
+      "reason": null,
+      "source_ids": [
+        "E90"
+      ]
+    },
+    {
+      "ranking_name": "china_enterprise_500",
+      "ranking_label": "中国企业500强",
+      "year": 2025,
+      "status": "not_listed",
+      "rank": null,
+      "listed_entity": null,
+      "relationship_to_target": "not_applicable",
+      "relationship_source_ids": [],
+      "relationship_evidence": null,
+      "reason": null,
+      "source_ids": [
+        "E91"
+      ]
+    },
+    {
+      "ranking_name": "china_private_enterprise_500",
+      "ranking_label": "中国民营企业500强",
+      "year": 2025,
+      "status": "not_listed",
+      "rank": null,
+      "listed_entity": null,
+      "relationship_to_target": "not_applicable",
+      "relationship_source_ids": [],
+      "relationship_evidence": null,
+      "reason": null,
+      "source_ids": [
+        "E92"
+      ]
+    }
   ],
   "equity": {
     "data_status": "available",
     "nodes": [
       {
         "id": "controller",
-        "name": "李丐腾",
+        "name": "测试控制人",
         "entity_type": "实际控制人",
         "role": "最终控制方",
         "level": 0,
@@ -58,7 +104,7 @@
       },
       {
         "id": "holding",
-        "name": "上海飞科投资有限公司",
+        "name": "示例控股有限公司",
         "entity_type": "控股平台",
         "role": "无主要实体经营",
         "level": 1,
@@ -78,7 +124,7 @@
       },
       {
         "id": "listed",
-        "name": "上海飞科电器股份有限公司",
+        "name": "示例测试企业股份有限公司",
         "entity_type": "上市公司",
         "role": "核心经营主体／分析主体",
         "level": 2,
@@ -88,7 +134,7 @@
       },
       {
         "id": "wuhu",
-        "name": "芜湖飞科电器有限公司",
+        "name": "示例制造有限公司",
         "entity_type": "子公司",
         "role": "生产制造",
         "level": 3,
@@ -98,7 +144,7 @@
       },
       {
         "id": "poree",
-        "name": "浙江博锐个护电器有限公司",
+        "name": "示例品牌运营有限公司",
         "entity_type": "子公司",
         "role": "生产制造／品牌",
         "level": 3,
@@ -108,7 +154,7 @@
       },
       {
         "id": "supply",
-        "name": "飞科供应链有限公司",
+        "name": "示例供应链有限公司",
         "entity_type": "子公司",
         "role": "集中采购与供应链",
         "level": 3,
@@ -173,7 +219,7 @@
     "conflict_disclosures": [],
     "evidence_summary": {
       "display_source_id": "E01",
-      "display_source_title": "上海飞科电器股份有限公司2025年年度报告",
+      "display_source_title": "示例测试企业股份有限公司2025年年度报告",
       "as_of_date": "2025-12-31"
     }
   },
@@ -197,7 +243,7 @@
     {
       "segment": "供应链管理",
       "products": "零部件、原材料集中采购与供应商管理",
-      "entity": "飞科供应链有限公司",
+      "entity": "示例供应链有限公司",
       "sales_channels": "集团内部协同（不适用外部销售渠道）",
       "footprint": "服务现有生产和销售网络",
       "id": "B03"
@@ -212,7 +258,7 @@
     }
   ],
   "industry_position": {
-    "statement": "飞科属于中国个人护理电器头部企业。飞科在2024年度暨2025年第一季度业绩说明会上披露：根据中国商业联合会统计，飞科电动剃须刀多年蝉联全国市场销量第一、市场综合占有率第一；该结论限定于电动剃须刀品类，不外推为全部小家电市场第一。［E02］",
+    "statement": "示例企业属于中国个人护理电器头部企业。示例企业在2024年度暨2025年第一季度业绩说明会上披露：根据中国商业联合会统计，示例企业电动剃须刀多年蝉联全国市场销量第一、市场综合占有率第一；该结论限定于电动剃须刀品类，不外推为全部小家电市场第一。［E02］",
     "category": "中国电动剃须刀",
     "position": "全国市场销量第一、市场综合占有率第一（多年）",
     "period": "截至2025年业绩说明会披露时点",
@@ -222,26 +268,182 @@
     ]
   },
   "industry_chain": {
-    "positioning": {"summary": "飞科位于个人护理电器的品牌、产品与制造组织环节；上下游内容仅作行业结构与代表样本说明。"},
+    "positioning": {
+      "summary": "示例企业位于个人护理电器的品牌、产品与制造组织环节；上下游内容仅作行业结构与代表样本说明。"
+    },
     "peer_enterprises": [
-      {"name": "飞利浦", "core_business": "个人护理电器", "scale_or_position": "行业代表品牌", "similarity_dimensions": ["个人护理品类", "品牌渠道"], "similarity": "与研究对象同属个人护理电器品牌经营环节。", "reason": "用于横向比较，不代表交易关系。", "source_ids": ["E07"]},
-      {"name": "博朗", "core_business": "个人护理电器", "scale_or_position": "行业代表品牌", "similarity_dimensions": ["个人护理品类", "品牌渠道"], "similarity": "与研究对象同属个人护理电器品牌经营环节。", "reason": "用于横向比较，不代表交易关系。", "source_ids": ["E07"]},
-      {"name": "松下", "core_business": "个人护理电器", "scale_or_position": "行业代表品牌", "similarity_dimensions": ["个人护理品类", "品牌渠道"], "similarity": "与研究对象同属个人护理电器品牌经营环节。", "reason": "用于横向比较，不代表交易关系。", "source_ids": ["E07"]}
+      {
+        "name": "飞利浦",
+        "core_business": "个人护理电器",
+        "scale_or_position": "行业代表品牌",
+        "similarity_dimensions": [
+          "个人护理品类",
+          "品牌渠道"
+        ],
+        "similarity": "与研究对象同属个人护理电器品牌经营环节。",
+        "reason": "用于横向比较，不代表交易关系。",
+        "source_ids": [
+          "E07"
+        ]
+      },
+      {
+        "name": "博朗",
+        "core_business": "个人护理电器",
+        "scale_or_position": "行业代表品牌",
+        "similarity_dimensions": [
+          "个人护理品类",
+          "品牌渠道"
+        ],
+        "similarity": "与研究对象同属个人护理电器品牌经营环节。",
+        "reason": "用于横向比较，不代表交易关系。",
+        "source_ids": [
+          "E07"
+        ]
+      },
+      {
+        "name": "松下",
+        "core_business": "个人护理电器",
+        "scale_or_position": "行业代表品牌",
+        "similarity_dimensions": [
+          "个人护理品类",
+          "品牌渠道"
+        ],
+        "similarity": "与研究对象同属个人护理电器品牌经营环节。",
+        "reason": "用于横向比较，不代表交易关系。",
+        "source_ids": [
+          "E07"
+        ]
+      }
     ],
     "upstream": [
-      {"activity": "微型电机", "function": "为行业产品提供通用驱动部件。", "representative_enterprises": [{"name": "万宝至马达（Mabuchi Motor）", "note": "行业代表样本，不代表已确认供应商。", "source_ids": ["E03"]}], "relationship_scope": "行业代表样本，不代表已确认供应商。"},
-      {"activity": "护理电器电机", "function": "为行业产品提供通用驱动部件。", "representative_enterprises": [{"name": "日本电产（Nidec）", "note": "行业代表样本，不代表已确认供应商。", "source_ids": ["E04"]}], "relationship_scope": "行业代表样本，不代表已确认供应商。"},
-      {"activity": "消费电池", "function": "为行业产品提供通用储能部件。", "representative_enterprises": [{"name": "鹏辉能源", "note": "行业代表样本，不代表已确认供应商。", "source_ids": ["E05"]}, {"name": "亿纬锂能", "note": "行业代表样本，不代表已确认供应商。", "source_ids": ["E06"]}], "relationship_scope": "行业代表样本，不代表已确认供应商。"}
+      {
+        "activity": "微型电机",
+        "function": "为行业产品提供通用驱动部件。",
+        "representative_enterprises": [
+          {
+            "name": "万宝至马达（Mabuchi Motor）",
+            "note": "行业代表样本，不代表已确认供应商。",
+            "source_ids": [
+              "E03"
+            ]
+          }
+        ],
+        "relationship_scope": "行业代表样本，不代表已确认供应商。"
+      },
+      {
+        "activity": "护理电器电机",
+        "function": "为行业产品提供通用驱动部件。",
+        "representative_enterprises": [
+          {
+            "name": "日本电产（Nidec）",
+            "note": "行业代表样本，不代表已确认供应商。",
+            "source_ids": [
+              "E04"
+            ]
+          }
+        ],
+        "relationship_scope": "行业代表样本，不代表已确认供应商。"
+      },
+      {
+        "activity": "消费电池",
+        "function": "为行业产品提供通用储能部件。",
+        "representative_enterprises": [
+          {
+            "name": "鹏辉能源",
+            "note": "行业代表样本，不代表已确认供应商。",
+            "source_ids": [
+              "E05"
+            ]
+          },
+          {
+            "name": "亿纬锂能",
+            "note": "行业代表样本，不代表已确认供应商。",
+            "source_ids": [
+              "E06"
+            ]
+          }
+        ],
+        "relationship_scope": "行业代表样本，不代表已确认供应商。"
+      }
     ],
     "downstream": [
-      {"activity": "综合电商零售", "function": "提供行业零售触达。", "representative_enterprises": [{"name": "淘宝天猫", "note": "年报列示渠道；不代表已确认客户或合作伙伴。", "source_ids": ["E01"]}], "relationship_scope": "公开渠道代表样本，不代表已确认客户或合作伙伴。"},
-      {"activity": "自营电商零售", "function": "提供行业零售触达。", "representative_enterprises": [{"name": "京东", "note": "年报列示渠道；不代表已确认客户或合作伙伴。", "source_ids": ["E01"]}], "relationship_scope": "公开渠道代表样本，不代表已确认客户或合作伙伴。"},
-      {"activity": "折扣及社交电商零售", "function": "提供行业零售触达。", "representative_enterprises": [{"name": "拼多多", "note": "年报列示渠道；不代表已确认客户或合作伙伴。", "source_ids": ["E01"]}, {"name": "唯品会", "note": "年报列示渠道；不代表已确认客户或合作伙伴。", "source_ids": ["E01"]}], "relationship_scope": "公开渠道代表样本，不代表已确认客户或合作伙伴。"}
+      {
+        "activity": "综合电商零售",
+        "function": "提供行业零售触达。",
+        "representative_enterprises": [
+          {
+            "name": "淘宝天猫",
+            "note": "年报列示渠道；不代表已确认客户或合作伙伴。",
+            "source_ids": [
+              "E01"
+            ]
+          }
+        ],
+        "relationship_scope": "公开渠道代表样本，不代表已确认客户或合作伙伴。"
+      },
+      {
+        "activity": "自营电商零售",
+        "function": "提供行业零售触达。",
+        "representative_enterprises": [
+          {
+            "name": "京东",
+            "note": "年报列示渠道；不代表已确认客户或合作伙伴。",
+            "source_ids": [
+              "E01"
+            ]
+          }
+        ],
+        "relationship_scope": "公开渠道代表样本，不代表已确认客户或合作伙伴。"
+      },
+      {
+        "activity": "折扣及社交电商零售",
+        "function": "提供行业零售触达。",
+        "representative_enterprises": [
+          {
+            "name": "拼多多",
+            "note": "年报列示渠道；不代表已确认客户或合作伙伴。",
+            "source_ids": [
+              "E01"
+            ]
+          },
+          {
+            "name": "唯品会",
+            "note": "年报列示渠道；不代表已确认客户或合作伙伴。",
+            "source_ids": [
+              "E01"
+            ]
+          }
+        ],
+        "relationship_scope": "公开渠道代表样本，不代表已确认客户或合作伙伴。"
+      }
     ],
     "industry_common_needs": [
-      {"need": "供应链协同", "basis": "由行业上游部件与品牌制造环节归纳，不是飞科已发生事实。", "status": "industry_inference", "source_ids": ["E03", "E04"]},
-      {"need": "产品研发与质量控制", "basis": "由个人护理电器品牌制造环节归纳，不是飞科已发生事实。", "status": "industry_inference", "source_ids": ["E01", "E07"]},
-      {"need": "渠道运营", "basis": "由行业零售触达环节归纳，不是飞科已发生事实。", "status": "industry_inference", "source_ids": ["E01"]}
+      {
+        "need": "供应链协同",
+        "basis": "由行业上游部件与品牌制造环节归纳，不是示例企业已发生事实。",
+        "status": "industry_inference",
+        "source_ids": [
+          "E03",
+          "E04"
+        ]
+      },
+      {
+        "need": "产品研发与质量控制",
+        "basis": "由个人护理电器品牌制造环节归纳，不是示例企业已发生事实。",
+        "status": "industry_inference",
+        "source_ids": [
+          "E01",
+          "E07"
+        ]
+      },
+      {
+        "need": "渠道运营",
+        "basis": "由行业零售触达环节归纳，不是示例企业已发生事实。",
+        "status": "industry_inference",
+        "source_ids": [
+          "E01"
+        ]
+      }
     ]
   },
   "financials": [
@@ -485,7 +687,7 @@
         "海南省商务厅"
       ],
       "outcome": "not_triggered",
-      "conclusion": "飞科本轮拟迁入的是供应链协调、贸易合同和结算，未形成海南进口自用、岛内加工或加工增值业务事实，暂不作为可享受政策。",
+      "conclusion": "示例企业本轮拟迁入的是供应链协调、贸易合同和结算，未形成海南进口自用、岛内加工或加工增值业务事实，暂不作为可享受政策。",
       "next_evidence": "如后续拟在海南进口设备或料件、设加工主体或形成加工增值链条，需补充货物清单、加工地点、增值率、海关监管和内销路径。",
       "evidence_source_ids": [
         "P11"
@@ -500,7 +702,7 @@
         "国家外汇管理局海南省分局"
       ],
       "outcome": "conditional_opportunity",
-      "conclusion": "飞科已形成海外市场拓展与投资管理信号；如由三亚主体新设、并购或增资境外企业，可从海南办理ODI备案及后续外汇登记。该项是合规办理路径，不是财政奖励。",
+      "conclusion": "示例企业已形成海外市场拓展与投资管理信号；如由三亚主体新设、并购或增资境外企业，可从海南办理ODI备案及后续外汇登记。该项是合规办理路径，不是财政奖励。",
       "next_evidence": "需企业提供拟投国别、境外主体、项目、投资金额、资金来源、董事会决议和收益安排后，再核验备案及外汇登记路径。",
       "evidence_source_ids": [
         "P08",
@@ -536,7 +738,7 @@
         "中国人民银行海南省分行"
       ],
       "outcome": "conditional_opportunity",
-      "conclusion": "如飞科在三亚设主办企业并形成符合门槛的境内外成员企业体系，可申请本外币一体化资金池，集中办理境内外资金归集、余缺调剂和经常项目集中收付。",
+      "conclusion": "如示例企业在三亚设主办企业并形成符合门槛的境内外成员企业体系，可申请本外币一体化资金池，集中办理境内外资金归集、余缺调剂和经常项目集中收付。",
       "next_evidence": "需核验境内外成员企业、营业收入、跨境收支规模、所有者权益、主办企业和合作银行等准入条件。",
       "evidence_source_ids": [
         "P13"
@@ -552,42 +754,144 @@
         "id": "S01",
         "signal_type": "headquarters_and_talent",
         "basis_type": "enterprise_fact",
-        "enterprise_fact_refs": ["B01", "L01"],
+        "enterprise_fact_refs": [
+          "B01",
+          "L01"
+        ],
         "fact": "企业具备上市公司管理、品牌运营和核心团队配置能力。",
-        "source_ids": ["E01"],
+        "source_ids": [
+          "E01"
+        ],
         "opportunities": [
-          {"topic": "corporate_income_tax", "disposition": "surfaced", "reason": "三亚主体承接符合鼓励类目录的主营业务并实质运营时可研判15%税率。", "policy_source_ids": ["P01"]},
-          {"topic": "talent_income_tax", "disposition": "surfaced", "reason": "核心管理及专业人员实际在海南任职并满足清单条件时可研判个税优惠。", "policy_source_ids": ["P03", "P04"]},
-          {"topic": "headquarters_recognition", "disposition": "pending_evidence", "reason": "本轮未取得三亚现行总部认定及兑现文件，不进入前台政策表。", "policy_source_ids": ["P10"]}
+          {
+            "topic": "corporate_income_tax",
+            "disposition": "surfaced",
+            "reason": "三亚主体承接符合鼓励类目录的主营业务并实质运营时可研判15%税率。",
+            "policy_source_ids": [
+              "P01"
+            ]
+          },
+          {
+            "topic": "talent_income_tax",
+            "disposition": "surfaced",
+            "reason": "核心管理及专业人员实际在海南任职并满足清单条件时可研判个税优惠。",
+            "policy_source_ids": [
+              "P03",
+              "P04"
+            ]
+          },
+          {
+            "topic": "headquarters_recognition",
+            "disposition": "pending_evidence",
+            "reason": "本轮未取得三亚现行总部认定及兑现文件，不进入前台政策表。",
+            "policy_source_ids": [
+              "P10"
+            ]
+          }
         ]
       },
       {
         "id": "S02",
         "signal_type": "overseas_business",
         "basis_type": "enterprise_fact",
-        "enterprise_fact_refs": ["B04", "L04"],
+        "enterprise_fact_refs": [
+          "B04",
+          "L04"
+        ],
         "fact": "企业公开披露海外产品、渠道拓展和境外投资运营方向。",
-        "source_ids": ["E01"],
+        "source_ids": [
+          "E01"
+        ],
         "opportunities": [
-          {"topic": "foreign_trade", "disposition": "merged", "reason": "海外销售与采购机会并入EF账户和跨境结算工具展示。", "policy_source_ids": ["P06"]},
-          {"topic": "ef_account", "disposition": "surfaced", "reason": "真实跨境贸易、投资或资金结算可触发EF账户办理。", "policy_source_ids": ["P06"]},
-          {"topic": "cross_border_settlement", "disposition": "merged", "reason": "跨境人民币及外汇便利与EF账户同属跨境结算工具，合并展示。", "policy_source_ids": ["P06"]},
-          {"topic": "odi", "disposition": "surfaced", "reason": "新增境外设立、并购或增资项目可触发海南ODI备案与外汇登记。", "policy_source_ids": ["P08", "P14"]},
-          {"topic": "overseas_income_tax", "disposition": "surfaced", "reason": "符合产业和新增境外直接投资所得条件时，可研判企业所得税免征。", "policy_source_ids": ["P01", "P12"]},
-          {"topic": "cross_border_fund_pool", "disposition": "surfaced", "reason": "形成符合门槛的境内外成员企业体系后，可研判本外币一体化资金池。", "policy_source_ids": ["P13"]},
-          {"topic": "offshore_trade_stamp_duty", "disposition": "surfaced", "reason": "若三亚主体形成货物不入境的非居民间离岸转手买卖，可免征相关合同印花税。", "policy_source_ids": ["P07"]}
+          {
+            "topic": "foreign_trade",
+            "disposition": "merged",
+            "reason": "海外销售与采购机会并入EF账户和跨境结算工具展示。",
+            "policy_source_ids": [
+              "P06"
+            ]
+          },
+          {
+            "topic": "ef_account",
+            "disposition": "surfaced",
+            "reason": "真实跨境贸易、投资或资金结算可触发EF账户办理。",
+            "policy_source_ids": [
+              "P06"
+            ]
+          },
+          {
+            "topic": "cross_border_settlement",
+            "disposition": "merged",
+            "reason": "跨境人民币及外汇便利与EF账户同属跨境结算工具，合并展示。",
+            "policy_source_ids": [
+              "P06"
+            ]
+          },
+          {
+            "topic": "odi",
+            "disposition": "surfaced",
+            "reason": "新增境外设立、并购或增资项目可触发海南ODI备案与外汇登记。",
+            "policy_source_ids": [
+              "P08",
+              "P14"
+            ]
+          },
+          {
+            "topic": "overseas_income_tax",
+            "disposition": "surfaced",
+            "reason": "符合产业和新增境外直接投资所得条件时，可研判企业所得税免征。",
+            "policy_source_ids": [
+              "P01",
+              "P12"
+            ]
+          },
+          {
+            "topic": "cross_border_fund_pool",
+            "disposition": "surfaced",
+            "reason": "形成符合门槛的境内外成员企业体系后，可研判本外币一体化资金池。",
+            "policy_source_ids": [
+              "P13"
+            ]
+          },
+          {
+            "topic": "offshore_trade_stamp_duty",
+            "disposition": "surfaced",
+            "reason": "若三亚主体形成货物不入境的非居民间离岸转手买卖，可免征相关合同印花税。",
+            "policy_source_ids": [
+              "P07"
+            ]
+          }
         ]
       },
       {
         "id": "S03",
         "signal_type": "import_and_processing",
         "basis_type": "enterprise_fact",
-        "enterprise_fact_refs": ["B03", "L03"],
+        "enterprise_fact_refs": [
+          "B03",
+          "L03"
+        ],
         "fact": "企业存在供应链采购能力，但本轮未发现海南岛内进口自用或加工生产安排。",
-        "source_ids": ["E01"],
+        "source_ids": [
+          "E01"
+        ],
         "opportunities": [
-          {"topic": "zero_tariff", "disposition": "pending_evidence", "reason": "只有形成海南主体进口征税目录外货物等真实路径后再纳入。", "policy_source_ids": ["P11"]},
-          {"topic": "processing_value_added", "disposition": "excluded", "reason": "本轮没有海南加工环节，不能由现有供应链事实反向虚构加工业务。", "policy_source_ids": ["P11"]}
+          {
+            "topic": "zero_tariff",
+            "disposition": "pending_evidence",
+            "reason": "只有形成海南主体进口征税目录外货物等真实路径后再纳入。",
+            "policy_source_ids": [
+              "P11"
+            ]
+          },
+          {
+            "topic": "processing_value_added",
+            "disposition": "excluded",
+            "reason": "本轮没有海南加工环节，不能由现有供应链事实反向虚构加工业务。",
+            "policy_source_ids": [
+              "P11"
+            ]
+          }
         ]
       }
     ]
@@ -609,13 +913,13 @@
       "landing_action": "形成可核验的目录内主营业务、管理机构、人员、账务及资产实质运营。",
       "plain_language": "三亚主体以符合目录的业务为主营并满足实质运营条件后，可按规定适用15%企业所得税。",
       "policy_value": "将符合条件业务的企业所得税税率降至15%。",
-      "match_logic": "飞科已有自营电商和数字营销基础，但目录归类与收入结构尚未核验。",
+      "match_logic": "示例企业已有自营电商和数字营销基础，但目录归类与收入结构尚未核验。",
       "conditions": "鼓励类产业目录、主营业务收入占比及实质运营条件均须满足。",
       "handling_route": "企业按企业所得税申报规定享受，并留存目录归类与实质运营证据。",
       "judgment": "条件型政策机会",
       "source_id": "P01",
       "report_title": "企业所得税15%优惠",
-      "report_reason": "飞科已有自营电商、数字营销和销售结算能力；如由三亚主体承接可归入鼓励类产业目录的主营业务，相关主营收入达到规定比例并形成实质运营，可按15%税率缴纳企业所得税。",
+      "report_reason": "示例企业已有自营电商、数字营销和销售结算能力；如由三亚主体承接可归入鼓励类产业目录的主营业务，相关主营收入达到规定比例并形成实质运营，可按15%税率缴纳企业所得税。",
       "report_business": "自营电商、数字营销及销售结算",
       "report_value": "三亚主体经营符合鼓励类目录业务并满足实质运营条件后，企业所得税按15%征收。",
       "report_conditions": "主营业务属于鼓励类目录，主营业务收入占比达标，并在三亚形成管理、人员、账务及资产的实质运营。",
@@ -645,7 +949,7 @@
       "source_id": "P03",
       "report_group": "talent-iit",
       "report_title": "高端紧缺人才个人所得税优惠（实际税负15%封顶）",
-      "report_reason": "飞科具备总部管理、品牌、电商和海外运营等核心岗位；相关人员在三亚主体实际任职、取得海南来源所得并满足高端紧缺人才清单及居住等条件时，个人所得税实际税负超过15%的部分免征。",
+      "report_reason": "示例企业具备总部管理、品牌、电商和海外运营等核心岗位；相关人员在三亚主体实际任职、取得海南来源所得并满足高端紧缺人才清单及居住等条件时，个人所得税实际税负超过15%的部分免征。",
       "report_business": "区域总部及核心管理、品牌、电商和海外运营团队",
       "report_value": "符合条件的高端和紧缺人才，实际个人所得税负超过15%的部分免征。",
       "report_conditions": "人才符合高端或紧缺人才条件；在海南的居住、劳动关系、海南来源所得及所属单位实质运营等要求满足。",
@@ -668,7 +972,7 @@
       "landing_action": "由三亚主体承接劳动关系、薪酬发放、社保及个税申报。",
       "plain_language": "符合条件的人员须以海南来源所得在海南申报，并按清单管理和年度汇算规则办理优惠。",
       "policy_value": "明确人才个税优惠的来源所得、单位实质运营和申报执行口径。",
-      "match_logic": "飞科如迁入核心人员，需要以三亚主体实际任职和收入安排承接。",
+      "match_logic": "示例企业如迁入核心人员，需要以三亚主体实际任职和收入安排承接。",
       "conditions": "海南来源所得、人才条件、居住或特定行业条件、所属单位实质运营。",
       "handling_route": "按公告、清单管理办法及税务年度汇算要求办理。",
       "judgment": "条件型政策机会",
@@ -697,7 +1001,7 @@
       "judgment": "条件型政策机会",
       "source_id": "P06",
       "report_title": "EF账户（多功能自由贸易账户）",
-      "report_reason": "飞科已有海外销售、采购和跨境运营信号；三亚主体形成真实跨境贸易、投融资或结算需求并通过银行真实性、反洗钱审查后，可使用EF账户办理跨境资金收付与账户管理。",
+      "report_reason": "示例企业已有海外销售、采购和跨境运营信号；三亚主体形成真实跨境贸易、投融资或结算需求并通过银行真实性、反洗钱审查后，可使用EF账户办理跨境资金收付与账户管理。",
       "report_business": "海外销售、采购、投融资及跨境资金结算",
       "report_value": "三亚主体可开立EF账户，用于跨境贸易、投融资和资金结算的便利化管理；该项为账户与资金便利，不是税收减免。",
       "report_conditions": "存在真实跨境贸易、投资或资金结算需求，并通过经办银行尽调、反洗钱和真实性审核。",
@@ -720,13 +1024,13 @@
       "landing_action": "形成货物始终未实际进出我国关境的非居民间离岸转手买卖。",
       "plain_language": "海南主体开展符合定义的离岸转手买卖并书立买卖合同，可免征印花税。",
       "policy_value": "对符合定义的离岸转手买卖合同免征印花税。",
-      "match_logic": "飞科存在海外渠道和供应链管理基础，但尚未证明形成离岸转手买卖。",
+      "match_logic": "示例企业存在海外渠道和供应链管理基础，但尚未证明形成离岸转手买卖。",
       "conditions": "买卖双方为非居民企业，货物始终未实际进出我国关境。",
       "handling_route": "按印花税申报管理要求留存合同、交易对手和货物流向证明。",
       "judgment": "条件型政策机会",
       "source_id": "P07",
       "report_title": "离岸贸易印花税优惠",
-      "report_reason": "飞科具有海外渠道和供应链管理基础；如三亚主体从非居民企业购货后转售给另一非居民企业，且货物始终不实际进出我国关境，相关买卖合同可免征印花税。",
+      "report_reason": "示例企业具有海外渠道和供应链管理基础；如三亚主体从非居民企业购货后转售给另一非居民企业，且货物始终不实际进出我国关境，相关买卖合同可免征印花税。",
       "report_business": "境外采购、境外销售及贸易合同结算",
       "report_value": "符合离岸转手买卖定义的合同，可免征印花税。",
       "report_conditions": "买卖双方均为非居民企业，货物始终未实际进出我国关境。",
@@ -749,13 +1053,13 @@
       "landing_action": "由三亚主体形成明确境外投资项目、决策、资金来源和投后管理安排。",
       "plain_language": "三亚主体实施境外设立、并购或增资时，可按项目情况办理ODI备案及银行外汇登记。",
       "policy_value": "明确境外投资的合规办理路径和资金汇出前置手续；该项不是财政补贴。",
-      "match_logic": "飞科已披露海外市场拓展与投资运营方向。",
+      "match_logic": "示例企业已披露海外市场拓展与投资运营方向。",
       "conditions": "存在真实境外投资项目，并完成发改、商务及外汇等适用手续。",
       "handling_route": "向发展改革、商务主管部门办理核准或备案，并按外汇规定在银行办理境外直接投资外汇登记。",
       "judgment": "条件型政策机会",
       "source_id": "P08",
       "report_title": "ODI境外投资备案与外汇登记",
-      "report_reason": "飞科已形成海外市场拓展和投资运营方向；如由三亚主体新设、并购或增资境外企业，可在项目、决策和资金来源明确后办理ODI备案及外汇登记，将境外投资管理职能落在三亚。"
+      "report_reason": "示例企业已形成海外市场拓展和投资运营方向；如由三亚主体新设、并购或增资境外企业，可在项目、决策和资金来源明确后办理ODI备案及外汇登记，将境外投资管理职能落在三亚。"
     },
     {
       "name": "海南自由贸易港新增境外直接投资所得企业所得税优惠",
@@ -773,13 +1077,13 @@
       "landing_action": "由三亚主体实施新增境外投资，并形成符合条件的境外分支机构营业利润或境外子公司股息所得。",
       "plain_language": "符合产业和投资所得条件的三亚主体，其新增境外直接投资取得的特定所得可免征企业所得税。",
       "policy_value": "对符合条件的新增境外直接投资所得免征企业所得税。",
-      "match_logic": "飞科已有海外市场和投资运营方向，可进一步从三亚实施新增境外投资。",
+      "match_logic": "示例企业已有海外市场和投资运营方向，可进一步从三亚实施新增境外投资。",
       "conditions": "符合旅游业、现代服务业或高新技术产业范围；所得来自新设境外分支机构营业利润，或持股20%以上境外子公司分回的相应股息；被投资国法定企业所得税率不低于5%。",
       "handling_route": "在企业所得税申报中按规定享受并留存新增投资、境外所得、持股比例和被投国税率等资料。",
       "judgment": "条件型政策机会",
       "source_id": "P12",
       "report_title": "新增境外直接投资所得企业所得税免征",
-      "report_reason": "飞科已有海外市场拓展和投资运营方向；如三亚主体属于旅游业、现代服务业或高新技术产业，并取得符合持股、所得类型和被投国税率条件的新增境外直接投资所得，该部分所得可免征企业所得税。"
+      "report_reason": "示例企业已有海外市场拓展和投资运营方向；如三亚主体属于旅游业、现代服务业或高新技术产业，并取得符合持股、所得类型和被投国税率条件的新增境外直接投资所得，该部分所得可免征企业所得税。"
     },
     {
       "name": "海南跨国公司本外币一体化资金池业务",
@@ -797,31 +1101,31 @@
       "landing_action": "在三亚设立主办企业并纳入符合条件的境内外成员企业。",
       "plain_language": "符合条件的跨国公司可由海南主办企业集中管理境内外本外币资金并办理集中收付。",
       "policy_value": "提高境内外资金归集、余缺调剂、集中收付和跨境资金运营效率。",
-      "match_logic": "飞科已开展海外市场拓展，未来形成境内外成员企业体系后可研判资金池。",
+      "match_logic": "示例企业已开展海外市场拓展，未来形成境内外成员企业体系后可研判资金池。",
       "conditions": "集团成员关系、主办企业、营业收入、跨境收支及所有者权益等条件须满足备案规定。",
       "handling_route": "由三亚主办企业选择合作银行并向国家外汇管理局海南省分局办理备案。",
       "judgment": "条件型政策机会",
       "source_id": "P13",
       "report_title": "跨国公司本外币一体化资金池",
-      "report_reason": "飞科已形成海外市场拓展方向；如后续建立符合门槛的境内外成员企业体系，并以三亚主体作为主办企业，可集中开展境内外本外币资金归集、余缺调剂和经常项目集中收付。"
+      "report_reason": "示例企业已形成海外市场拓展方向；如后续建立符合门槛的境内外成员企业体系，并以三亚主体作为主办企业，可集中开展境内外本外币资金归集、余缺调剂和经常项目集中收付。"
     }
   ],
-  "comprehensive_assessment": "飞科电器具备上市公司主体、品牌渠道和现金创造能力，适合以区域总部、数字营销、贸易结算和海外运营支持功能在三亚中央商务区推进。项目现实性取决于管理人员、合同、收入、利润和跨境结算是否真实进入三亚主体；制造产线不作为本轮迁入假设。",
+  "comprehensive_assessment": "示例测试企业具备上市公司主体、品牌渠道和现金创造能力，适合以区域总部、数字营销、贸易结算和海外运营支持功能在三亚中央商务区推进。项目现实性取决于管理人员、合同、收入、利润和跨境结算是否真实进入三亚主体；制造产线不作为本轮迁入假设。",
   "sources": [
     {
       "id": "E01",
       "type": "企业信息",
-      "name": "上海飞科电器股份有限公司2025年年度报告",
-      "issuer": "上海飞科电器股份有限公司／上交所法定披露",
+      "name": "示例测试企业股份有限公司2025年年度报告",
+      "issuer": "示例测试企业股份有限公司／上交所法定披露",
       "date": "2026-04-29",
-      "location": "https://static.sse.com.cn/disclosure/listedinfo/announcement/c/new/2026-04-29/603868_20260429_HKU6.pdf",
+      "location": "https://static.sse.com.cn/disclosure/listedinfo/announcement/c/new/2026-04-29/000000_20260429_HKU6.pdf",
       "used_in": "第一、四、六部分"
     },
     {
       "id": "E02",
       "type": "企业信息",
-      "name": "飞科电器2024年度暨2025年第一季度业绩说明会",
-      "issuer": "上海飞科电器股份有限公司／上海证券报·中国证券网",
+      "name": "示例测试企业2024年度暨2025年第一季度业绩说明会",
+      "issuer": "示例测试企业股份有限公司／上海证券报·中国证券网",
       "date": "2025-05-20",
       "location": "https://roadshow.cnstock.com/fbh/fkdq2024",
       "used_in": "第一部分企业概况"
@@ -865,8 +1169,8 @@
     {
       "id": "E07",
       "type": "企业信息",
-      "name": "上海飞科电器股份有限公司首次公开发行股票招股说明书",
-      "issuer": "上海飞科电器股份有限公司／法定披露",
+      "name": "示例测试企业股份有限公司首次公开发行股票招股说明书",
+      "issuer": "示例测试企业股份有限公司／法定披露",
       "date": "2016-04-01",
       "location": "https://static.cninfo.com.cn/finalpage/2016-04-01/1202124026.PDF",
       "used_in": "第一部分产业链中游竞争格局"
@@ -874,8 +1178,8 @@
     {
       "id": "F01",
       "type": "财务数据",
-      "name": "上海飞科电器股份有限公司2025年年度报告",
-      "issuer": "上海飞科电器股份有限公司／上交所法定披露",
+      "name": "示例测试企业股份有限公司2025年年度报告",
+      "issuer": "示例测试企业股份有限公司／上交所法定披露",
       "date": "2026-04-29",
       "location": "同E01，近三年主要会计数据及财务报表附注",
       "used_in": "第二部分"
@@ -883,8 +1187,8 @@
     {
       "id": "F02",
       "type": "财务数据",
-      "name": "上海飞科电器股份有限公司2024年年度报告",
-      "issuer": "上海飞科电器股份有限公司／上交所法定披露",
+      "name": "示例测试企业股份有限公司2024年年度报告",
+      "issuer": "示例测试企业股份有限公司／上交所法定披露",
       "date": "2025-04-30",
       "location": "https://static.cninfo.com.cn/finalpage/2025-04-30/1223423209.PDF",
       "used_in": "第二部分"
@@ -892,8 +1196,8 @@
     {
       "id": "R01",
       "type": "风险与监管",
-      "name": "上海飞科电器股份有限公司2025年年度报告",
-      "issuer": "上海飞科电器股份有限公司／上交所法定披露",
+      "name": "示例测试企业股份有限公司2025年年度报告",
+      "issuer": "示例测试企业股份有限公司／上交所法定披露",
       "date": "2026-04-29",
       "location": "同E01，重大诉讼、仲裁及风险因素",
       "used_in": "第三部分"

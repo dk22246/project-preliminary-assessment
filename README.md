@@ -4,7 +4,7 @@
 
 ## 安装
 
-完整克隆或下载本仓库到 Agent 的 Skill 目录，保持目录名为 `project-preliminary-assessment`。不要只复制 `SKILL.md`，也不要复制 `examples` 作为企业项目。
+完整克隆或下载本仓库到 Agent 的 Skill 目录，保持目录名为 `project-preliminary-assessment`。不要只复制 `SKILL.md`。仓库不提供可直接渲染的真实企业示例；维护测试夹具仅位于 `tests/fixtures`，公开渲染入口会拒绝夹具数据，不能将其作为企业项目或交付报告。
 
 首次安装或依赖变化后，在仓库根目录运行一次（仅安装依赖并验证浏览器，不跑完整发布测试）：
 

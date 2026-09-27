@@ -12,7 +12,7 @@
     "max_concurrency": 4,
     "per_host_concurrency": 1
   },
-  "fingerprint_roots": ["agents", "examples", "references", "schemas", "scripts", "tests"],
+  "fingerprint_roots": ["agents", "references", "schemas", "scripts", "tests"],
   "fingerprint_files": [
     "SKILL.md",
     "AGENTS.md",

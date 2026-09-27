@@ -9,7 +9,7 @@ from docx import Document
 from docx.enum.text import WD_BREAK
 from docx.shared import Cm
 
-from report_core import financial_change_notes, financial_headers, load_data, validate_report_data, validate_text
+from report_core import financial_change_notes, financial_headers, load_data, require_fixture_authorization, validate_report_data, validate_text
 from word_report_builder import add_body, add_cover_line, add_heading, add_native_toc_with_cache, add_standard_table, configure_report_document, try_update_fields_with_word
 
 
@@ -143,8 +143,13 @@ def main() -> int:
     parser.add_argument("report_data")
     parser.add_argument("--out", required=True)
     parser.add_argument("--equity-image")
+    parser.add_argument("--fixture-mode", action="store_true", help=argparse.SUPPRESS)
     args = parser.parse_args()
     data = load_data(args.report_data)
+    try:
+        fixture_only = require_fixture_authorization(data, allow_fixture=args.fixture_mode)
+    except ValueError as error:
+        raise SystemExit(str(error)) from error
     errors = validate_report_data(data) + validate_text(data)
     if errors:
         raise SystemExit("\n".join(errors))
@@ -154,6 +159,8 @@ def main() -> int:
         raise SystemExit("有股权关系时缺少股权图 PNG，Word 不得用文本框替代图形")
     doc = Document()
     configure_report_document(doc, data["meta"].get("report_short_name", "招商项目整体落地研判报告"))
+    if fixture_only:
+        add_cover_line(doc, "【自动化测试夹具 · 禁止交付】")
     add_cover_line(doc, data["meta"]["report_title"], title=True)
     add_cover_line(doc, f"编制单位：{data['meta'].get('unit', '三亚中央商务区招商研判组')}")
     add_cover_line(doc, f"编制日期：{data['meta']['generated_at']}")

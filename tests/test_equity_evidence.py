@@ -15,7 +15,7 @@ sys.path.insert(0, str(ROOT / "scripts"))
 from report_core import validate_report_data
 
 
-REPORT = json.loads((ROOT / "examples" / "flyco-report-data.json").read_text(encoding="utf-8"))
+REPORT = json.loads((ROOT / "tests" / "fixtures" / "release" / "synthetic-report-data.json").read_text(encoding="utf-8"))
 
 
 def evidence_ledger():
@@ -23,7 +23,7 @@ def evidence_ledger():
         "schema_version": "1.0",
         "subject": {
             "legal_entity": REPORT["entity_resolution"]["legal_entity"],
-            "unified_social_credit_code": "91310000735470911B",
+            "unified_social_credit_code": "91100000000000000X",
         },
         "provider_attempts": [
             {"provider": "qcc_web", "status": "success", "queried_at": "2026-08-02T12:00:00+08:00"},
@@ -86,7 +86,7 @@ def sync_summary(ledger, report):
 
 
 def write_web_artifact_chain(directory, ledger, *, corrupt_hash=False, mutate_capture=None):
-    capture = json.loads((ROOT / "examples" / "equity-web-capture-valid.json").read_text(encoding="utf-8"))
+    capture = json.loads((ROOT / "tests" / "fixtures" / "equity-web-capture-valid.json").read_text(encoding="utf-8"))
     if mutate_capture:
         mutate_capture(capture)
     capture_path = directory / "qcc_web-capture.json"
@@ -248,7 +248,7 @@ class EquityEvidenceTests(unittest.TestCase):
             html_path = Path(directory) / "report.html"
             report_path.write_text(json.dumps(report, ensure_ascii=False), encoding="utf-8")
             result = subprocess.run(
-                [sys.executable, "-X", "utf8", str(ROOT / "scripts" / "render_report_html.py"), str(report_path), "--out", str(html_path)],
+                [sys.executable, "-X", "utf8", str(ROOT / "scripts" / "render_report_html.py"), str(report_path), "--out", str(html_path), "--fixture-mode"],
                 cwd=ROOT, capture_output=True, text=True, encoding="utf-8", errors="replace", check=False,
             )
             self.assertEqual(result.returncode, 0, result.stderr)
@@ -323,7 +323,7 @@ class EquityEvidenceTests(unittest.TestCase):
             html_path = Path(directory) / "report.html"
             report_path.write_text(json.dumps(report, ensure_ascii=False), encoding="utf-8")
             result = subprocess.run(
-                [sys.executable, "-X", "utf8", str(ROOT / "scripts" / "render_report_html.py"), str(report_path), "--out", str(html_path)],
+                [sys.executable, "-X", "utf8", str(ROOT / "scripts" / "render_report_html.py"), str(report_path), "--out", str(html_path), "--fixture-mode"],
                 cwd=ROOT,
                 capture_output=True,
                 text=True,

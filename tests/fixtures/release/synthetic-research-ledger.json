@@ -1,0 +1,266 @@
+{
+  "fixture_metadata": {
+    "fixture_only": true,
+    "fixture_name": "synthetic-release-test",
+    "fixture_notice": "自动化测试夹具，禁止作为企业报告交付"
+  },
+  "enterprise": "示例测试企业股份有限公司",
+  "enterprise_profile": {
+    "analysis_entity": "示例测试企业股份有限公司",
+    "listing_status": "listed",
+    "research_route": "listed_disclosure",
+    "basis_source_ids": [
+      "E01"
+    ]
+  },
+  "research_stop_gate": {
+    "source_channels": {
+      "exchange_disclosure": {
+        "status": "completed",
+        "source_ids": [
+          "E01"
+        ]
+      },
+      "company_official": {
+        "status": "completed",
+        "source_ids": [
+          "E01"
+        ]
+      },
+      "government_regulatory": {
+        "status": "completed",
+        "source_ids": [
+          "R02"
+        ]
+      }
+    },
+    "required_topics": {
+      "entity": {
+        "status": "completed",
+        "source_ids": [
+          "E01"
+        ]
+      },
+      "core_business": {
+        "status": "completed",
+        "source_ids": [
+          "E01"
+        ]
+      },
+      "industry_position": {
+        "status": "completed",
+        "source_ids": [
+          "E01"
+        ]
+      },
+      "domestic_overseas": {
+        "status": "completed",
+        "source_ids": [
+          "E01"
+        ]
+      },
+      "three_year_financials": {
+        "status": "completed",
+        "source_ids": [
+          "E01"
+        ]
+      },
+      "equity": {
+        "status": "completed",
+        "source_ids": [
+          "E01"
+        ]
+      },
+      "risk": {
+        "status": "completed",
+        "source_ids": [
+          "E01"
+        ]
+      }
+    },
+    "discovery_rounds": [
+      {
+        "round": 1,
+        "high_value_candidate_ids": [
+          "BC01",
+          "BC02",
+          "BC03",
+          "BC04"
+        ]
+      }
+    ]
+  },
+  "fact_ledger": [
+    {
+      "id": "FA01",
+      "source_id": "E01",
+      "action": "管理",
+      "object": "品牌与区域经营",
+      "enterprise_role": "运营者",
+      "confidence": "high"
+    },
+    {
+      "id": "FA02",
+      "source_id": "E01",
+      "action": "运营",
+      "object": "自营电商",
+      "enterprise_role": "运营者",
+      "confidence": "high"
+    },
+    {
+      "id": "FA03",
+      "source_id": "E01",
+      "action": "结算",
+      "object": "供应链贸易",
+      "enterprise_role": "运营者",
+      "confidence": "high"
+    },
+    {
+      "id": "FA04",
+      "source_id": "E01",
+      "action": "投资",
+      "object": "海外市场",
+      "enterprise_role": "管理者",
+      "confidence": "high"
+    }
+  ],
+  "business_candidates": [
+    {
+      "id": "BC01",
+      "name": "总部与品牌运营",
+      "fact_ids": [
+        "FA01"
+      ],
+      "disposition": "include",
+      "disposition_target": "L01",
+      "disposition_reason": "可由三亚主体承接"
+    },
+    {
+      "id": "BC02",
+      "name": "自营电商与数字营销",
+      "fact_ids": [
+        "FA02"
+      ],
+      "disposition": "include",
+      "disposition_target": "L02",
+      "disposition_reason": "可由三亚主体承接"
+    },
+    {
+      "id": "BC03",
+      "name": "供应链贸易与结算",
+      "fact_ids": [
+        "FA03"
+      ],
+      "disposition": "include",
+      "disposition_target": "L03",
+      "disposition_reason": "可由三亚主体承接"
+    },
+    {
+      "id": "BC04",
+      "name": "海外投资运营支持",
+      "fact_ids": [
+        "FA04"
+      ],
+      "disposition": "include",
+      "disposition_target": "L04",
+      "disposition_reason": "可由三亚主体承接"
+    }
+  ],
+  "department_routes": [
+    {
+      "id": "DR01",
+      "landing_business_id": "L01",
+      "candidate_ids": [
+        "BC01"
+      ],
+      "matter": "总部及经营管理",
+      "route_rule_id": "headquarters_management",
+      "department": "三亚市投资促进局",
+      "route_type": "matched_static_rule",
+      "status": "matched_static_rule"
+    },
+    {
+      "id": "DR02",
+      "landing_business_id": "L02",
+      "candidate_ids": [
+        "BC02"
+      ],
+      "matter": "数字商业运营",
+      "route_rule_id": "digital_commerce_operation",
+      "department": "海南省商务厅",
+      "route_type": "matched_static_rule",
+      "status": "matched_static_rule"
+    },
+    {
+      "id": "DR03",
+      "landing_business_id": "L03",
+      "candidate_ids": [
+        "BC03"
+      ],
+      "matter": "跨境贸易与结算",
+      "route_rule_id": "cross_border_trade",
+      "department": "中国人民银行海南省分行",
+      "route_type": "matched_static_rule",
+      "status": "matched_static_rule"
+    },
+    {
+      "id": "DR04",
+      "landing_business_id": "L04",
+      "candidate_ids": [
+        "BC04"
+      ],
+      "matter": "境外投资管理",
+      "route_rule_id": "overseas_investment",
+      "department": "海南省商务厅",
+      "route_type": "matched_static_rule",
+      "status": "matched_static_rule"
+    }
+  ],
+  "policy_candidates": [
+    {
+      "id": "PC01",
+      "route_id": "DR01",
+      "policy_name": "税收与人才政策",
+      "status": "current_conditional",
+      "disposition": "include",
+      "formal_policy_source_ids": [
+        "P01",
+        "P03",
+        "P04"
+      ]
+    },
+    {
+      "id": "PC02",
+      "route_id": "DR02",
+      "policy_name": "数字商业税收政策",
+      "status": "current_conditional",
+      "disposition": "include",
+      "formal_policy_source_ids": [
+        "P01"
+      ]
+    },
+    {
+      "id": "PC03",
+      "route_id": "DR03",
+      "policy_name": "跨境资金与贸易便利",
+      "status": "current_conditional",
+      "disposition": "include",
+      "formal_policy_source_ids": [
+        "P06",
+        "P07"
+      ]
+    },
+    {
+      "id": "PC04",
+      "route_id": "DR04",
+      "policy_name": "境外投资备案、境外所得税收及跨境资金池",
+      "status": "current_conditional",
+      "disposition": "include",
+      "formal_policy_source_ids": [
+        "P08",
+        "P12",
+        "P13"
+      ]
+    }
+  ]
+}

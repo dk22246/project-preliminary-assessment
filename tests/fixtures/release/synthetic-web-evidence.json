@@ -13,7 +13,7 @@
       "fetched_at": "2026-07-30T00:00:00+00:00",
       "http_status": 200,
       "extraction_status": "success",
-      "content_path": "evidence-sample/official-policy.md",
+      "content_path": "official-policy.md",
       "content_sha256": "00359aaaff5cef59f2872e5b267e16531640353881943623a960fe5f8b4a5aa1",
       "attachments": [],
       "error": ""

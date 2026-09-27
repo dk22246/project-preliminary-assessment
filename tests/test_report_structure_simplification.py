@@ -13,7 +13,7 @@ sys.path.insert(0, str(ROOT / "scripts"))
 from report_core import validate_report_data
 
 
-REPORT = json.loads((ROOT / "examples" / "flyco-report-data.json").read_text(encoding="utf-8"))
+REPORT = json.loads((ROOT / "tests" / "fixtures" / "release" / "synthetic-report-data.json").read_text(encoding="utf-8"))
 
 
 class ReportStructureSimplificationTests(unittest.TestCase):
@@ -26,9 +26,10 @@ class ReportStructureSimplificationTests(unittest.TestCase):
                     "-X",
                     "utf8",
                     str(ROOT / "scripts" / "render_report_html.py"),
-                    str(ROOT / "examples" / "flyco-report-data.json"),
+                    str(ROOT / "tests" / "fixtures" / "release" / "synthetic-report-data.json"),
                     "--out",
                     str(output),
+                    "--fixture-mode",
                 ],
                 text=True,
                 capture_output=True,

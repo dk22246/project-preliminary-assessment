@@ -5,7 +5,7 @@ import argparse
 from html import escape
 from pathlib import Path
 
-from report_core import equity_svg, financial_change_notes, financial_headers, load_data, validate_report_data, validate_text
+from report_core import equity_svg, financial_change_notes, financial_headers, load_data, require_fixture_authorization, validate_report_data, validate_text
 
 
 CSS = r'''
@@ -291,8 +291,13 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("report_data")
     parser.add_argument("--out", required=True)
+    parser.add_argument("--fixture-mode", action="store_true", help=argparse.SUPPRESS)
     args = parser.parse_args()
     data = load_data(args.report_data)
+    try:
+        fixture_only = require_fixture_authorization(data, allow_fixture=args.fixture_mode)
+    except ValueError as error:
+        raise SystemExit(str(error)) from error
     errors = validate_report_data(data) + validate_text(data)
     if errors:
         raise SystemExit("\n".join(errors))
@@ -338,9 +343,11 @@ def main() -> int:
     sections.append(section("七、参考资料", source_table(visible_sources)))
     toc_html = "".join(f'<a href="#s{anchor}"><span class="toc-index">{anchor}</span><span>{escape(title.split("、", 1)[1])}</span><span class="toc-arrow">→</span></a>' for title, anchor in toc)
     toc_html += '<a href="#industry-chain"><span class="toc-index">一-6</span><span>产业链上下游</span><span class="toc-arrow">→</span></a>'
-    cover = '<section class="cover"><div class="cover-inner"><p class="cover-kicker">三亚中央商务区 · 招商前期研判</p><h1>' + escape(data["meta"]["report_title"]) + '</h1><div class="cover-meta"><p><strong>编制单位：</strong>' + escape(data["meta"].get("unit", "三亚中央商务区招商研判组")) + '</p><p><strong>报告性质：</strong>内部招商前期研判</p><p><strong>编制日期：</strong>' + escape(data["meta"]["generated_at"]) + '</p></div><span class="cover-stamp">内部使用</span></div></section>'
+    fixture_label = "自动化测试夹具 · 禁止交付" if fixture_only else "内部使用"
+    cover = '<section class="cover"><div class="cover-inner"><p class="cover-kicker">三亚中央商务区 · 招商前期研判</p><h1>' + escape(data["meta"]["report_title"]) + '</h1><div class="cover-meta"><p><strong>编制单位：</strong>' + escape(data["meta"].get("unit", "三亚中央商务区招商研判组")) + '</p><p><strong>报告性质：</strong>' + escape(fixture_label if fixture_only else "内部招商前期研判") + '</p><p><strong>编制日期：</strong>' + escape(data["meta"]["generated_at"]) + '</p></div><span class="cover-stamp">' + escape(fixture_label) + '</span></div></section>'
     toc_block = '<nav class="toc" aria-label="报告目录"><p class="cover-kicker">报告目录</p><h1>目录</h1><p class="toc-intro">点击章节名称可跳转至对应内容。</p><div class="toc-grid">' + toc_html + "</div></nav>"
-    html = '<!doctype html><html lang="zh-CN" class="template-' + template + '"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>' + escape(data["meta"]["report_title"]) + "</title><style>" + CSS + "</style></head><body><main>" + cover + toc_block + "".join(sections) + "</main></body></html>"
+    fixture_attribute = ' data-fixture-only="true"' if fixture_only else ""
+    html = '<!doctype html><html lang="zh-CN" class="template-' + template + '"' + fixture_attribute + '><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>' + escape(data["meta"]["report_title"]) + "</title><style>" + CSS + "</style></head><body><main>" + cover + toc_block + "".join(sections) + "</main></body></html>"
     Path(args.out).write_text(html, encoding="utf-8")
     print(args.out)
     return 0

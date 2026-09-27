@@ -13,11 +13,11 @@ sys.path.insert(0, str(ROOT / "scripts"))
 from report_core import validate_report_data
 
 
-FLYCO = json.loads((ROOT / "examples" / "flyco-report-data.json").read_text(encoding="utf-8"))
+FIXTURE = json.loads((ROOT / "tests" / "fixtures" / "release" / "synthetic-report-data.json").read_text(encoding="utf-8"))
 
 
 def usd_data():
-    data = copy.deepcopy(FLYCO)
+    data = copy.deepcopy(FIXTURE)
     data["meta"].update({"financial_currency": "USD", "financial_unit": "亿美元"})
     for row in data["financials"]:
         row["revenue"] = str(row["revenue"]).replace("亿元", "")
@@ -32,13 +32,13 @@ def usd_data():
 
 class FinancialRenderingTests(unittest.TestCase):
     def test_every_financial_row_requires_an_explicit_data_status(self):
-        data = copy.deepcopy(FLYCO)
+        data = copy.deepcopy(FIXTURE)
         data["financials"][0].pop("data_status", None)
         errors = validate_report_data(data)
         self.assertTrue(any("data_status" in error for error in errors), errors)
 
     def test_nonlisted_report_accepts_three_explicit_not_public_financial_rows(self):
-        data = copy.deepcopy(FLYCO)
+        data = copy.deepcopy(FIXTURE)
         data["enterprise_overview"]["listing_status"] = "非上市"
         for row in data["financials"]:
             row.update({
@@ -57,7 +57,7 @@ class FinancialRenderingTests(unittest.TestCase):
         self.assertFalse(any("财务行" in error for error in errors), errors)
 
     def test_unavailable_financial_row_requires_a_reason(self):
-        data = copy.deepcopy(FLYCO)
+        data = copy.deepcopy(FIXTURE)
         row = data["financials"][0]
         row.update({
             "data_status": "not_public",
@@ -71,7 +71,7 @@ class FinancialRenderingTests(unittest.TestCase):
         self.assertTrue(any("availability_note" in error for error in errors), errors)
 
     def test_html_displays_the_unavailable_financial_reason(self):
-        data = copy.deepcopy(FLYCO)
+        data = copy.deepcopy(FIXTURE)
         data["financials"][0].update({
             "data_status": "not_public",
             "revenue": "未公开披露",
@@ -85,7 +85,7 @@ class FinancialRenderingTests(unittest.TestCase):
             output = Path(directory) / "report.html"
             source.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
             result = subprocess.run(
-                [sys.executable, "-X", "utf8", str(ROOT / "scripts" / "render_report_html.py"), str(source), "--out", str(output)],
+                [sys.executable, "-X", "utf8", str(ROOT / "scripts" / "render_report_html.py"), str(source), "--out", str(output), "--fixture-mode"],
                 text=True,
                 capture_output=True,
             )
@@ -111,7 +111,7 @@ class FinancialRenderingTests(unittest.TestCase):
             output = directory / "report.html"
             source.write_text(json.dumps(usd_data(), ensure_ascii=False), encoding="utf-8")
             result = subprocess.run(
-                [sys.executable, "-X", "utf8", str(ROOT / "scripts" / "render_report_html.py"), str(source), "--out", str(output)],
+                [sys.executable, "-X", "utf8", str(ROOT / "scripts" / "render_report_html.py"), str(source), "--out", str(output), "--fixture-mode"],
                 text=True,
                 capture_output=True,
             )
@@ -140,7 +140,7 @@ class FinancialRenderingTests(unittest.TestCase):
                 output = directory / f"{label}.html"
                 source.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
                 result = subprocess.run(
-                    [sys.executable, "-X", "utf8", str(ROOT / "scripts" / "render_report_html.py"), str(source), "--out", str(output)],
+                    [sys.executable, "-X", "utf8", str(ROOT / "scripts" / "render_report_html.py"), str(source), "--out", str(output), "--fixture-mode"],
                     text=True,
                     capture_output=True,
                 )

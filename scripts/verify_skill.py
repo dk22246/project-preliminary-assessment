@@ -27,7 +27,7 @@ def commands(release: bool, smoke: bool, out_dir: str | None) -> list[tuple[str,
 def main() -> int:
     parser = argparse.ArgumentParser(description="Run fast checks or the maintainer release gate with Python only.")
     parser.add_argument("--release", action="store_true", help="run packaging preflight and the complete offline test suite")
-    parser.add_argument("--smoke", action="store_true", help="release gate plus the Flyco HTML sample")
+    parser.add_argument("--smoke", action="store_true", help="release gate plus the synthetic fixture HTML")
     parser.add_argument("--out-dir", help="optional preflight smoke output directory")
     args = parser.parse_args()
     env = dict(os.environ)

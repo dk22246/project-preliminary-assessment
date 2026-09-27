@@ -20,7 +20,7 @@ class ReportPipelinePolicyEvidenceTests(unittest.TestCase):
         command = preflight.smoke_arguments(Path("out"), Path("node.exe"))
         self.assertIn("--fixture-mode", command)
         index = command.index("--policy-evidence")
-        self.assertTrue(str(command[index + 1]).endswith("flyco-policy-evidence.json"))
+        self.assertTrue(str(command[index + 1]).endswith("synthetic-policy-evidence.json"))
 
     def test_formal_pipeline_requires_policy_evidence_argument(self):
         from run_report_pipeline import main

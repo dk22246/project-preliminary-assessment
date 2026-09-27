@@ -14,7 +14,7 @@ from render_report_html import policy_match_table
 from runtime_state import capability_errors
 
 
-REPORT = json.loads((ROOT / "examples" / "flyco-report-data.json").read_text(encoding="utf-8"))
+REPORT = json.loads((ROOT / "tests" / "fixtures" / "release" / "synthetic-report-data.json").read_text(encoding="utf-8"))
 
 
 class PortablePolicyRadarContractTests(unittest.TestCase):

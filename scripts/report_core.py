@@ -67,6 +67,14 @@ def load_data(path: str | Path) -> dict:
     return json.loads(Path(path).read_text(encoding="utf-8-sig"))
 
 
+def require_fixture_authorization(data: dict, *, allow_fixture: bool = False) -> bool:
+    """Reject release-test data at every public report renderer."""
+    fixture_only = bool(data.get("fixture_metadata", {}).get("fixture_only"))
+    if fixture_only and not allow_fixture:
+        raise ValueError("fixture测试底稿禁止通过公开渲染入口生成或交付报告")
+    return fixture_only
+
+
 def load_ranking_registry(path: str | Path | None = None) -> dict[str, dict]:
     """Load the current ranking contract from data, failing closed on drift."""
     registry_path = Path(path or os.environ.get("REPORT_RANKING_REGISTRY") or Path(__file__).parents[1] / "references" / "ranking-registry.json")

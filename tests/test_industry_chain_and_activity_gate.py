@@ -18,7 +18,7 @@ import render_report_word
 class IndustryChainAndActivityGateTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.data = json.loads((ROOT / "examples" / "flyco-report-data.json").read_text(encoding="utf-8-sig"))
+        cls.data = json.loads((ROOT / "tests" / "fixtures" / "release" / "synthetic-report-data.json").read_text(encoding="utf-8-sig"))
         catalog = json.loads((ROOT / "references" / "catalogs" / "complete-industry-catalog-library.json").read_text(encoding="utf-8-sig"))
         cls.catalog = {item["id"]: item for item in catalog["entries"]}
 
