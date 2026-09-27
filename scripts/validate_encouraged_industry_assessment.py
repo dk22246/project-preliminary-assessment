@@ -142,6 +142,30 @@ def validate_assessment(data: dict) -> list[str]:
                 errors.append(f"{business_id}: 明确符合必须包含direct条目")
     if overall in OVERALL and overall != _expected_overall(judgments):
         errors.append("目录总体判断与逐业务判断不一致")
+    conflict_check = assessment.get("conflict_check")
+    if conflict_check is not None:
+        if not isinstance(conflict_check, dict):
+            errors.append("conflict_check必须为对象")
+        else:
+            cc_status = _text(conflict_check.get("status"))
+            if cc_status not in {"cleared", "flagged"}:
+                errors.append("conflict_check.status只能为cleared或flagged")
+            cc_items = conflict_check.get("items", [])
+            if cc_status == "flagged":
+                if not isinstance(cc_items, list) or not cc_items:
+                    errors.append("conflict_check为flagged时必须列出命中的限制类/淘汰类条目")
+                else:
+                    for index, item in enumerate(cc_items, 1):
+                        if not isinstance(item, dict):
+                            errors.append(f"conflict_check.items[{index}]必须为对象")
+                            continue
+                        if _text(item.get("policy_category")) not in {"restricted", "eliminated"}:
+                            errors.append(f"conflict_check.items[{index}]的policy_category只能为restricted或eliminated")
+                        for field in ("catalog_entry_id", "catalog_item", "related_business", "note"):
+                            if not _text(item.get(field)):
+                                errors.append(f"conflict_check.items[{index}]缺少{field}")
+            elif cc_items:
+                errors.append("conflict_check为cleared时items必须为空")
     payload = json.dumps(assessment, ensure_ascii=False)
     for phrase in BANNED:
         if phrase in payload:

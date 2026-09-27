@@ -177,7 +177,24 @@ def encouraged_industry_table(assessment: dict) -> str:
             verification,
         ])
     summary = '<p class="catalog-summary"><strong>总体判断：</strong>' + escape(str(assessment.get("summary", "未说明"))) + '</p>'
-    return summary + report_table(
+    conflict_html = ""
+    conflict_check = assessment.get("conflict_check")
+    if isinstance(conflict_check, dict) and conflict_check.get("status") == "flagged":
+        conflict_rows = []
+        for item in conflict_check.get("items", []):
+            conflict_rows.append([
+                {"restricted": "限制类", "eliminated": "淘汰类"}.get(str(item.get("policy_category")), "—"),
+                str(item.get("catalog_item", "未注明条目")),
+                str(item.get("related_business", "未注明业务")),
+                str(item.get("note", "未说明")),
+            ])
+        if conflict_rows:
+            conflict_html = (
+                '<h4 class="catalog-conflict-heading">限制类/淘汰类风险提示</h4>'
+                '<p class="catalog-conflict-note">以下为企业主营业务命中的产业结构调整限制类、淘汰类条目，仅作风险提示或排除依据，不作正向鼓励类匹配。</p>'
+                + report_table(["类别", "命中条目", "关联业务", "说明"], conflict_rows, "wide catalog-table", [10, 36, 12, 42])
+            )
+    return summary + conflict_html + report_table(
         ["企业具体经营活动", "匹配结论", "对应目录条目", "判断依据", "相近可能或待核事项"],
         rows,
         "wide catalog-table",
