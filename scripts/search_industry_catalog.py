@@ -75,11 +75,11 @@ def activity_is_compatible(entry: dict, activity_type: str) -> bool:
 def _rank(entries: list[dict], exact_terms: list[str], expanded_terms: list[str], limit: int) -> list[dict]:
     scored: list[tuple[int, dict, list[str], list[str]]] = []
     for entry in entries:
-        haystack = _haystack(entry).lower()
         title = str(entry.get("item_title", "")).lower()
         detail_titles = " ".join(str(item.get("detail_title", "")) for item in entry.get("detail_entries", [])).lower()
-        exact_hits = [term for term in exact_terms if term and term in haystack]
-        expanded_hits = [term for term in expanded_terms if term and term in haystack]
+        title_haystack = " ".join(str(entry.get(key, "")) for key in ("section", "subsection", "item_title", "region")).lower() + " " + detail_titles
+        exact_hits = [term for term in exact_terms if term and term in title_haystack]
+        expanded_hits = [term for term in expanded_terms if term and term in title_haystack]
         if not exact_hits and not expanded_hits:
             continue
         exact_score = sum(16 if term == title else 10 if term in title else 6 if term in detail_titles else 2 for term in exact_hits)
