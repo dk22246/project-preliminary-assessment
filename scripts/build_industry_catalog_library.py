@@ -103,6 +103,22 @@ def build_library(workbook_path: Path) -> dict:
             "source_row": _number(row[5]),
         })
 
+    struct_details: dict[tuple, list[dict]] = {}
+    for row_number, row in enumerate(sheets.get("产业结构界定指引", [])[1:], start=2):
+        key = (_text(row[0]), _number(row[1]))
+        struct_details.setdefault(key, []).append({
+            "detail_title": _text(row[3]),
+            "definition": _text(row[4]),
+        })
+
+    foreign_nat_details: dict[int, list[dict]] = {}
+    for row_number, row in enumerate(sheets.get("外商投资全国界定指引", [])[1:], start=2):
+        item_no = _number(row[0])
+        foreign_nat_details.setdefault(item_no, []).append({
+            "detail_title": _text(row[2]),
+            "definition": _text(row[3]),
+        })
+
     entries: list[dict] = []
     domestic_positive: list[str] = []
     foreign_positive: list[str] = []
@@ -125,6 +141,8 @@ def build_library(workbook_path: Path) -> dict:
             "source_row": row_number,
             "source_url": _text(row[5]),
         }
+        if category == "encouraged":
+            entry["detail_entries"] = struct_details.get((_text(row[2]), _number(row[3])), [])
         entries.append(entry)
         (domestic_positive if category == "encouraged" else industrial_conflicts).append(entry_id)
 
@@ -159,6 +177,7 @@ def build_library(workbook_path: Path) -> dict:
             "item_no": item_no,
             "item_title": _text(row[4]),
             "region": "全国",
+            "detail_entries": foreign_nat_details.get(item_no, []),
             "source_sheet": "外商投资全国2025",
             "source_row": row_number,
             "source_url": _text(row[5]),
@@ -168,6 +187,8 @@ def build_library(workbook_path: Path) -> dict:
     hainan_regional_ids: list[str] = []
     for row_number, row in enumerate(sheets["外商投资地区2025"][1:], start=2):
         region = _text(row[1])
+        if region != "海南省":
+            continue
         item_no = _number(row[2])
         entry_id = f"foreign_investment_regional_2025:{region}:{item_no}"
         entries.append({
@@ -183,9 +204,8 @@ def build_library(workbook_path: Path) -> dict:
             "source_row": row_number,
             "source_url": _text(row[4]),
         })
-        if region == "海南省":
-            hainan_regional_ids.append(entry_id)
-            foreign_positive.append(entry_id)
+        hainan_regional_ids.append(entry_id)
+        foreign_positive.append(entry_id)
 
     hainan_view = [(_number(row[1]), _text(row[2])) for row in sheets["海南外资2025"][1:]]
     regional_view = [
@@ -204,7 +224,7 @@ def build_library(workbook_path: Path) -> dict:
             "eliminated": sum(item["policy_category"] == "eliminated" for item in entries),
         },
         "foreign_investment_national_2025": len(sheets["外商投资全国2025"]) - 1,
-        "foreign_investment_regional_2025": len(sheets["外商投资地区2025"]) - 1,
+        "foreign_investment_regional_2025": len(hainan_regional_ids),
         "foreign_investment_hainan_2025": len(hainan_regional_ids),
         "hainan_added_2024": len(sheets["海南新增2024"]) - 1,
         "hainan_added_guide_details": sum(len(value) for value in details_by_item.values()),

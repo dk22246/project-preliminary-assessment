@@ -179,6 +179,9 @@ def resolve_catalog_match(match: object) -> dict:
         resolved["detail_definition"] = detail.get("definition", "")
     elif "detail_index" in match:
         raise ValueError(f"{entry_id}没有detail_entries，不得填写detail_index")
+    else:
+        resolved["detailed_item"] = entry.get("item_title", "")
+        resolved["detail_definition"] = ""
     resolved["catalog_item_no"] = str(entry.get("item_no", ""))
     resolved["catalog_item"] = entry.get("item_title", "")
     resolved["catalog_scope"] = entry.get("catalog_scope", "")

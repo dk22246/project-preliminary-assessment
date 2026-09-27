@@ -37,7 +37,7 @@ class CompleteIndustryCatalogLibraryTests(unittest.TestCase):
             "eliminated": 422,
         })
         self.assertEqual(data["counts"]["foreign_investment_national_2025"], 619)
-        self.assertEqual(data["counts"]["foreign_investment_regional_2025"], 1060)
+        self.assertEqual(data["counts"]["foreign_investment_regional_2025"], 102)
         self.assertEqual(data["counts"]["foreign_investment_hainan_2025"], 102)
         self.assertEqual(data["counts"]["hainan_added_2024"], 176)
         self.assertEqual(data["counts"]["hainan_added_guide_details"], 352)

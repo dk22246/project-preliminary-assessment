@@ -15,7 +15,7 @@ DEFAULT_LIBRARY = ROOT / "references" / "catalogs" / "complete-industry-catalog-
 EXPECTED_COUNTS = {
     "industrial_restructuring_2024": {"total": 1005, "encouraged": 352, "restricted": 231, "eliminated": 422},
     "foreign_investment_national_2025": 619,
-    "foreign_investment_regional_2025": 1060,
+    "foreign_investment_regional_2025": 102,
     "foreign_investment_hainan_2025": 102,
     "hainan_added_2024": 176,
     "hainan_added_guide_details": 352,
