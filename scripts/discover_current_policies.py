@@ -43,7 +43,7 @@ def _timestamp() -> str:
     return datetime.now(timezone.utc).astimezone().isoformat()
 
 
-def _default_fetch(url: str, headers: dict[str, str], timeout: float = 20) -> dict:
+def _default_fetch(url: str, headers: dict[str, str], timeout: float = 10) -> dict:
     try:
         with urlopen(Request(url, headers=headers, method="GET"), timeout=timeout) as response:  # nosec B310
             if official_url(url) and not official_url(response.geturl()):
@@ -406,7 +406,7 @@ def discover_current_policies(
     max_concurrency: int = 4,
     max_retries: int = 2,
     sleep: Callable[[float], None] = default_sleep,
-    request_timeout: float = 20,
+    request_timeout: float = 10,
 ) -> dict:
     """Discover bounded same-host policy material with one fetch per URL per round."""
     out_dir = Path(out_dir)
@@ -418,7 +418,8 @@ def discover_current_policies(
     seen_entries = set()
     for task in tasks:
         if task["entry_url"] not in seen_entries:
-            entry_items.append({"url": task["entry_url"], "dynamic": False})
+            # 目录页是发现新政策的入口，必须本轮重新访问，不得跨轮复用缓存
+            entry_items.append({"url": task["entry_url"], "dynamic": True})
             seen_entries.add(task["entry_url"])
     entry_results = _fetch_batch(
         entry_items,

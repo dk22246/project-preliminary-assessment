@@ -58,11 +58,12 @@ class PolicyCache:
         dynamic: bool = False,
         revalidated_at: str,
     ) -> dict:
-        """Fetch once per run and return a receipt; cached content never fakes a new fetch."""
+        """Reuse a fresh (<24h) cached artifact across runs; dynamic material always re-fetches. Cached content never fakes a new fetch."""
         cached = self._read(url)
-        if cached and self.round_id and cached.get("round_id") == self.round_id:
+        if cached and not dynamic:
             try:
-                age = (datetime.fromisoformat(revalidated_at) - datetime.fromisoformat(cached["revalidated_at"])).total_seconds()
+                ref_time = cached.get("revalidated_at") or cached.get("retrieved_at")
+                age = (datetime.fromisoformat(revalidated_at) - datetime.fromisoformat(ref_time)).total_seconds()
             except (ValueError, KeyError, TypeError):
                 age = 86401
             if 0 <= age < 86400 and hashlib.sha256(cached["_artifact_path"].read_bytes()).hexdigest() == cached.get("artifact_sha256"):
@@ -92,10 +93,10 @@ class PolicyCache:
 
 
 def workspace_cache(out_dir: Path) -> PolicyCache:
-    """Share evidence only inside the actual run; preserve the original receipt time."""
+    """Reuse fresh (<24h) evidence artifacts across runs; preserve the original receipt time."""
     for parent in (Path(out_dir).resolve(), *Path(out_dir).resolve().parents):
         state_path = parent / "workflow-state.json"
         if state_path.is_file():
             state = json.loads(state_path.read_text(encoding="utf-8-sig"))
             return PolicyCache(parent / "evidence" / ".cache" / "policies", str(state["run_id"]))
-    return PolicyCache(Path(out_dir).parent / ".cache" / "policies")
+    return PolicyCache(Path(out_dir) / ".cache" / "policies")

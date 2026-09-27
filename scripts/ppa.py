@@ -742,7 +742,7 @@ def build_parser() -> argparse.ArgumentParser:
     discover_policy.add_argument("--out-dir")
     discover_policy.add_argument("--max-concurrency", type=int, default=4)
     discover_policy.add_argument("--max-retries", type=int, default=2)
-    discover_policy.add_argument("--request-timeout", type=float, default=20)
+    discover_policy.add_argument("--request-timeout", type=float, default=10)
     discover_policy.set_defaults(handler=command_discover_policies)
     resume = sub.add_parser("resume", help="兼容版本更新后保留资料接续；重新编译核验")
     resume.add_argument("--work-dir", required=True)

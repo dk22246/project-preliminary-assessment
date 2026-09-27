@@ -39,12 +39,13 @@ class PolicyPathExecutionTests(unittest.TestCase):
             calls.append(url)
             return {"status": 200, "body": b"policy", "headers": {"Content-Type": "text/html"}}
         with tempfile.TemporaryDirectory() as tmp:
-            cache = PolicyCache(Path(tmp), "run1")
-            first = cache.revalidate("https://agency.gov.cn/a", fetch, dynamic=True, revalidated_at="2026-09-18T10:00:00+08:00")
-            second = cache.revalidate("https://agency.gov.cn/a", fetch, dynamic=True, revalidated_at="2026-09-18T10:05:00+08:00")
+            # 静态材料（dynamic=False）：24 小时内跨 run 复用，保留原始 retrieved_at
+            first = PolicyCache(Path(tmp), "run1").revalidate("https://agency.gov.cn/a", fetch, dynamic=False, revalidated_at="2026-09-18T10:00:00+08:00")
+            second = PolicyCache(Path(tmp), "run2").revalidate("https://agency.gov.cn/a", fetch, dynamic=False, revalidated_at="2026-09-18T10:05:00+08:00")
             self.assertEqual(first["retrieved_at"], second["retrieved_at"])
             self.assertEqual(len(calls), 1)
-            PolicyCache(Path(tmp), "run2").revalidate("https://agency.gov.cn/a", fetch, revalidated_at="2026-09-18T10:06:00+08:00")
+            # 动态材料（dynamic=True）：始终重新获取，即使 24 小时内
+            PolicyCache(Path(tmp), "run3").revalidate("https://agency.gov.cn/a", fetch, dynamic=True, revalidated_at="2026-09-18T10:06:00+08:00")
             self.assertEqual(len(calls), 2)
 
     def test_cache_tampering_is_not_reused(self):
