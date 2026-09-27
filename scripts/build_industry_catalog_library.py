@@ -128,6 +128,9 @@ def build_library(workbook_path: Path) -> dict:
     for row_number, row in enumerate(sheets["产业结构2024"][1:], start=2):
         category = category_map[_text(row[0])]
         entry_id = f"industrial_restructuring_2024:{row_number}"
+        item_title = _text(row[4])
+        if category == "encouraged" and "：" in item_title:
+            item_title = item_title.split("：", 1)[0].strip()
         entry = {
             "id": entry_id,
             "catalog_scope": "industrial_restructuring_2024",
@@ -135,7 +138,7 @@ def build_library(workbook_path: Path) -> dict:
             "section": _text(row[2]),
             "subsection": _text(row[1]),
             "item_no": _number(row[3]),
-            "item_title": _text(row[4]),
+            "item_title": item_title,
             "region": "全国",
             "source_sheet": "产业结构2024",
             "source_row": row_number,
