@@ -42,6 +42,12 @@ def build_research_plan(findings: dict) -> dict:
         "research_route": route,
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "dedupe_key": "canonical_url",
+        "execution": {
+            "collection_mode": "batch_parallel",
+            "max_research_rounds": 1 if route == "listed_disclosure" else 2,
+            "same_document_rule": "同一规范化URL在同一run_id内只抓取和解析一次",
+            "conditional_action_rule": "only_if_gap或only_if_material_gap没有明确缺口时直接标记skipped，不得执行泛搜",
+        },
         "actions": [
             {"id": f"RA{index:02d}", "action": action, "channel": channel, "mode": mode, "purpose": purpose, "status": "pending"}
             for index, (action, channel, mode, purpose) in enumerate(actions, 1)

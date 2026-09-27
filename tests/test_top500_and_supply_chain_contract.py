@@ -255,6 +255,12 @@ class Top500AndSupplyChainContractTests(unittest.TestCase):
         data["industry_chain"]["downstream"][0]["representative_enterprises"][0] = "淘宝天猫"
         self.assert_contract_error(data, "representative_enterprises")
 
+    def test_industry_chain_rejects_generic_category_as_representative_enterprise(self):
+        data = report_with_full_new_contract()
+        data["industry_chain"]["upstream"][0]["representative_enterprises"][0]["name"] = "原料生产与初加工主体"
+        data["industry_chain"]["downstream"][0]["representative_enterprises"][0]["name"] = "零售终端"
+        self.assert_contract_error(data, "代表企业不得使用行业类别或占位词")
+
     def test_upstream_without_transaction_evidence_cannot_claim_supplier(self):
         data = report_with_full_new_contract()
         data["industry_chain"]["upstream"][0]["relationship_scope"] = "研究对象供应商样本"

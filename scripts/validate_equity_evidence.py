@@ -210,6 +210,9 @@ def validate_equity_evidence(
     sources = ledger.get("sources", [])
     source_by_id: dict[str, dict] = {}
     for source in sources:
+        if not isinstance(source, dict):
+            errors.append("股权证据sources必须为取证记录对象，不能只填写来源编号")
+            continue
         source_id = _text(source.get("id"))
         provider = _text(source.get("provider"))
         if not source_id or source_id in source_by_id:

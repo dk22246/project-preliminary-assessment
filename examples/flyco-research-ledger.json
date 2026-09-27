@@ -23,9 +23,7 @@
       "risk": {"status": "completed", "source_ids": ["E01"]}
     },
     "discovery_rounds": [
-      {"round": 1, "high_value_candidate_ids": ["BC01", "BC02", "BC03", "BC04"]},
-      {"round": 2, "high_value_candidate_ids": []},
-      {"round": 3, "high_value_candidate_ids": []}
+      {"round": 1, "high_value_candidate_ids": ["BC01", "BC02", "BC03", "BC04"]}
     ]
   },
   "fact_ledger": [

@@ -44,6 +44,8 @@ class FastPathMetricsTests(unittest.TestCase):
         text = (ROOT / "scripts" / "run_report_pipeline.py").read_text(encoding="utf-8")
         self.assertNotIn('"enterprise_research_seconds": 0', text)
         self.assertNotIn('"policy_discovery_seconds": 0', text)
+        self.assertIn('"enterprise_research_seconds": None', text)
+        self.assertIn('"timing_scope"', text)
         self.assertIn('"phase_seconds"', text)
         self.assertIn('"full_release_tests_run": False', text)
 

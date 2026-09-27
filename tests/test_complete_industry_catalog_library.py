@@ -24,6 +24,7 @@ class CompleteIndustryCatalogLibraryTests(unittest.TestCase):
 
     def test_canonical_workbook_and_portable_build_validation_scripts_are_packaged(self):
         self.assertTrue(WORKBOOK.is_file(), "缺少新的统一主工作簿")
+        self.assertTrue((CATALOG_DIR / "catalog-query-expansions.json").is_file(), "缺少目录业务用语扩展表")
         self.assertTrue((ROOT / "scripts" / "build_industry_catalog_library.py").is_file())
         self.assertTrue((ROOT / "scripts" / "validate_industry_catalog_library.py").is_file())
 
@@ -72,6 +73,25 @@ class CompleteIndustryCatalogLibraryTests(unittest.TestCase):
         conflict = entries[data["routes"]["industrial_conflicts"][0]]
         checked = module.search([conflict["item_title"]], subject_type="domestic", limit=30, include_conflicts=True)
         self.assertTrue(any(item["policy_category"] in {"restricted", "eliminated"} for item in checked["conflicts"]))
+
+    def test_condiment_business_recalls_agricultural_deep_processing_as_adjacent_candidate(self):
+        module = self.load_search_module()
+        result = module.search(["调味品生产"], subject_type="domestic", limit=30)
+        candidate = next(
+            (item for item in result["candidates"] if item["id"] == "hainan_added_2024:9"),
+            None,
+        )
+        self.assertIsNotNone(candidate, "调味品业务应召回农林产品深加工作为相近候选，交由后续判断具体工艺")
+        self.assertIn("农林产品深加工", result["query_expansions"])
+        self.assertEqual(candidate["recall_origin"], "expanded")
+        self.assertIsNone(result["decision"], "候选召回不得自动改写为资格认定")
+
+    def test_exact_catalog_term_ranks_above_expanded_recall(self):
+        module = self.load_search_module()
+        result = module.search(["农林产品深加工", "调味品生产"], subject_type="domestic", limit=30)
+        candidate = next(item for item in result["candidates"] if item["id"] == "hainan_added_2024:9")
+        self.assertEqual(candidate["recall_origin"], "exact")
+        self.assertIn("农林产品深加工", candidate["matched_terms"])
 
     def test_skill_and_preflight_require_the_complete_library(self):
         skill = (ROOT / "SKILL.md").read_text(encoding="utf-8")

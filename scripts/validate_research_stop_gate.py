@@ -231,6 +231,10 @@ def validate_research_stop_gate(ledger: dict, report_data: dict | None = None) -
             errors.append("上市公司尚未完成法定披露集中研究，不能结束一般性企业研究")
         elif route == "nonlisted_public_evidence":
             errors.append("非上市公司尚未完成固定来源阶梯和一次定向补查，不能结束一般性企业研究")
+    elif route == "listed_disclosure" and len(rounds) != 1:
+        errors.append("上市公司只能执行一轮集中研究；缺口应在同轮定向处置，不得重复泛搜")
+    elif route == "nonlisted_public_evidence" and len(rounds) > 2:
+        errors.append("非上市公司最多执行固定来源阶梯和一次定向补查，不得增加重复检索轮次")
     if route == "nonlisted_public_evidence":
         _validate_nonlisted_checks(gate, errors, report_data)
     return errors

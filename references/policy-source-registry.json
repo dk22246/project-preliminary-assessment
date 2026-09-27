@@ -14,7 +14,7 @@
     {"department": "国家税务总局海南省税务局", "jurisdiction": "hainan", "entry_url": "https://hainan.chinatax.gov.cn/", "entry_kind": "homepage"},
     {"department": "海口海关", "jurisdiction": "hainan", "entry_url": "https://haikou.customs.gov.cn/", "entry_kind": "homepage"},
     {"department": "中国人民银行海南省分行", "jurisdiction": "hainan", "entry_url": "https://haikou.pbc.gov.cn/", "entry_kind": "homepage"},
-    {"department": "国家外汇管理局海南省分局", "jurisdiction": "hainan", "entry_url": "https://www.safe.gov.cn/hainan/zcfg/index.html", "entry_kind": "policy_directory"},
+    {"department": "国家外汇管理局海南省分局", "jurisdiction": "hainan", "entry_url": "https://www.safe.gov.cn/hainan/zcfg/index.html", "entry_kind": "policy_directory", "path_entries": {"invalidity_catalog": "https://www.safe.gov.cn/hainan/xxyxfgml/index.html"}},
     {"department": "三亚市投资促进局", "jurisdiction": "sanya", "entry_url": "https://syipb.sanya.gov.cn/tzcjjsite/zcwj/list.shtml", "entry_kind": "policy_directory"},
     {"department": "三亚市发展和改革委员会", "jurisdiction": "sanya", "entry_url": "https://fg.sanya.gov.cn/", "entry_kind": "homepage"},
     {"department": "三亚市商务局", "jurisdiction": "sanya", "entry_url": "https://swj.sanya.gov.cn/swjsite/bmwjxx/newxxgklist.shtml", "entry_kind": "policy_directory"},

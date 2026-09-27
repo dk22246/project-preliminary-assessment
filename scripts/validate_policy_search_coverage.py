@@ -53,7 +53,7 @@ def _report_items(report_data: dict) -> dict[tuple[str, str], dict]:
     return items
 
 
-def validate_policy_search_coverage(coverage: dict, research_ledger: dict, report_data: dict, *, allow_stale_fixture: bool = False) -> list[str]:
+def validate_policy_search_coverage(coverage: dict, research_ledger: dict, report_data: dict, *, allow_stale_fixture: bool = False, policy_evidence: dict | None = None, evidence_base: Path | None = None) -> list[str]:
     """Validate semantic expansion, role-aware receipts and report conclusion boundaries."""
     errors: list[str] = []
     for field in ("enterprise", "researched_at", "search_mode", "landing_business_hypotheses", "searches", "policy_candidates"):
@@ -89,6 +89,11 @@ def validate_policy_search_coverage(coverage: dict, research_ledger: dict, repor
     candidates = _index(coverage.get("policy_candidates"), "政策候选", errors)
     scan_profiles = _index(coverage.get("department_scan_profiles", []), "部门检索回执档案", errors)
     sources = {_text(item.get("id")) for item in report_data.get("sources", []) if _text(item.get("id"))}
+    verified_evidence = {}
+    if policy_evidence and evidence_base:
+        from validate_policy_evidence import validate_policy_evidence as check_evidence
+        if not check_evidence(policy_evidence, report_data, coverage, base_dir=evidence_base):
+            verified_evidence = {_text(row.get("id")): row for row in policy_evidence.get("records", [])}
 
     hypotheses_by_landing: dict[str, list[dict]] = {}
     for hypothesis_id, hypothesis in hypotheses.items():
@@ -257,7 +262,20 @@ def validate_policy_search_coverage(coverage: dict, research_ledger: dict, repor
                     if not _text(run.get("not_available_basis")):
                         errors.append(f"{run_label}: not_available 必须说明官方路径不存在或不适用的依据")
                 elif path in required_paths:
-                    errors.append(f"{run_label}: {run_status}，必须标记 research_incomplete，禁止生成正式报告")
+                    substitute = run.get("substitute_evidence", {})
+                    evidence_ids = substitute.get("evidence_record_ids", []) if isinstance(substitute, dict) else []
+                    linked = set().union(*(set(row.get("formal_policy_source_ids", [])) for row in candidates_by_search.get(search_id, [])))
+                    # A failed auxiliary index does not erase a verified formal document.
+                    # Theme discovery itself cannot be replaced by evidence of one known policy.
+                    covered = (
+                        path in {"department_documents", "normative_documents", "invalidity_catalog", "application_notices"}
+                        and bool(evidence_ids) and bool(linked)
+                        and bool(substitute.get("basis")) and bool(substitute.get("locator"))
+                        and all(identifier in verified_evidence and verified_evidence[identifier].get("policy_source_id") in linked for identifier in evidence_ids)
+                        and all(verified_evidence[identifier].get("application_status") != "unknown" for identifier in evidence_ids)
+                    )
+                    if not covered:
+                        errors.append(f"{run_label}: {run_status}，research_incomplete，缺少经过正式证据校验的替代依据，禁止生成正式报告")
         missing_departments = expected_departments - department_names
         for department in sorted(missing_departments):
             errors.append(f"{label}: 缺少报告所列主管部门的检索回执：{department}")
@@ -308,6 +326,7 @@ def main() -> int:
     parser.add_argument("policy_search_ledger")
     parser.add_argument("--research-ledger", required=True)
     parser.add_argument("--report-data", required=True)
+    parser.add_argument("--policy-evidence")
     args = parser.parse_args()
     coverage = load_data(args.policy_search_ledger)
     research_ledger = load_data(args.research_ledger)
@@ -321,6 +340,8 @@ def main() -> int:
         research_ledger,
         report_data,
         allow_stale_fixture=canonical_fixture,
+        policy_evidence=load_data(args.policy_evidence) if args.policy_evidence and Path(args.policy_evidence).is_file() else None,
+        evidence_base=Path(args.policy_evidence).resolve().parent if args.policy_evidence else None,
     )
     if errors:
         print("政策检索覆盖校验失败：")

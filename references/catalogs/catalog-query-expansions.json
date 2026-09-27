@@ -1,0 +1,18 @@
+{
+  "version": "1.0",
+  "purpose": "Only expand business-language queries into catalog-language recall terms. Expansion never determines eligibility.",
+  "rules": [
+    {
+      "triggers": ["调味品", "酱油", "蚝油", "食醋", "酱类", "复合调味料"],
+      "expansions": ["食品", "农林产品深加工"]
+    },
+    {
+      "triggers": ["食品制造", "食品加工", "农副食品"],
+      "expansions": ["食品", "农林产品深加工"]
+    },
+    {
+      "triggers": ["饮料制造", "饮品生产"],
+      "expansions": ["饮料", "农林产品深加工"]
+    }
+  ]
+}

@@ -105,7 +105,7 @@ def main(
         ))
         run(python_command(SCRIPTS / "validate_research_ledger.py", args.research_ledger, "--report-data", str(data)))
         run(python_command(SCRIPTS / "validate_research_stop_gate.py", args.research_ledger, "--report-data", str(data)))
-        run(python_command(SCRIPTS / "validate_policy_search_coverage.py", args.policy_search_ledger, "--research-ledger", args.research_ledger, "--report-data", str(data)))
+        run(python_command(SCRIPTS / "validate_policy_search_coverage.py", args.policy_search_ledger, "--research-ledger", args.research_ledger, "--report-data", str(data), "--policy-evidence", args.policy_evidence))
         policy_evidence_args = [args.policy_evidence, "--report-data", str(data), "--policy-search-ledger", args.policy_search_ledger]
         if args.fixture_mode:
             policy_evidence_args.append("--fixture-mode")
@@ -154,9 +154,13 @@ def main(
     }
     metrics = {
         "deployment_mode": "fixture" if args.fixture_mode else "verified_render_path" if trusted_workflow else "internal_full_validation",
-        "enterprise_research_seconds": phase_metrics["enterprise_research"],
+        # Enterprise research happens before this deterministic renderer starts.
+        # Stage wall-clock spans may contain human/agent idle time after resume,
+        # so never publish them as measured active research duration.
+        "enterprise_research_seconds": None,
         "policy_discovery_seconds": phase_metrics["policy_discovery"],
         "phase_seconds": phase_metrics,
+        "timing_scope": "phase_seconds are workflow wall-clock spans; local_validation_seconds and render_and_layout_seconds are measured active automation time",
         "policy_network_requests": 0,
         "policy_cache_revalidated": 0,
         "local_validation_seconds": round(validation_seconds, 3),

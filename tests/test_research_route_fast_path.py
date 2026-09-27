@@ -22,6 +22,8 @@ class ResearchRouteFastPathTests(unittest.TestCase):
         ])
         self.assertEqual(plan["actions"][1]["mode"], "only_if_gap")
         self.assertNotIn("media_search", {row["action"] for row in plan["actions"]})
+        self.assertEqual(plan["execution"]["max_research_rounds"], 1)
+        self.assertEqual(plan["execution"]["collection_mode"], "batch_parallel")
 
     def test_nonlisted_route_never_creates_exchange_or_annual_report_action(self):
         from research_plan import build_research_plan
@@ -36,6 +38,8 @@ class ResearchRouteFastPathTests(unittest.TestCase):
             "business_registry", "risk_records", "targeted_gap_check",
         })
         self.assertFalse(any(row["channel"] == "exchange_disclosure" for row in plan["actions"]))
+        self.assertEqual(plan["execution"]["max_research_rounds"], 2)
+        self.assertEqual(plan["execution"]["collection_mode"], "batch_parallel")
 
     def test_mismatched_listing_route_is_rejected(self):
         from research_plan import build_research_plan

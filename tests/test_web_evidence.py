@@ -16,6 +16,110 @@ from validate_evidence import validate_ledger
 
 
 class WebEvidenceTests(unittest.TestCase):
+    @staticmethod
+    def _pdf_with_text(text: str) -> bytes:
+        stream = f"BT /F1 12 Tf 72 720 Td ({text}) Tj ET".encode("ascii")
+        objects = [
+            b"<< /Type /Catalog /Pages 2 0 R >>",
+            b"<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
+            b"<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >>",
+            b"<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>",
+            b"<< /Length " + str(len(stream)).encode("ascii") + b" >>\nstream\n" + stream + b"\nendstream",
+        ]
+        result = bytearray(b"%PDF-1.4\n")
+        offsets = [0]
+        for number, body in enumerate(objects, 1):
+            offsets.append(len(result))
+            result.extend(f"{number} 0 obj\n".encode("ascii") + body + b"\nendobj\n")
+        xref = len(result)
+        result.extend(f"xref\n0 {len(objects) + 1}\n0000000000 65535 f \n".encode("ascii"))
+        result.extend(b"".join(f"{offset:010d} 00000 n \n".encode("ascii") for offset in offsets[1:]))
+        result.extend(f"trailer\n<< /Size {len(objects) + 1} /Root 1 0 R >>\nstartxref\n{xref}\n%%EOF\n".encode("ascii"))
+        return bytes(result)
+
+    def _cached_pdf_record(self, directory: str, body: bytes, digest: str | None = None, final_url: str = "https://hainan.chinatax.gov.cn/report.pdf") -> dict:
+        root = Path(directory)
+        raw = root / "raw.pdf"
+        raw.write_bytes(body)
+
+        class Cache:
+            round_id = "test-round"
+
+            @staticmethod
+            def _paths(_url):
+                return root / "receipt.json", raw
+
+        raw_hash = digest or hashlib.sha256(body).hexdigest()
+        receipt = {
+            "http_status": 200,
+            "final_url": final_url,
+            "content_type": "application/pdf",
+            "retrieved_at": "2026-09-21T00:00:00+00:00",
+            "artifact_sha256": raw_hash,
+            "reused_in_round": True,
+        }
+        with patch.object(collector, "workspace_cache", return_value=Cache()), patch.object(collector, "_request_with_retry", return_value=(receipt, 1, "")):
+            return collector.collect(
+                "https://hainan.chinatax.gov.cn/report.pdf", purpose="年报", out_dir=root,
+                explicit_hosts=set(), timeout=1, retries=0, index=1,
+            )
+
+    def test_cached_pdf_extracts_text_once_and_reuses_same_hash(self):
+        with tempfile.TemporaryDirectory() as directory:
+            body = self._pdf_with_text("Annual Report")
+            first = self._cached_pdf_record(directory, body)
+            self.assertEqual(first["extraction_status"], "success")
+            self.assertEqual(first["title"], "report")
+            content = Path(directory) / first["content_path"]
+            self.assertIn("Annual Report", content.read_text(encoding="utf-8"))
+            initial_mtime = content.stat().st_mtime_ns
+            second = self._cached_pdf_record(directory, body)
+            self.assertEqual(second["content_path"], first["content_path"])
+            self.assertEqual(content.stat().st_mtime_ns, initial_mtime)
+
+    def test_cached_pdf_reextracts_when_raw_hash_changes(self):
+        with tempfile.TemporaryDirectory() as directory:
+            first = self._cached_pdf_record(directory, self._pdf_with_text("First"))
+            second = self._cached_pdf_record(directory, self._pdf_with_text("Second"))
+            self.assertEqual(first["extraction_status"], "success")
+            self.assertEqual(second["extraction_status"], "success")
+            self.assertNotEqual(first["content_path"], second["content_path"])
+            self.assertIn("Second", (Path(directory) / second["content_path"]).read_text(encoding="utf-8"))
+
+    def test_cached_scanned_pdf_requires_ocr(self):
+        with tempfile.TemporaryDirectory() as directory:
+            record = self._cached_pdf_record(directory, self._pdf_with_text(""))
+        self.assertEqual(record["extraction_status"], "failed")
+        self.assertIn("OCR", record["error"])
+
+    def test_cached_pdf_redirect_to_unregistered_host_never_extracts_or_succeeds(self):
+        with tempfile.TemporaryDirectory() as directory:
+            with patch.object(collector, "extract_pdf", wraps=collector.extract_pdf) as extract:
+                record = self._cached_pdf_record(
+                    directory, self._pdf_with_text("Private"), final_url="https://example.com/report.pdf",
+                )
+        self.assertEqual(record["extraction_status"], "failed")
+        self.assertIn("重定向", record["error"])
+        extract.assert_not_called()
+
+    def test_pdf_text_cache_reuses_shared_raw_cache_across_evidence_directories(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            raw = root / ".cache" / "policies" / "annual.bin"
+            raw.parent.mkdir(parents=True)
+            body = self._pdf_with_text("Annual Report")
+            raw.write_bytes(body)
+            digest = hashlib.sha256(body).hexdigest()
+            with patch.object(collector, "extract_pdf", wraps=collector.extract_pdf) as extract:
+                first, error = collector._cached_pdf_content(raw, digest, root / "topic-a")
+                second, second_error = collector._cached_pdf_content(raw, digest, root / "topic-b")
+            self.assertEqual(error, "")
+            self.assertEqual(second_error, "")
+            self.assertEqual(first, second)
+            self.assertEqual(extract.call_count, 1)
+            self.assertTrue((root / "topic-a" / first).is_file())
+            self.assertTrue((root / "topic-b" / second).is_file())
+
     def test_allows_registered_official_policy_source(self):
         self.assertTrue(is_allowed_url("https://hainan.chinatax.gov.cn/policy", set()))
 

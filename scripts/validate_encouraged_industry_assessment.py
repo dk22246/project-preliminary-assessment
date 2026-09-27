@@ -52,6 +52,8 @@ def validate_assessment(data: dict) -> list[str]:
 
     sources = {_text(item.get("id")) for item in data.get("sources", [])}
     checked = assessment.get("catalogs_checked", [])
+    if not isinstance(checked, list) or any(not isinstance(item, dict) for item in checked):
+        return errors + ["encouraged_industry_assessment.catalogs_checked必须为对象数组，每项填写catalog_scope、status及source_id或不适用原因；不能只填目录名称"]
     checked_scopes = {_text(item.get("catalog_scope")) for item in checked}
     if checked_scopes != SCOPES:
         errors.append("目录检索必须覆盖海南新增、产业结构调整和外商投资三条路径")

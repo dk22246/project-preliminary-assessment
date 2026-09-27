@@ -23,6 +23,14 @@ class SingleFinalGateTests(unittest.TestCase):
             workflow_state.create(work_dir, "测试企业", "fingerprint")
             args = type("Args", (), {"work_dir": str(work_dir), "node": None, "chrome": None})()
             hashes = workflow_state.artifact_hashes(work_dir)
+            for name in ("enterprise-findings.json", "policy-findings.json"):
+                (work_dir / name).write_text("{}", encoding="utf-8")
+            state = workflow_state.load(work_dir)
+            state["findings_input_sha256"] = {
+                "enterprise": ppa._file_sha256(work_dir / "enterprise-findings.json"),
+                "policy": ppa._file_sha256(work_dir / "policy-findings.json"),
+            }
+            workflow_state.save(work_dir, state)
             with patch.object(ppa, "require_ready_runtime"), patch.object(ppa, "package_fingerprint", return_value="fingerprint"), patch.object(ppa, "_validate_lightweight_stage", return_value={"compiled": True}) as light, patch.object(ppa, "_validate_final_suite", return_value=hashes) as final:
                 self.assertEqual(ppa.command_finalize(args), 0)
             self.assertEqual(final.call_count, 1)

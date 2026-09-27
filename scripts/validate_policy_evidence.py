@@ -90,12 +90,18 @@ def validate_policy_evidence(evidence: dict, report_data: dict, policy_search_le
         seen_ids.add(record_id)
         source_id = _text(record.get("policy_source_id"))
         records_by_source.setdefault(source_id, []).append(record)
-        for field in ("requested_url", "final_url", "retrieved_at", "issuer", "title", "document_number", "published_at", "validity_basis", "validity_locator", "application_basis", "application_locator"):
+        formal = source_id in frontend_source_ids
+        fields = ("requested_url", "final_url", "retrieved_at", "issuer", "title")
+        if formal:
+            fields += ("document_number", "published_at", "validity_basis", "validity_locator", "application_basis", "application_locator")
+        for field in fields:
             if not _text(record.get(field)):
                 errors.append(f"{label}: 缺少{field}")
-        if record.get("http_status") != 200:
-            errors.append(f"{label}: HTTP状态必须为200")
-        if _text(record.get("content_type")) not in CONTENT_TYPES:
+        if record.get("http_status") not in {200, 304}:
+            errors.append(f"{label}: HTTP状态必须为200或附缓存正文的304复验")
+        if record.get("http_status") == 304 and (not record.get("revalidated_at") or not record.get("cached_artifact_created_at")):
+            errors.append(f"{label}: 304必须保留本轮复验时间及缓存创建时间")
+        if formal and _text(record.get("content_type")) not in CONTENT_TYPES:
             errors.append(f"{label}: content_type不受支持")
         source = sources.get(source_id)
         if source is None:
@@ -117,9 +123,9 @@ def validate_policy_evidence(evidence: dict, report_data: dict, policy_search_le
             digest = hashlib.sha256(artifact.read_bytes()).hexdigest()
             if digest != _text(record.get("artifact_sha256")):
                 errors.append(f"{label}: artifact SHA256不一致")
-        if _text(record.get("validity_status")) != "current":
+        if formal and _text(record.get("validity_status")) != "current":
             errors.append(f"{label}: 只有现行政策证据可支撑前台政策")
-        if _text(record.get("application_status")) not in APPLICATION_STATUSES:
+        if formal and _text(record.get("application_status")) not in APPLICATION_STATUSES:
             errors.append(f"{label}: application_status不合法")
 
     for source_id in sorted(frontend_source_ids):

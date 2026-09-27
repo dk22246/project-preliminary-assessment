@@ -170,11 +170,27 @@ def load_verified_state() -> dict | None:
 
 
 def state_is_current(state: dict | None) -> bool:
-    return bool(state and state.get("verified") is True and state.get("fingerprint") == package_fingerprint())
+    return bool(state and state.get("verified") is True and (
+        state.get("dependency_fingerprint") == dependency_fingerprint()
+        or state.get("fingerprint") == package_fingerprint()
+    ))
+
+
+def dependency_fingerprint() -> str:
+    digest = hashlib.sha256()
+    for name in ("runtime-requirements.json", "package.json", "package-lock.json", "requirements-word.txt"):
+        path = ROOT / name
+        digest.update(name.encode())
+        if path.is_file():
+            digest.update(path.read_bytes())
+    digest.update(sys.executable.encode())
+    digest.update(sys.version.encode())
+    return digest.hexdigest()
 
 
 def write_verified_state(state: dict) -> None:
     STATE_DIR.mkdir(parents=True, exist_ok=True)
     payload = dict(state)
     payload["verified"] = True
+    payload["dependency_fingerprint"] = dependency_fingerprint()
     STATE_FILE.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")

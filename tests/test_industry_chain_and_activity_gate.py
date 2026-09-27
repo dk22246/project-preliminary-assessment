@@ -50,6 +50,11 @@ class IndustryChainAndActivityGateTests(unittest.TestCase):
         for forbidden in ("stages", "regional_ecosystem", "招商与产业集群启示", "潜在线索", "评分"):
             self.assertNotIn(forbidden, html_chain)
 
+    def test_html_table_of_contents_has_direct_industry_chain_anchor(self):
+        renderer = (ROOT / "scripts" / "render_report_html.py").read_text(encoding="utf-8")
+        self.assertIn('id="industry-chain"', renderer)
+        self.assertIn('href="#industry-chain"', renderer)
+
         group_listed = copy.deepcopy(self.data["top500_status"])
         group_listed[0].update({"status": "group_listed", "rank": 12, "listed_entity": "示例集团", "relationship_to_target": "ultimate_group"})
         incomplete = copy.deepcopy(self.data["top500_status"])

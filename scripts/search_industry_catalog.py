@@ -9,6 +9,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 CATALOG = ROOT / "references" / "catalogs" / "complete-industry-catalog-library.json"
+QUERY_EXPANSIONS = ROOT / "references" / "catalogs" / "catalog-query-expansions.json"
 SUBJECTS = {"domestic": "domestic_positive", "foreign": "foreign_positive"}
 ACTIVITY_KEYWORDS = {
     "research": ("研发", "研究", "技术开发", "设计"),
@@ -36,6 +37,19 @@ def _terms(queries: list[str]) -> list[str]:
     return list(dict.fromkeys(result))
 
 
+def _expanded_terms(exact_terms: list[str]) -> list[str]:
+    """Map common business language to catalog language for recall only."""
+    payload = json.loads(QUERY_EXPANSIONS.read_text(encoding="utf-8-sig"))
+    expanded: list[str] = []
+    query_text = " ".join(exact_terms)
+    for rule in payload.get("rules", []):
+        triggers = [str(item).strip().lower() for item in rule.get("triggers", []) if str(item).strip()]
+        if any(trigger in query_text for trigger in triggers):
+            expanded.extend(str(item).strip().lower() for item in rule.get("expansions", []) if str(item).strip())
+    exact = set(exact_terms)
+    return [term for term in dict.fromkeys(expanded) if term not in exact]
+
+
 def _haystack(entry: dict) -> str:
     details = " ".join(
         f"{item.get('detail_title', '')} {item.get('definition', '')}"
@@ -58,21 +72,34 @@ def activity_is_compatible(entry: dict, activity_type: str) -> bool:
     return derived["classification"] == "broad_category" or activity_type in derived["activity_types"]
 
 
-def _rank(entries: list[dict], terms: list[str], limit: int) -> list[dict]:
-    scored: list[tuple[int, dict, list[str]]] = []
+def _rank(entries: list[dict], exact_terms: list[str], expanded_terms: list[str], limit: int) -> list[dict]:
+    scored: list[tuple[int, dict, list[str], list[str]]] = []
     for entry in entries:
         haystack = _haystack(entry).lower()
         title = str(entry.get("item_title", "")).lower()
         detail_titles = " ".join(str(item.get("detail_title", "")) for item in entry.get("detail_entries", [])).lower()
-        hits = [term for term in terms if term and term in haystack]
-        if not hits:
+        exact_hits = [term for term in exact_terms if term and term in haystack]
+        expanded_hits = [term for term in expanded_terms if term and term in haystack]
+        if not exact_hits and not expanded_hits:
             continue
-        score = sum(8 if term == title else 5 if term in title else 3 if term in detail_titles else 1 for term in hits)
+        exact_score = sum(16 if term == title else 10 if term in title else 6 if term in detail_titles else 2 for term in exact_hits)
+        expanded_score = sum(4 if term == title else 3 if term in title else 2 if term in detail_titles else 1 for term in expanded_hits)
+        score = exact_score + expanded_score
         if entry.get("catalog_scope") == "hainan_added_2024":
             score += 1
-        scored.append((score, entry, hits))
+        scored.append((score, entry, exact_hits, expanded_hits))
     scored.sort(key=lambda item: (-item[0], str(item[1].get("catalog_scope")), int(item[1].get("source_row") or 99999)))
-    return [dict(entry, recall_score=score, matched_terms=hits) for score, entry, hits in scored[:limit]]
+    return [
+        dict(
+            entry,
+            recall_score=score,
+            recall_origin="exact" if exact_hits else "expanded",
+            matched_terms=exact_hits + expanded_hits,
+            matched_exact_terms=exact_hits,
+            matched_expanded_terms=expanded_hits,
+        )
+        for score, entry, exact_hits, expanded_hits in scored[:limit]
+    ]
 
 
 def search(
@@ -86,13 +113,17 @@ def search(
     payload = json.loads(CATALOG.read_text(encoding="utf-8-sig"))
     by_id = {entry["id"]: entry for entry in payload.get("entries", [])}
     terms = _terms(queries)
-    candidates = _rank([by_id[item_id] for item_id in payload["routes"][SUBJECTS[subject_type]]], terms, limit)
+    expanded_terms = _expanded_terms(terms)
+    candidates = _rank([by_id[item_id] for item_id in payload["routes"][SUBJECTS[subject_type]]], terms, expanded_terms, limit)
     conflicts = []
     if include_conflicts:
-        conflicts = _rank([by_id[item_id] for item_id in payload["routes"]["industrial_conflicts"]], terms, limit)
+        conflicts = _rank([by_id[item_id] for item_id in payload["routes"]["industrial_conflicts"]], terms, expanded_terms, limit)
     return {
         "subject_type": subject_type,
         "decision": None,
+        "query_terms": terms,
+        "query_expansions": expanded_terms,
+        "recall_notice": "扩展词只用于召回相近目录条目，不代表符合；仍须核对经营行为、对象、工艺及条件。",
         "candidates": candidates,
         "conflicts": conflicts,
     }

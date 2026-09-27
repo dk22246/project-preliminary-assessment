@@ -2,26 +2,82 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "Lean realtime policy findings",
   "type": "object",
-  "required": ["version", "enterprise", "researched_at", "report", "search", "evidence", "sources"],
+  "required": ["version", "enterprise", "researched_at", "search", "policy_records", "evidence", "sources"],
   "properties": {
     "version": {"const": "1.0"},
     "enterprise": {"type": "string", "minLength": 1},
-    "researched_at": {"type": "string", "minLength": 1},
-    "report": {"type": "object"},
-    "search": {"type": "object"},
-    "evidence": {"type": "array"},
+    "researched_at": {"type": "string"},
+    "discovery_last_researched_at": {"type": "string"},
+    "policy_records": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["key", "source_keys", "search_keys", "fact_keys", "landing_business_keys", "topic", "match_reason", "eligibility_status", "disposition", "conditions", "handling_route", "report_group", "policy"],
+        "properties": {
+          "key": {"type": "string", "minLength": 1},
+          "source_keys": {"type": "array", "items": {"type": "string", "minLength": 1}},
+          "search_keys": {"type": "array", "items": {"type": "string", "minLength": 1}},
+          "fact_keys": {"type": "array", "items": {"type": "string", "minLength": 1}},
+          "landing_business_keys": {"type": "array", "items": {"type": "string", "minLength": 1}},
+          "topic": {"type": "string", "minLength": 1},
+          "match_reason": {"type": "string", "minLength": 1},
+          "eligibility_status": {"enum": ["unknown", "eligible", "ineligible", "not_triggered"]},
+          "disposition": {"enum": ["include", "merge", "conditional", "excluded", "expired", "pending"]},
+          "conditions": {"type": "string"},
+          "handling_route": {"type": "string"},
+          "report_group": {"type": "string", "minLength": 1},
+          "review_status": {"type": "string", "enum": ["changed_source_pending_review", "reviewed"]},
+          "policy": {
+            "type": "object",
+            "properties": {
+              "name": {"type": "string"}, "region": {"type": "string"}, "region_evidence": {"type": "string"},
+              "source_type": {"type": "string"}, "source_url": {"type": "string"}, "status": {"type": "string"},
+              "enterprise_business": {"type": "string"}, "landing_action": {"type": "string"},
+              "report_title": {"type": "string"}, "report_reason": {"type": "string"}
+            }
+          }
+        }
+      }
+    },
+    "search": {
+      "type": "object",
+      "properties": {
+        "landing_business_hypotheses": {"type": "array", "items": {"type": "object"}},
+        "department_scan_profiles": {"type": "array", "items": {"type": "object", "required": ["key", "runs"], "properties": {"key": {"type": "string", "minLength": 1}, "runs": {"type": "array", "items": {"type": "object", "properties": {"result_source_keys": {"type": "array", "items": {"type": "string"}}, "result_source_ids": {"type": "array", "items": {"type": "string"}}, "evidence_record_keys": {"type": "array", "items": {"type": "string"}}, "evidence_record_ids": {"type": "array", "items": {"type": "string"}}, "source_keys": {"type": "array", "items": {"type": "string"}}, "status": {"type": "string"}, "checked_at": {"type": "string"}}}}}}},
+        "searches": {"type": "array", "items": {"type": "object", "required": ["key"], "properties": {"key": {"type": "string", "minLength": 1}, "profile_key": {"type": "string"}, "topic": {"type": "string"}, "discovered_candidate_keys": {"type": "array", "items": {"type": "string"}}, "discovered_candidate_ids": {"type": "array", "items": {"type": "string"}}}}},
+        "discovered_candidates": {"type": "array", "items": {"type": "object", "properties": {"key": {"type": "string", "minLength": 1}, "stable_key": {"type": "string", "minLength": 1}, "title": {"type": "string"}}}},
+        "failures": {"type": "array", "items": {"type": "object", "properties": {"message": {"type": "string"}, "stage": {"type": "string"}}}},
+        "decode_warnings": {"type": "array", "items": {"type": "object", "properties": {"message": {"type": "string"}, "path": {"type": "string"}}}}
+      },
+      "additionalProperties": false
+    },
+    "evidence": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["key"],
+        "properties": {
+          "key": {"type": "string", "minLength": 1},
+          "policy_source_key": {"type": "string"},
+          "sha256": {"type": "string"},
+          "captured_at": {"type": "string"}
+        }
+      }
+    },
     "sources": {
       "type": "array",
       "items": {
         "type": "object",
-        "required": ["key", "type", "name"],
+        "required": ["key", "type"],
         "properties": {
           "key": {"type": "string", "minLength": 1},
           "type": {"type": "string", "minLength": 1},
-          "name": {"type": "string", "minLength": 1}
+          "name": {"type": "string", "minLength": 1}, "title": {"type": "string"}
         }
       }
-    }
+    },
+    "failures": {"type": "array", "items": {"type": "object"}},
+    "decode_warnings": {"type": "array", "items": {"type": "object"}}
   },
   "additionalProperties": false
 }

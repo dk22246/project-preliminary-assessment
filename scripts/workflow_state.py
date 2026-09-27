@@ -193,7 +193,7 @@ def ready_state_errors(work_dir: Path | str, skill_fingerprint: str) -> list[str
     if not str(payload.get("run_id", "")).strip() or not str(payload.get("enterprise", "")).strip():
         errors.append("流程状态缺少run_id或企业主体")
     if payload.get("skill_fingerprint") != skill_fingerprint:
-        errors.append("Skill版本已变化，必须重新开始本轮正式报告或重新完成阶段门禁")
+        errors.append("Skill版本已变化，请通过ppa.py resume保留资料接续并重新编译核验")
     expected = payload.get("ready_artifact_hashes")
     if not isinstance(expected, dict) or set(expected) != set(REPORT_ARTIFACTS):
         errors.append("缺少report_ready五台账指纹回执")
@@ -206,6 +206,24 @@ def ready_state_errors(work_dir: Path | str, skill_fingerprint: str) -> list[str
     for name in REPORT_ARTIFACTS:
         if current_hashes.get(name) != expected.get(name):
             errors.append(f"report_ready后{name}发生变化，必须重新完成最终门禁")
+    # Hashes prove content stability, not freshness. This cheap check must also run
+    # when the full semantic gate is reused by finalize/deliver.
+    now = datetime.now(timezone.utc)
+    try:
+        report = json.loads((Path(work_dir) / "report-data.json").read_text(encoding="utf-8-sig"))
+        evidence = json.loads((Path(work_dir) / "policy-evidence.json").read_text(encoding="utf-8-sig"))
+        timestamps = []
+        meta = report.get("meta", {})
+        if "policy_researched_at" in meta:
+            timestamps.append(("政策检索", meta["policy_researched_at"]))
+        timestamps.extend((f"政策证据{row.get('id', '')}", row.get("retrieved_at")) for row in evidence.get("records", []) if isinstance(row, dict))
+        for label, value in timestamps:
+            checked = _parse_time(value)
+            age = (now - checked).total_seconds() if checked else None
+            if age is None or age < -600 or age > 86400:
+                errors.append(f"{label}超过24小时或时间无效，必须重新实时核验")
+    except (OSError, ValueError, TypeError, AttributeError) as error:
+        errors.append(f"无法检查政策证据时效：{error}")
     return errors
 
 

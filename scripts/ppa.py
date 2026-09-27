@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import argparse
+from concurrent.futures import ThreadPoolExecutor
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -160,11 +162,22 @@ def _validator(script: str, *arguments: str) -> None:
     _run([sys.executable, "-X", "utf8", str(SCRIPTS / script), *arguments], capture=True)
 
 
+def _validator_errors(script: str, *arguments: str) -> list[str]:
+    result = subprocess.run(
+        [sys.executable, "-X", "utf8", str(SCRIPTS / script), *arguments],
+        cwd=ROOT, text=True, encoding="utf-8", errors="replace", capture_output=True, check=False,
+    )
+    if not result.returncode:
+        return []
+    detail = ((result.stdout or "") + (result.stderr or "")).strip()
+    return [f"{script}: {detail or f'exit {result.returncode}'}"]
+
+
 def _current_workspace(work_dir: str | Path, *, minimum_stage: str | None = None) -> tuple[Path, dict]:
     root = Path(work_dir).resolve()
     state = workflow_state.load(root)
     if state.get("skill_fingerprint") != package_fingerprint():
-        raise ValueError("该项目由其他Skill版本创建；为防旧规则混入，请用当前版本重新start正式工作区")
+        raise ValueError("项目版本已变化；请运行 ppa.py resume --work-dir 原目录，保留资料后重新编译核验")
     current = str(state.get("current_stage", ""))
     if minimum_stage and (
         current not in workflow_state.STAGES
@@ -212,9 +225,189 @@ def command_search_catalog(args: argparse.Namespace) -> int:
 def command_compile(args: argparse.Namespace) -> int:
     from compile_workspace import compile_workspace
 
-    work_dir, _ = _current_workspace(args.work_dir)
+    work_dir, state = _current_workspace(args.work_dir)
+    inputs = {
+        "enterprise": _file_sha256(work_dir / "enterprise-findings.json"),
+        "policy": _file_sha256(work_dir / "policy-findings.json"),
+    }
+    fingerprint = package_fingerprint()
+    receipt = state.get("compile_receipt", {})
+    artifacts_exist = all((work_dir / name).is_file() for name in workflow_state.REPORT_ARTIFACTS)
+    if (
+        receipt.get("skill_fingerprint") == fingerprint
+        and receipt.get("inputs") == inputs
+        and state.get("findings_input_sha256") == inputs
+        and artifacts_exist
+        and receipt.get("outputs") == workflow_state.artifact_hashes(work_dir)
+    ):
+        print(json.dumps({"work_dir": str(work_dir), "generated": [], "reused": True}, ensure_ascii=False))
+        return 0
     compiled = compile_workspace(work_dir)
+    state = workflow_state.load(work_dir)
+    state["findings_input_sha256"] = inputs
+    state["compile_receipt"] = {
+        "skill_fingerprint": fingerprint,
+        "inputs": inputs,
+        "outputs": workflow_state.artifact_hashes(work_dir),
+    }
+    workflow_state.save(work_dir, state)
+    _refresh_enterprise_prepare_receipt(work_dir)
     print(json.dumps({"work_dir": str(work_dir), "generated": sorted(compiled)}, ensure_ascii=False))
+    return 0
+
+
+def command_migrate_findings(args: argparse.Namespace) -> int:
+    from compile_workspace import migrate_legacy_equity, migrate_legacy_policy_findings
+
+    work_dir = Path(args.work_dir).resolve()
+    enterprise_path = work_dir / "enterprise-findings.json"
+    policy_path = work_dir / "policy-findings.json"
+    enterprise = _load_json(enterprise_path)
+    policy = _load_json(policy_path)
+    migrated_enterprise = migrate_legacy_equity(enterprise)
+    migrated_policy = migrate_legacy_policy_findings(policy, migrated_enterprise)
+    from findings_contract import validate_findings_contracts
+    errors = validate_findings_contracts(migrated_enterprise, migrated_policy)
+    if errors:
+        raise ValueError("迁移后输入契约错误：\n" + "\n".join(errors))
+    with tempfile.TemporaryDirectory(dir=work_dir) as temporary:
+        root = Path(temporary)
+        _write_json(root / enterprise_path.name, migrated_enterprise)
+        _write_json(root / policy_path.name, migrated_policy)
+        (root / enterprise_path.name).replace(enterprise_path)
+        (root / policy_path.name).replace(policy_path)
+    print(json.dumps({"work_dir": str(work_dir), "migrated": [enterprise_path.name, policy_path.name], "workflow_state": "unchanged"}, ensure_ascii=False))
+    return 0
+
+
+def _enterprise_input_fingerprint(work_dir: Path) -> str:
+    return hashlib.sha256((work_dir / "enterprise-findings.json").read_bytes()).hexdigest()
+
+
+def _file_sha256(path: Path) -> str:
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def _enterprise_view_hashes(work_dir: Path) -> dict[str, str]:
+    """Hash only enterprise-owned views, excluding policy-derived report fields."""
+    report = _load_json(work_dir / "report-data.json")
+    report = json.loads(json.dumps(report, ensure_ascii=False))
+    report.pop("policy_research", None)
+    report.pop("policy_opportunity_radar", None)
+    report.pop("policies", None)
+    if isinstance(report.get("meta"), dict):
+        report["meta"].pop("policy_researched_at", None)
+        report["meta"].pop("policy_search_mode", None)
+    values = {
+        "report-data.json": report,
+        "research-ledger.json": _load_json(work_dir / "research-ledger.json"),
+        "equity-evidence.json": _load_json(work_dir / "equity-evidence.json"),
+    }
+    return {
+        name: hashlib.sha256(json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8")).hexdigest()
+        for name, value in values.items()
+    }
+
+
+def _refresh_enterprise_prepare_receipt(work_dir: Path) -> None:
+    state = workflow_state.load(work_dir)
+    if (
+        state.get("enterprise_input_sha256") == _enterprise_input_fingerprint(work_dir)
+        and all((work_dir / name).is_file() for name in ("report-data.json", "research-ledger.json", "equity-evidence.json"))
+    ):
+        state["enterprise_prepare_artifact_hashes"] = _enterprise_view_hashes(work_dir)
+        workflow_state.save(work_dir, state)
+
+
+def _findings_input_errors(work_dir: Path, state: dict) -> list[str]:
+    bound = state.get("findings_input_sha256")
+    if not isinstance(bound, dict):
+        return ["尚无成功compile的输入绑定；请先修正输入并运行compile，不执行后续整套校验"]
+    errors: list[str] = []
+    for kind, name in (("enterprise", "enterprise-findings.json"), ("policy", "policy-findings.json")):
+        expected = str(bound.get(kind, ""))
+        path = work_dir / name
+        if not expected:
+            errors.append(f"缺少{kind} findings输入绑定SHA")
+        elif not path.is_file():
+            errors.append(f"缺少{ name }")
+        elif _file_sha256(path) != expected:
+            errors.append(f"{name}已变化，必须重新compile并finalize")
+    return errors
+
+
+def _validate_enterprise_payloads(work_dir: Path, compiled: dict[str, dict]) -> list[tuple[str, dict]]:
+    """Validate only the ordered enterprise stages against candidate ledgers."""
+    with tempfile.TemporaryDirectory(dir=work_dir) as temporary:
+        candidate = Path(temporary)
+        (candidate / "report-data.json").write_text(
+            json.dumps(compiled["report-data.json"], ensure_ascii=False), encoding="utf-8"
+        )
+        (candidate / "research-ledger.json").write_text(
+            json.dumps(compiled["research-ledger.json"], ensure_ascii=False), encoding="utf-8"
+        )
+        receipts: list[tuple[str, dict]] = []
+        errors: list[str] = []
+        for stage in workflow_state.STAGES[1 : workflow_state.STAGES.index("landing_businesses_complete") + 1]:
+            try:
+                receipts.append((stage, _validate_lightweight_stage(candidate, stage)))
+            except ValueError as error:
+                errors.append(f"{stage}: {error}")
+        if errors:
+            raise ValueError("企业轻量阶段校验失败：\n" + "\n".join(errors))
+        return receipts
+
+
+def command_prepare_enterprise(args: argparse.Namespace) -> int:
+    """Compile and complete the enterprise-only chain without reading policy input."""
+    from compile_workspace import compile_enterprise_findings
+
+    work_dir, state = _current_workspace(args.work_dir)
+    input_path = work_dir / "enterprise-findings.json"
+    if not input_path.is_file():
+        raise ValueError("缺少enterprise-findings.json")
+    findings = _load_json(input_path)
+    if str(findings.get("enterprise", "")).strip() != str(state.get("enterprise", "")).strip():
+        raise ValueError("enterprise-findings.json企业主体与流程状态不一致")
+    fingerprint = _enterprise_input_fingerprint(work_dir)
+    required_names = ("report-data.json", "research-ledger.json", "equity-evidence.json")
+    prepared_hashes = state.get("enterprise_prepare_artifact_hashes")
+    fast_path_valid = (
+        state.get("enterprise_input_sha256") == fingerprint
+        and isinstance(prepared_hashes, dict)
+        and all((work_dir / name).is_file() for name in required_names)
+        and prepared_hashes == _enterprise_view_hashes(work_dir)
+        and workflow_state.STAGES.index(str(state.get("current_stage"))) >= workflow_state.STAGES.index("landing_businesses_complete")
+    )
+    if fast_path_valid:
+        print("通过：企业准备阶段已按相同输入完成，未重复编译或改变政策台账")
+        return 0
+
+    compiled = compile_enterprise_findings(findings, work_dir)
+    receipts = _validate_enterprise_payloads(work_dir, compiled)
+    # Only after every enterprise stage passes, replace the three enterprise ledgers.
+    with tempfile.TemporaryDirectory(dir=work_dir) as temporary:
+        temporary_root = Path(temporary)
+        for name in required_names:
+            _write_json(temporary_root / name, compiled[name])
+        for name in required_names:
+            (temporary_root / name).replace(work_dir / name)
+
+    current = str(state.get("current_stage", ""))
+    if current not in workflow_state.STAGES:
+        raise ValueError(f"未知流程阶段：{current or '空'}")
+    # Any changed enterprise input invalidates an earlier report_ready receipt.
+    state["current_stage"] = "environment_ready"
+    state["completed_stages"] = ["environment_ready"]
+    state["history"] = [row for row in state.get("history", []) if row.get("stage") == "environment_ready"]
+    state["ready_artifact_hashes"] = {}
+    state["delivery"] = {}
+    state["enterprise_input_sha256"] = fingerprint
+    state["enterprise_prepare_artifact_hashes"] = _enterprise_view_hashes(work_dir)
+    workflow_state.save(work_dir, state)
+    for stage, receipt in receipts:
+        workflow_state.complete_stage(work_dir, stage, receipt)
+    print(json.dumps({"work_dir": str(work_dir), "current_stage": "landing_businesses_complete", "policy_input": "not_required"}, ensure_ascii=False))
     return 0
 
 
@@ -228,9 +421,12 @@ def command_research_plan(args: argparse.Namespace) -> int:
 
 
 def command_discover_policies(args: argparse.Namespace) -> int:
-    from discover_current_policies import discover_current_policies, merge_discovery_fragment
-
     work_dir, _ = _current_workspace(args.work_dir, minimum_stage="landing_businesses_complete")
+    state = workflow_state.load(work_dir)
+    expected_input_sha = str(state.get("enterprise_input_sha256", ""))
+    if not expected_input_sha or _enterprise_input_fingerprint(work_dir) != expected_input_sha:
+        raise ValueError("企业输入已变化或缺少prepare-enterprise回执；请先重新运行prepare-enterprise")
+    from discover_current_policies import discover_current_policies, merge_discovery_fragment
     out_dir = Path(args.out_dir).resolve() if args.out_dir else work_dir / "evidence" / "policy-discovery"
     result = discover_current_policies(
         _load_json(work_dir / "research-ledger.json"),
@@ -238,6 +434,7 @@ def command_discover_policies(args: argparse.Namespace) -> int:
         out_dir,
         max_concurrency=args.max_concurrency,
         max_retries=args.max_retries,
+        request_timeout=args.request_timeout,
     )
     merge_discovery_fragment(work_dir / "policy-findings.json", out_dir / "policy-findings-fragment.json")
     print(json.dumps({"out_dir": str(out_dir), **result["metrics"]}, ensure_ascii=False))
@@ -265,17 +462,32 @@ def _validate_lightweight_stage(work_dir: Path, stage: str) -> dict:
             raise ValueError("企业事实或业务候选尚未编译")
         return {"compiled": True, "fact_count": len(research["fact_ledger"])}
     if stage == "equity_financial_complete":
-        if len(report.get("financials", [])) != 3:
+        financials = report.get("financials", [])
+        years = [str(row.get("year", "")).strip() for row in financials if isinstance(row, dict)]
+        if len(financials) != 3 or len(years) != 3 or not all(years) or len(set(years)) != 3:
             raise ValueError("最近三个完整年度财务尚未完成")
-        return {"compiled": True, "financial_years": [row.get("year") for row in report["financials"]]}
+        return {"compiled": True, "financial_years": years}
     if stage == "industry_catalog_complete":
-        if not report.get("encouraged_industry_assessment"):
-            raise ValueError("鼓励类产业目录判断尚未完成")
+        assessments = report.get("encouraged_industry_assessment")
+        if not isinstance(assessments, dict):
+            raise ValueError("鼓励类产业目录判断模块尚未编译")
+        required = ("catalog_version", "catalogs_checked", "business_assessments")
+        if any(not assessments.get(field) for field in required):
+            raise ValueError("鼓励类产业目录判断模块字段不完整")
+        business_ids = {str(item.get("id", "")) for item in report.get("businesses", []) if isinstance(item, dict)}
+        assessed_ids = {str(item.get("business_id", "")) for item in assessments.get("business_assessments", []) if isinstance(item, dict)}
+        if not business_ids or not business_ids.issubset(assessed_ids):
+            raise ValueError("鼓励类产业目录判断未覆盖全部企业业务")
+        source_ids = {str(item.get("id", "")) for item in report.get("sources", [])}
+        if not any(source_id.startswith("P") for source_id in source_ids):
+            raise ValueError("鼓励类产业目录判断缺少P类官方目录来源")
         return {"compiled": True}
     if stage == "landing_businesses_complete":
         landings = report.get("landing_businesses", [])
         required = ("id", "business", "fact_basis", "sanya_path", "value", "feasibility", "policy_departments")
-        if not landings or any(any(not item.get(field) for field in required) for item in landings):
+        if not isinstance(landings, list) or not landings or any(
+            not isinstance(item, dict) or any(not item.get(field) for field in required) for item in landings
+        ):
             raise ValueError("三亚落地业务及承接路径尚未完整填写")
         return {"compiled": True, "landing_business_ids": [item["id"] for item in landings]}
     if stage == "policy_research_complete":
@@ -296,19 +508,31 @@ def _validate_final_suite(work_dir: Path) -> dict:
     research = work_dir / "research-ledger.json"
     search = work_dir / "policy-search-ledger.json"
     policy = work_dir / "policy-evidence.json"
-    _validator("validate_report_data.py", str(report))
-    _validator("validate_text_quality.py", str(report))
-    _validator("validate_encouraged_industry_assessment.py", str(report))
-    _validator("validate_equity_evidence.py", str(equity), "--report-data", str(report), "--research-ledger", str(research))
-    _validator("validate_research_ledger.py", str(research), "--report-data", str(report))
-    _validator("validate_research_stop_gate.py", str(research), "--report-data", str(report))
-    _validator("validate_policy_search_coverage.py", str(search), "--research-ledger", str(research), "--report-data", str(report))
-    _validator("validate_policy_evidence.py", str(policy), "--report-data", str(report), "--policy-search-ledger", str(search))
-    _validator("validate_business_policy_ledger.py", str(report))
+    errors: list[str] = []
+    checks = (
+        ("validate_report_data.py", (str(report),)),
+        ("validate_text_quality.py", (str(report),)),
+        ("validate_encouraged_industry_assessment.py", (str(report),)),
+        ("validate_equity_evidence.py", (str(equity), "--report-data", str(report), "--research-ledger", str(research))),
+        ("validate_research_ledger.py", (str(research), "--report-data", str(report))),
+        ("validate_research_stop_gate.py", (str(research), "--report-data", str(report))),
+        ("validate_policy_search_coverage.py", (str(search), "--research-ledger", str(research), "--report-data", str(report), "--policy-evidence", str(policy))),
+        ("validate_policy_evidence.py", (str(policy), "--report-data", str(report), "--policy-search-ledger", str(search))),
+        ("validate_business_policy_ledger.py", (str(report),)),
+    )
+    # Read-only gates share immutable compiled artifacts, not mutable output files.
+    # Collect in declaration order so parallel execution cannot scramble diagnostics.
+    with ThreadPoolExecutor(max_workers=4) as executor:
+        futures = [executor.submit(_validator_errors, script, *arguments) for script, arguments in checks]
+        for future in futures:
+            errors.extend(future.result())
     with tempfile.TemporaryDirectory() as temporary:
         cards = Path(temporary) / "policy-cards.json"
-        _validator("export_policy_cards.py", str(report), "--out", str(cards))
-        _validator("validate_policy_scope.py", str(cards))
+        errors.extend(_validator_errors("export_policy_cards.py", str(report), "--out", str(cards)))
+        if cards.is_file():
+            errors.extend(_validator_errors("validate_policy_scope.py", str(cards)))
+    if errors:
+        raise ValueError("最终语义门禁失败（已汇总独立错误）：\n" + "\n".join(errors))
     return workflow_state.artifact_hashes(work_dir)
 
 
@@ -317,7 +541,10 @@ def command_finalize(args: argparse.Namespace) -> int:
     work_dir = Path(args.work_dir).resolve()
     state = workflow_state.load(work_dir)
     if state.get("skill_fingerprint") != package_fingerprint():
-        raise ValueError("该项目由其他Skill版本创建；请用当前版本重新start正式工作区")
+        raise ValueError("项目版本已变化；请先运行 ppa.py resume --work-dir 原目录")
+    input_errors = _findings_input_errors(work_dir, state)
+    if input_errors:
+        raise ValueError("findings输入绑定失败：\n" + "\n".join(input_errors))
     current = str(state.get("current_stage", ""))
     if current in {"report_ready", "html_accepted"}:
         stale = workflow_state.ready_state_errors(work_dir, package_fingerprint())
@@ -327,8 +554,28 @@ def command_finalize(args: argparse.Namespace) -> int:
     receipts: list[tuple[str, dict]] = []
     current_index = workflow_state.STAGES.index(current)
     for stage in workflow_state.STAGES[current_index + 1: workflow_state.STAGES.index("report_ready")]:
-        receipts.append((stage, _validate_lightweight_stage(work_dir, stage)))
-    hashes = _validate_final_suite(work_dir)
+        try:
+            receipts.append((stage, _validate_lightweight_stage(work_dir, stage)))
+        except ValueError as error:
+            receipts.append((stage, {"validation_error": str(error)}))
+    lightweight_errors = [
+        f"{stage}: {receipt['validation_error']}"
+        for stage, receipt in receipts if "validation_error" in receipt
+    ]
+    formal_errors: list[str] = []
+    hashes: dict[str, str] | None = None
+    try:
+        hashes = _validate_final_suite(work_dir)
+    except ValueError as error:
+        formal_errors.append(str(error))
+    if lightweight_errors or formal_errors:
+        sections = []
+        if lightweight_errors:
+            sections.append("轻量阶段校验失败（独立汇总）：\n" + "\n".join(lightweight_errors))
+        if formal_errors:
+            sections.append("正式语义门禁失败（独立汇总）：\n" + "\n".join(formal_errors))
+        raise ValueError("\n".join(sections))
+    assert hashes is not None
     if current in {"report_ready", "html_accepted"}:
         workflow_state.refresh_report_ready(work_dir, hashes)
     else:
@@ -351,7 +598,37 @@ def command_status(args: argparse.Namespace) -> int:
         state = workflow_state.load(args.work_dir)
         print(f"项目：{state.get('enterprise')}；run_id={state.get('run_id')}；当前阶段={state.get('current_stage')}；下一阶段={workflow_state.next_stage(state) or '无'}")
         if state.get("skill_fingerprint") != package_fingerprint():
-            print("警告：项目状态来自其他Skill版本，正式交付前必须重新start")
+            print("项目版本已变化：运行 ppa.py resume --work-dir 原目录保留资料接续")
+    return 0
+
+
+def command_resume(args: argparse.Namespace) -> int:
+    """Keep compatible inputs and evidence; invalidate approvals from old code."""
+    from findings_contract import validate_enterprise_findings
+    root = Path(args.work_dir).resolve()
+    state = workflow_state.load(root)
+    findings = _load_json(root / "enterprise-findings.json")
+    if findings.get("version") != "1.0" or findings.get("enterprise") != state.get("enterprise"):
+        raise ValueError("输入契约版本或主体不兼容；资料保留，需显式迁移")
+    errors = validate_enterprise_findings(findings)
+    if errors:
+        raise ValueError("原工作区输入需修正，资料未改动：\n" + "\n".join(errors))
+    fingerprint = package_fingerprint()
+    if state.get("skill_fingerprint") == fingerprint:
+        print("工作区版本一致，保留当前进度；按status继续")
+        return 0
+    backup = root / ("workflow-state.before-resume-" + str(state.get("skill_fingerprint", "unknown"))[:12] + ".json")
+    if not backup.exists():
+        _write_json(backup, state)
+    state["skill_fingerprint"] = fingerprint
+    state["current_stage"] = "environment_ready"
+    state["completed_stages"] = ["environment_ready"]
+    state["ready_artifact_hashes"] = {}
+    state["delivery"] = {}
+    for key in ("enterprise_input_sha256", "enterprise_prepare_artifact_hashes", "findings_input_sha256"):
+        state.pop(key, None)
+    workflow_state.save(root, state)
+    print("已接续兼容工作区；输入与证据保留。下一步prepare-enterprise、compile、finalize，不必重新start。")
     return 0
 
 
@@ -359,6 +636,7 @@ def command_deliver(args: argparse.Namespace) -> int:
     runtime = require_ready_runtime(args.node, args.chrome, need_word=args.word)
     work_dir = Path(args.work_dir).resolve()
     errors = workflow_state.ready_state_errors(work_dir, package_fingerprint())
+    errors.extend(_findings_input_errors(work_dir, workflow_state.load(work_dir)))
     if errors:
         raise ValueError("正式交付门禁失败：\n" + "\n".join(f"- {error}" for error in errors))
     from run_report_pipeline import main as pipeline
@@ -428,6 +706,12 @@ def build_parser() -> argparse.ArgumentParser:
     compile_command = sub.add_parser("compile", help="将两份精简输入原子编译为五份正式台账")
     compile_command.add_argument("--work-dir", required=True)
     compile_command.set_defaults(handler=command_compile)
+    migrate = sub.add_parser("migrate-findings", help="显式迁移旧版双写输入为canonical findings契约")
+    migrate.add_argument("--work-dir", required=True)
+    migrate.set_defaults(handler=command_migrate_findings)
+    prepare = sub.add_parser("prepare-enterprise", help="企业侧三台账编译与落地阶段准备；不依赖政策输入")
+    prepare.add_argument("--work-dir", required=True)
+    prepare.set_defaults(handler=command_prepare_enterprise)
     research_plan = sub.add_parser("research-plan", help="按上市或非上市路由生成最小企业研究行动清单")
     research_plan.add_argument("--work-dir", required=True)
     research_plan.set_defaults(handler=command_research_plan)
@@ -458,7 +742,11 @@ def build_parser() -> argparse.ArgumentParser:
     discover_policy.add_argument("--out-dir")
     discover_policy.add_argument("--max-concurrency", type=int, default=4)
     discover_policy.add_argument("--max-retries", type=int, default=2)
+    discover_policy.add_argument("--request-timeout", type=float, default=20)
     discover_policy.set_defaults(handler=command_discover_policies)
+    resume = sub.add_parser("resume", help="兼容版本更新后保留资料接续；重新编译核验")
+    resume.add_argument("--work-dir", required=True)
+    resume.set_defaults(handler=command_resume)
     deliver = sub.add_parser("deliver", help="在全部阶段和五台账指纹通过后生成报告")
     deliver.add_argument("--work-dir", required=True)
     deliver.add_argument("--out-dir", required=True)

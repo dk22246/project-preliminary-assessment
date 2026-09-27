@@ -38,8 +38,6 @@ def complete_ledger():
             },
             "discovery_rounds": [
                 {"round": 1, "high_value_candidate_ids": ["BC01"]},
-                {"round": 2, "high_value_candidate_ids": []},
-                {"round": 3, "high_value_candidate_ids": []},
             ],
         },
         "business_candidates": [
@@ -119,9 +117,25 @@ class ResearchStopGateTests(unittest.TestCase):
         errors = validate_research_stop_gate(ledger)
         self.assertTrue(any("一次定向补查" in item for item in errors), errors)
 
-    def test_complete_dispositions_and_two_empty_rounds_allow_policy_phase(self):
+    def test_listed_route_rejects_repeated_research_rounds(self):
         self.assertIsNotNone(validate_research_stop_gate, "validate_research_stop_gate.py must provide validate_research_stop_gate")
-        self.assertEqual(validate_research_stop_gate(complete_ledger()), [])
+        ledger = complete_ledger()
+        ledger["research_stop_gate"]["discovery_rounds"].extend([
+            {"round": 2, "high_value_candidate_ids": []},
+            {"round": 3, "high_value_candidate_ids": []},
+        ])
+        errors = validate_research_stop_gate(ledger)
+        self.assertTrue(any("上市公司只能执行一轮集中研究" in item for item in errors), errors)
+
+    def test_nonlisted_route_rejects_more_than_fixed_ladder_and_one_gap_round(self):
+        ledger = make_nonlisted(complete_ledger())
+        ledger["research_stop_gate"]["discovery_rounds"] = [
+            {"round": "fixed_source_ladder", "high_value_candidate_ids": []},
+            {"round": "targeted_gap_check", "high_value_candidate_ids": []},
+            {"round": "repeated_search", "high_value_candidate_ids": []},
+        ]
+        errors = validate_research_stop_gate(ledger)
+        self.assertTrue(any("非上市公司最多执行固定来源阶梯和一次定向补查" in item for item in errors), errors)
 
     def test_missing_required_topic_blocks_stop_gate_and_requires_enterprise_supplement(self):
         self.assertIsNotNone(validate_research_stop_gate, "validate_research_stop_gate.py must provide validate_research_stop_gate")

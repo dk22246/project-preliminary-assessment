@@ -55,7 +55,7 @@ TOP500_STATUSES = {"listed", "group_listed", "not_listed", "research_incomplete"
 TOP500_RELATIONSHIPS = {"same_entity", "parent_group", "ultimate_group", "not_applicable"}
 TRANSACTION_TERMS = re.compile(r"供应商|供货商|客户|采购方|经销商|合作伙伴|合作方|supplier|vendor|customer|client|dealer|partner", re.IGNORECASE)
 NEGATED_TRANSACTION_TERMS = re.compile(
-    r"(?:不(?:代表|是|属于)?|非|未(?:确认|证实)?)(?:已确认)?(?:供应商|客户|合作伙伴)(?:或(?:供应商|客户|合作伙伴))*|"
+    r"(?:不(?:代表|是|属于|作为)?|非|未(?:确认|证实)?)(?:已确认)?(?:供应商|客户|合作伙伴)(?:或(?:供应商|客户|合作伙伴))*|"
     r"(?:not|no)\s+(?:a\s+)?(?:confirmed\s+)?(?:supplier|customer|client|partner)",
     re.IGNORECASE,
 )
@@ -116,7 +116,10 @@ def financial_change_notes(financials: list[dict]) -> list[str]:
 
 
 def validate_report_data(data: dict) -> list[str]:
-    errors = [f"缺少顶层字段：{name}" for name in REQUIRED_TOP if not data.get(name)]
+    errors = [
+        f"缺少顶层字段：{name}" if name not in data else f"顶层字段为空：{name}（检查输入及处置结果，不是编译字段丢失）"
+        for name in REQUIRED_TOP if not data.get(name)
+    ]
     if "overall_judgment" in data:
         errors.append("已停用顶层字段overall_judgment：报告不得恢复项目整体判断章节")
     entity = data.get("entity_resolution", {})
@@ -125,6 +128,18 @@ def validate_report_data(data: dict) -> list[str]:
     for field in ("established_at", "registered_location", "listing_status", "main_business", "employee_scale", "profile", "operating_summary"):
         if not str(overview.get(field, "")).strip():
             errors.append(f"企业概况缺少{field}")
+    risks = data.get("risks")
+    if not isinstance(risks, dict):
+        errors.append("风险数据必须编译为包含regulatory与litigation的结构化对象，禁止将原始风险列表直接交给渲染器")
+    else:
+        for field, columns in (("regulatory", 7), ("litigation", 6)):
+            rows = risks.get(field)
+            if not isinstance(rows, list):
+                errors.append(f"风险数据缺少{field}数组")
+                continue
+            for index, row in enumerate(rows, 1):
+                if not isinstance(row, list) or len(row) != columns:
+                    errors.append(f"风险数据{field}第{index}行必须包含{columns}列")
     equity = data.get("equity", {})
     equity_status = str(equity.get("data_status", "")).strip()
     if equity_status not in EQUITY_DATA_STATUSES:
@@ -387,10 +402,7 @@ def validate_policy_opportunity_radar(data: dict, report_source_ids: set[str] | 
         if signal_type == "industry_common_need" or "industry_inference" in source_kinds:
             errors.append(f"政策机会雷达{label}不得以industry_common_needs或industry_inference作为企业事实触发")
         signal_fact = str(signal.get("fact", ""))
-        is_overseas_signal = (
-            any(marker in signal_type for marker in ("overseas", "foreign_trade", "cross_border", "global"))
-            or any(marker in signal_fact for marker in ("海外", "境外", "跨境", "出口", "国际市场", "境外投资"))
-        )
+        is_overseas_signal = is_overseas_business_signal(signal_type, signal_fact)
         if is_overseas_signal:
             missing = sorted(OVERSEAS_OPPORTUNITY_TOPICS - topics)
             if missing:
@@ -399,6 +411,13 @@ def validate_policy_opportunity_radar(data: dict, report_source_ids: set[str] | 
     if missing_from_radar:
         errors.append(f"正式政策表存在未由企业事实信号触发的政策：{', '.join(missing_from_radar)}")
     return errors
+
+
+def is_overseas_business_signal(signal_type: object, fact: object) -> bool:
+    return (
+        any(marker in str(signal_type).lower() for marker in ("overseas", "foreign_trade", "cross_border", "global"))
+        or any(marker in str(fact) for marker in ("海外", "境外", "跨境", "出口", "国际市场", "境外投资"))
+    )
 
 
 def validate_top500_status(data: dict, report_source_ids: set[str]) -> list[str]:
@@ -485,6 +504,21 @@ def _has_unsupported_transaction_claim(value: str) -> bool:
     return bool(TRANSACTION_TERMS.search(remaining))
 
 
+GENERIC_REPRESENTATIVE_NAMES = {
+    "原料生产与初加工主体", "食品包装材料生产主体", "食品制造装备与检测服务主体",
+    "零售终端", "餐饮经营主体", "食品加工企业", "上游企业", "下游企业",
+    "相关企业", "行业企业", "供应商", "客户", "合作伙伴",
+}
+GENERIC_REPRESENTATIVE_PATTERN = re.compile(
+    r"^(?:原料|材料|设备|渠道|零售|餐饮|食品|行业|上游|下游|相关).*(?:主体|企业|机构|平台|终端|供应商|客户)$"
+)
+
+
+def _is_generic_representative_name(value: object) -> bool:
+    name = str(value or "").strip()
+    return not name or name in GENERIC_REPRESENTATIVE_NAMES or bool(GENERIC_REPRESENTATIVE_PATTERN.fullmatch(name))
+
+
 def validate_industry_chain(data: dict, report_source_ids: set[str]) -> list[str]:
     errors: list[str] = []
     chain = data.get("industry_chain", {})
@@ -528,6 +562,8 @@ def validate_industry_chain(data: dict, report_source_ids: set[str]) -> list[str
                 if not isinstance(representative, dict) or not str(representative.get("name", "")).strip():
                     errors.append(f"industry_chain.{section}的representative_enterprises必须为含name和source_ids的对象")
                     continue
+                if _is_generic_representative_name(representative.get("name")):
+                    errors.append(f"industry_chain.{section}代表企业不得使用行业类别或占位词：{representative.get('name')}")
                 _validate_e_sources(representative.get("source_ids", []), report_source_ids, "representative_enterprises", errors)
                 claim_text.extend(str(representative.get(field, "")) for field in ("name", "note"))
             if not entry.get("transaction_evidence") and any(_has_unsupported_transaction_claim(value) for value in claim_text):

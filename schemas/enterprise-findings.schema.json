@@ -6,9 +6,137 @@
   "properties": {
     "version": {"const": "1.0"},
     "enterprise": {"type": "string", "minLength": 1},
-    "report": {"type": "object"},
-    "research": {"type": "object"},
-    "equity": {"type": "object"},
+    "report": {
+      "type": "object",
+      "properties": {
+        "entity_resolution": {"type": "object", "properties": {"user_input": {"type": "string"}, "name_type": {"type": "string"}, "legal_entity": {"type": "string"}, "analysis_entity": {"type": "string"}, "financial_scope": {"type": "string"}, "risk_scope": {"type": "string"}}},
+        "enterprise_overview": {"type": "object"},
+        "financial_analysis": {"type": "string"},
+        "comprehensive_assessment": {"type": "string"},
+        "government_support": {"type": "array", "items": {"type": "object"}},
+        "businesses": {"type": "array", "items": {"type": "object", "required": ["key"], "properties": {"key": {"type": "string", "minLength": 1}}}},
+        "financials": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["year"],
+            "properties": {
+              "year": {"type": "string", "minLength": 1},
+              "government_support_components": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "required": ["name", "amount"],
+                  "properties": {
+                    "name": {"type": "string", "minLength": 1},
+                    "amount": {"type": "number"}
+                  }
+                }
+              }
+            }
+          }
+        },
+        "encouraged_industry_assessment": {
+          "type": "object",
+          "properties": {
+            "catalog_version": {"type": "string"},
+            "overall_judgment": {"enum": ["direct_match", "potential_match_only", "no_match", "research_incomplete", "明确符合", "存在相近可能", "暂未发现明确匹配"]},
+            "summary": {"type": "string"},
+            "catalogs_checked": {"type": "array", "items": {"type": "object", "required": ["catalog_scope", "status"], "properties": {"catalog_scope": {"enum": ["hainan_added_2024", "industrial_restructuring_current", "foreign_investment_current"]}, "status": {"enum": ["checked", "not_applicable"]}, "source_key": {"type": "string"}, "reason": {"type": "string"}}}},
+            "business_assessments": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["business_id"],
+                "properties": {
+                  "business_id": {"type": "string"},
+                  "activity_id": {"type": "string"},
+                  "business": {"type": "string"},
+                  "activity_name": {"type": "string"},
+                  "activity_object": {"type": "string"},
+                  "activity_type": {"enum": ["research", "manufacturing", "processing", "mining", "sales", "trade", "operation", "technical_service", "investment", "logistics", "management", "other"]},
+                  "condition_status": {"enum": ["met", "missing", "not_required", "not_applicable"]},
+                  "judgment": {"enum": ["direct_match", "potential_match", "no_match", "research_incomplete", "明确符合", "存在相近可能", "暂未发现明确匹配"]},
+                  "reason": {"type": "string"},
+                  "verification_needed": {"type": "string"},
+                  "enterprise_source_keys": {"type": "array", "items": {"type": "string"}},
+                  "catalog_source_keys": {"type": "array", "items": {"type": "string"}},
+                  "matched_items": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "required": ["catalog_entry_id"],
+                      "properties": {
+                        "catalog_entry_id": {"type": "string"},
+                        "detail_index": {"type": "integer", "minimum": 0}
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "landing_businesses": {"type": "array", "items": {"type": "object", "required": ["key", "business", "fact_basis", "sanya_path", "value", "feasibility", "policy_departments"], "properties": {"key": {"type": "string", "minLength": 1}, "business": {"type": "string", "minLength": 1}, "fact_basis": {"type": "string", "minLength": 1}, "sanya_path": {"type": "string", "minLength": 1}, "value": {"type": "string", "minLength": 1}, "feasibility": {"type": "string", "minLength": 1}, "policy_departments": {"type": "array", "minItems": 1}}}},
+        "industry_chain": {"type": "object"}, "industry_position": {"type": "object"}, "top500_status": {"type": "array"}, "risks": {"type": "array"}, "conclusion": {"type": "object"}, "tax_contribution": {"type": "object"}, "government_resources": {"type": "array"}, "meta": {"type": "object"}, "policies": {"type": "array"}, "policy_research": {"type": "array"}, "policy_opportunity_radar": {"type": "object"}, "equity": {"type": "object"}
+      },
+      "additionalProperties": false
+    },
+    "research": {
+      "type": "object",
+      "properties": {
+        "enterprise_profile": {"type": "object", "properties": {"analysis_entity": {"type": "string"}, "listing_status": {"type": "string"}, "research_route": {"type": "string"}, "basis_source_keys": {"type": "array"}}},
+        "research_stop_gate": {"type": "object"},
+        "facts": {"type": "array", "items": {"type": "object", "required": ["key", "source_keys", "action", "object", "enterprise_role", "confidence"], "properties": {"key": {"type": "string", "minLength": 1}, "source_keys": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}}, "action": {"type": "string", "minLength": 1}, "object": {"type": "string", "minLength": 1}, "enterprise_role": {"type": "string", "minLength": 1}, "confidence": {"enum": ["high", "medium", "low"]}}}},
+        "business_candidates": {"type": "array", "items": {"type": "object", "required": ["key"], "properties": {"key": {"type": "string", "minLength": 1}}}},
+        "department_routes": {"type": "array", "items": {"type": "object", "required": ["key", "landing_business_key"], "properties": {"key": {"type": "string", "minLength": 1}, "landing_business_key": {"type": "string", "minLength": 1}}}}
+      },
+      "additionalProperties": false
+    },
+    "equity": {
+      "type": "object",
+      "properties": {
+        "data_status": {"enum": ["", "available", "partial", "not_public", "inaccessible"]},
+        "review_status": {"enum": ["incomplete", "complete", "fallback_complete", "qualified_complete", "blocked", "not_public", "inaccessible"]},
+        "evidence_summary": {"type": "object", "properties": {"display_source_key": {"type": "string", "minLength": 1}, "as_of_date": {"type": "string", "minLength": 1}}},
+        "nodes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["key", "name", "entity_type", "role", "assertion_type", "as_of_date", "source_keys"],
+            "properties": {
+              "key": {"type": "string", "minLength": 1},
+              "name": {"type": "string", "minLength": 1},
+              "entity_type": {"type": "string", "minLength": 1},
+              "role": {"type": "string", "minLength": 1},
+              "assertion_type": {"enum": ["registry_fact", "legal_disclosure", "provider_calculation", "consolidation_scope"]},
+              "as_of_date": {"type": "string", "minLength": 1},
+              "source_keys": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}},
+              "calculation_basis": {"type": "string", "minLength": 1}
+            }
+          }
+        },
+        "edges": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["key", "from_key", "to_key", "relationship", "assertion_type", "as_of_date", "source_keys"],
+            "properties": {
+              "key": {"type": "string", "minLength": 1},
+              "from_key": {"type": "string", "minLength": 1},
+              "to_key": {"type": "string", "minLength": 1},
+              "relationship": {"type": "string", "minLength": 1},
+              "assertion_type": {"enum": ["registry_fact", "legal_disclosure", "provider_calculation", "consolidation_scope"]},
+              "as_of_date": {"type": "string", "minLength": 1},
+              "source_keys": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}},
+              "ownership_percent": {"type": "number"},
+              "is_remainder": {"type": "boolean"},
+              "calculation_basis": {"type": "string", "minLength": 1}
+            }
+          }
+        }
+      }
+    },
     "sources": {
       "type": "array",
       "items": {

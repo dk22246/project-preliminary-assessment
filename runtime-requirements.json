@@ -4,6 +4,7 @@
   "node": ">=18",
   "default_output": ["python", "node", "playwright", "playwright-chromium", "chrome"],
   "word_output": ["python-docx"],
+  "document_extraction": ["pypdf"],
   "network": {
     "connect_timeout_seconds": 10,
     "read_timeout_seconds": 30,
