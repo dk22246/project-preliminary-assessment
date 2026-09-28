@@ -58,8 +58,6 @@ def setup_commands(*, node: Path, with_word: bool, npm: str | None = None) -> li
         [npm_command, "ci", "--ignore-scripts"],
         [str(node), str(ROOT / "node_modules" / "playwright" / "cli.js"), "install", "chromium"],
     ]
-    if with_word:
-        commands.append([sys.executable, "-X", "utf8", "-m", "pip", "install", "-r", str(ROOT / "requirements-word.txt")])
     return commands
 
 
@@ -107,8 +105,6 @@ def command_setup(args: argparse.Namespace) -> int:
         if not npm:
             raise ValueError("缺少Playwright/Chromium且未找到npm；请安装带npm的Node.js，或用--npm提供npm/npm.cmd路径")
         install_commands.extend(setup_commands(node=node, with_word=False, npm=npm))
-    if args.with_word and not discovered.get("python_docx"):
-        install_commands.append([sys.executable, "-X", "utf8", "-m", "pip", "install", "-r", str(ROOT / "requirements-word.txt")])
     for command in install_commands:
         _run(command, env=env)
     discovered = discover(str(node), hinted_chrome)

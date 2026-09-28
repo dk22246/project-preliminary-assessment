@@ -247,8 +247,9 @@ class WorkflowControllerTests(unittest.TestCase):
         self.assertTrue(any("npm" in command and "ci" in command for command in flattened))
         self.assertTrue(any("playwright" in command and "install" in command and "chromium" in command for command in flattened))
         self.assertFalse(any("requirements-word.txt" in command for command in flattened))
+        # Word 已改为纯标准库生成（stdlib_docx），不再依赖 python-docx / requirements-word.txt
         word_commands = ppa.setup_commands(node=node, with_word=True)
-        self.assertTrue(any("requirements-word.txt" in " ".join(str(part) for part in command) for command in word_commands))
+        self.assertFalse(any("requirements-word.txt" in " ".join(str(part) for part in command) for command in word_commands))
 
     def test_setup_does_not_reuse_stale_receipt_when_runtime_is_missing(self):
         import ppa

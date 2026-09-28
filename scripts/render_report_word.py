@@ -5,9 +5,7 @@ import argparse
 from pathlib import Path
 import sys
 
-from docx import Document
-from docx.enum.text import WD_BREAK
-from docx.shared import Cm
+from stdlib_docx import Document
 
 from report_core import financial_change_notes, financial_headers, load_data, require_fixture_authorization, validate_report_data, validate_text
 from word_report_builder import add_body, add_cover_line, add_heading, add_native_toc_with_cache, add_standard_table, configure_report_document, try_update_fields_with_word
@@ -18,7 +16,7 @@ def rows(items, fields):
 
 
 def h1(doc, title):
-    doc.add_paragraph().add_run().add_break(WD_BREAK.PAGE)
+    doc.add_page_break()
     add_heading(doc, title, 1)
 
 
@@ -165,7 +163,7 @@ def main() -> int:
     add_cover_line(doc, f"编制单位：{data['meta'].get('unit', '三亚中央商务区招商研判组')}")
     add_cover_line(doc, f"编制日期：{data['meta']['generated_at']}")
     doc.add_page_break(); add_heading(doc, "目录", 1)
-    add_native_toc_with_cache(doc.add_paragraph(), [(x, 1) for x in ("一、企业基本情况", "二、近三年经营数据", "三、风险与合规情况", "四、三亚落地业务及落地方式", "五、企业政策匹配", "六、综合评估", "七、参考资料")])
+    add_native_toc_with_cache(doc, [(x, 1) for x in ("一、企业基本情况", "二、近三年经营数据", "三、风险与合规情况", "四、三亚落地业务及落地方式", "五、企业政策匹配", "六、综合评估", "七、参考资料")])
     h1(doc, "一、企业基本情况")
     add_heading(doc, "（一）企业主体认定与企业概况", 2)
     entity = data["entity_resolution"]
@@ -184,7 +182,7 @@ def main() -> int:
     add_heading(doc, "（二）500强核验", 2); add_standard_table(doc, ["榜单", "年度", "状态", "名次/入选主体", "与研究对象关系", "来源"], top500_rows(data["top500_status"]), [2.7, 1.1, 1.6, 3.3, 4.3, 1.9])
     add_heading(doc, "（三）股权架构拆解", 2)
     if equity_has_graph:
-        doc.add_picture(str(image), width=Cm(15)); add_body(doc, entity.get("equity_summary", "需企业补充")); add_equity_evidence_summary(doc, data["equity"]); add_equity_conflict_disclosures(doc, data["equity"].get("conflict_disclosures", []))
+        doc.add_picture(str(image), width_cm=15); add_body(doc, entity.get("equity_summary", "需企业补充")); add_equity_evidence_summary(doc, data["equity"]); add_equity_conflict_disclosures(doc, data["equity"].get("conflict_disclosures", []))
     else:
         add_body(doc, "股权公开信息不足：" + data["equity"].get("availability_note", "本轮公开检索未发现可靠股权数据，需企业补充。"))
         add_body(doc, "本轮检索依据：" + ("、".join(str(item) for item in data["equity"].get("search_source_ids", [])) or "未记录"))
