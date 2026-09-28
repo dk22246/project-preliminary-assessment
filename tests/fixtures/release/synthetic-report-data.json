@@ -1467,6 +1467,10 @@
         ],
         "verification_needed": "需补充海外电商平台店铺、订单、支付结算、跨境物流和境外收入证据。"
       }
-    ]
+    ],
+    "conflict_check": {
+      "status": "cleared",
+      "items": []
+    }
   }
 }

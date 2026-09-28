@@ -29,7 +29,7 @@ def main() -> int:
         print("运行环境自检失败：", file=sys.stderr)
         print("\n".join(f"- {error}" for error in errors), file=sys.stderr)
         return 1
-    print(f"通过：运行环境可用；Node={state['node']['path']}；Chrome={state['chrome']['path']}")
+    print(f"通过：运行环境可用；Node={state['node']['path']}；Chrome={state['chrome']['path']}；pypdf={'已装' if state.get('pypdf') else '未装'}")
     return 0
 
 

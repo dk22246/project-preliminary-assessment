@@ -138,10 +138,11 @@ def discover(node: str | None = None, chrome: str | None = None) -> dict:
         # stall the fast doctor. The browser layout gate proves executability.
         "chrome": {"path": str(chrome_path) if chrome_path else "", "version": "detected" if chrome_path else "unavailable"},
         "python_docx": importlib.util.find_spec("docx") is not None,
+        "pypdf": importlib.util.find_spec("pypdf") is not None,
     }
 
 
-def capability_errors(state: dict, *, need_node: bool = True, need_word: bool = False) -> list[str]:
+def capability_errors(state: dict, *, need_node: bool = True, need_word: bool = False, need_pdf: bool = False) -> list[str]:
     errors: list[str] = []
     if sys.version_info < (3, 10):
         errors.append("Python版本低于3.10")
@@ -155,8 +156,8 @@ def capability_errors(state: dict, *, need_node: bool = True, need_word: bool = 
         errors.append("未找到项目Playwright；请运行 scripts/ppa.py setup，或设置 REPORT_NODE_MODULES")
     if need_node and not state.get("chrome", {}).get("path"):
         errors.append("未找到Google Chrome/Chromium；请运行 scripts/ppa.py setup，或设置 REPORT_CHROME_EXECUTABLE")
-    if need_word and not state.get("python_docx"):
-        errors.append("生成Word需要python-docx；请运行 scripts/ppa.py setup --with-word")
+    if need_pdf and not state.get("pypdf"):
+        errors.append("提取政策PDF原文需要pypdf；请运行 scripts/ppa.py setup，或 pip install pypdf")
     return errors
 
 

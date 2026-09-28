@@ -143,10 +143,11 @@ def validate_assessment(data: dict) -> list[str]:
     if overall in OVERALL and overall != _expected_overall(judgments):
         errors.append("目录总体判断与逐业务判断不一致")
     conflict_check = assessment.get("conflict_check")
-    if conflict_check is not None:
-        if not isinstance(conflict_check, dict):
-            errors.append("conflict_check必须为对象")
-        else:
+    if conflict_check is None:
+        errors.append("conflict_check为必填字段：须声明 status(cleared/flagged)，命中限制类/淘汰类时列出 items")
+    elif not isinstance(conflict_check, dict):
+        errors.append("conflict_check必须为对象")
+    else:
             cc_status = _text(conflict_check.get("status"))
             if cc_status not in {"cleared", "flagged"}:
                 errors.append("conflict_check.status只能为cleared或flagged")
