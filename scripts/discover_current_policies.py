@@ -11,7 +11,7 @@ import json
 from pathlib import Path
 import re
 from time import sleep as default_sleep
-from threading import Lock
+from threading import Lock, Semaphore
 from typing import Callable
 from urllib.parse import urljoin, urlsplit, urlunsplit
 from urllib.request import Request, urlopen
@@ -96,7 +96,7 @@ def _request_with_retry(
                 status = 0
             if status in TRANSIENT_STATUS and attempt < max_retries:
                 retries += 1
-                sleep(2**attempt)
+                sleep(0.5)
                 continue
             if status in BLOCKED_STATUS:
                 return None, retries, "官方页面要求登录、验证码或拒绝访问，未尝试绕过"
@@ -370,7 +370,7 @@ def _fetch_batch(
     sleep: Callable,
 ) -> dict[str, tuple[dict | None, int, str | None]]:
     host_locks = {
-        urlsplit(item["url"]).netloc.lower(): Lock()
+        urlsplit(item["url"]).netloc.lower(): Semaphore(2)
         for item in urls
     }
     results = {}

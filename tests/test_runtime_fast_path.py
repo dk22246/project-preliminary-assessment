@@ -38,7 +38,7 @@ class RuntimeFastPathTests(unittest.TestCase):
             "read_timeout_seconds": 30,
             "max_retries": 2,
             "max_concurrency": 4,
-            "per_host_concurrency": 1,
+            "per_host_concurrency": 2,
         })
 
 

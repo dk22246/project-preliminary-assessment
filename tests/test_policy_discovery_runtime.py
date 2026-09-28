@@ -161,7 +161,9 @@ class PolicyDiscoveryRuntimeTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             discover_current_policies(ledger, report_data(), Path(directory), fetch=fetch, max_concurrency=4)
 
-        self.assertEqual(peak, 1)
+        # 同域名最多 2 并发（防对同一官方站过载，但不强制串行）
+        self.assertLessEqual(peak, 2)
+        self.assertGreaterEqual(peak, 1)
 
     def test_persistent_discovery_fragment_contains_evidence_and_shared_url_contract(self):
         calls = []
