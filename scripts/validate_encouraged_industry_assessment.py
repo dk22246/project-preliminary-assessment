@@ -140,6 +140,33 @@ def validate_assessment(data: dict) -> list[str]:
                     errors.append(f"{business_id}: 海南新增目录条目与内置界定指引不一致")
             if judgment == "direct_match" and _text(matched.get("match_type")) != "direct":
                 errors.append(f"{business_id}: 明确符合必须包含direct条目")
+    # 硬规则：制造类经营活动必须有对应销售环节（制造企业必然销售，除非纯代工）
+    activity_types_present = {_text(item.get("activity_type")) for item in rows}
+    if "manufacturing" in activity_types_present and "sales" not in activity_types_present:
+        errors.append("存在制造类经营活动但未拆出销售环节：制造企业必然有销售或委托销售；如确为纯代工/委托制造，须在对应业务reason中明确说明")
+    # 硬规则：销售渠道（线上/线下）必须在经营活动中拆出对应环节，不得窄化遗漏
+    offline_words = ("门店", "实体店", "实体", "直营", "加盟", "连锁", "体验店", "专柜", "商场", "购物中心", "超市", "便利店")
+    online_words = ("电商", "线上", "平台", "天猫", "京东", "直播", "网购", "商城", "拼多多")
+    sales_rows = [item for item in rows if _text(item.get("activity_type")) == "sales"]
+    for business in businesses:
+        bid = _text(business.get("id"))
+        channels = _text(business.get("sales_channels"))
+        if not channels:
+            continue
+        if any(word in channels for word in offline_words):
+            offline_covered = any(
+                any(word in (_text(item.get("activity_name")) + _text(item.get("activity_object"))) for word in ("门店", "实体", "线下", "经销", "批发", "分销"))
+                for item in sales_rows
+            )
+            if not offline_covered:
+                errors.append(f"{bid}: 销售渠道含线下实体（{channels}），但未拆出对应的线下实体/经销销售经营活动")
+        if any(word in channels for word in online_words):
+            online_covered = any(
+                any(word in (_text(item.get("activity_name")) + _text(item.get("activity_object"))) for word in ("电商", "线上", "平台", "网购"))
+                for item in sales_rows
+            )
+            if not online_covered:
+                errors.append(f"{bid}: 销售渠道含线上电商（{channels}），但未拆出对应的电商销售经营活动")
     if overall in OVERALL and overall != _expected_overall(judgments):
         errors.append("目录总体判断与逐业务判断不一致")
     conflict_check = assessment.get("conflict_check")
