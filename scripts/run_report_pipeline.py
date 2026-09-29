@@ -139,15 +139,16 @@ def main(
         raise SystemExit("HTML 版式验收失败，禁止生成或交付后续文件。")
     if args.pdf:
         run([args.node, str(SCRIPTS / "render_report_pdf.mjs"), str(html), str(out / "report.pdf")], env=env)
-    if args.word:
-        word_command = python_command(SCRIPTS / "render_report_word.py", str(data), "--out", str(out / "report.docx"))
-        if args.fixture_mode:
-            word_command.append("--fixture-mode")
-        if equity_has_graph:
-            image = out / "equity-chart.png"
-            run([args.node, str(SCRIPTS / "render_svg_png.mjs"), str(out / "equity-chart.svg"), str(image)], env=env)
-            word_command.extend(["--equity-image", str(image)])
-        run(word_command)
+    # Word 版已纯标准库（stdlib_docx），秒级生成、零第三方依赖，默认随 HTML 一起产出，
+    # 供报告右上角"下载 Word"按钮使用；--word 保留为向后兼容开关。
+    word_command = python_command(SCRIPTS / "render_report_word.py", str(data), "--out", str(out / "report.docx"))
+    if args.fixture_mode:
+        word_command.append("--fixture-mode")
+    if equity_has_graph:
+        image = out / "equity-chart.png"
+        run([args.node, str(SCRIPTS / "render_svg_png.mjs"), str(out / "equity-chart.svg"), str(image)], env=env)
+        word_command.extend(["--equity-image", str(image)])
+    run(word_command)
     state = workflow_state.load(Path(args.workflow_state).resolve().parent) if args.workflow_state else {}
     phase_metrics = {
         "enterprise_research": workflow_state.phase_seconds(state, "entity_confirmed", "enterprise_research_complete"),
