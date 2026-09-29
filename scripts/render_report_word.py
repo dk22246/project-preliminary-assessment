@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+from datetime import datetime
 from pathlib import Path
 import sys
 
@@ -9,6 +10,14 @@ from stdlib_docx import Document
 
 from report_core import financial_change_notes, financial_headers, load_data, require_fixture_authorization, risk_presentation, validate_report_data, validate_text
 from word_report_builder import add_body, add_cover_line, add_heading, add_native_toc_with_cache, add_standard_table, configure_report_document, try_update_fields_with_word
+
+
+def format_date(value: object) -> str:
+    raw = str(value)
+    try:
+        return datetime.fromisoformat(raw).strftime("%Y年%m月%d日")
+    except ValueError:
+        return raw
 
 
 def rows(items, fields):
