@@ -30,6 +30,7 @@
     "SKILL.md",
     "AGENTS.md",
     "runtime-requirements.json",
+    "requirements-runtime.txt",
     "package.json",
     "package-lock.json"
   ]

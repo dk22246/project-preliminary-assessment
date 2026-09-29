@@ -52,12 +52,18 @@ def _npm_candidate(node: Path, explicit: str | None = None) -> str | None:
     return None
 
 
-def setup_commands(*, node: Path, with_word: bool, npm: str | None = None) -> list[list[str]]:
+def setup_commands(
+    *, node: Path, npm: str | None = None, install_browser: bool = False, install_pdf: bool = False,
+) -> list[list[str]]:
     npm_command = npm or ("npm.cmd" if sys.platform == "win32" else "npm")
-    commands = [
-        [npm_command, "ci", "--ignore-scripts"],
-        [str(node), str(ROOT / "node_modules" / "playwright" / "cli.js"), "install", "chromium"],
-    ]
+    commands: list[list[str]] = []
+    if install_browser:
+        commands.extend([
+            [npm_command, "ci", "--ignore-scripts"],
+            [str(node), str(ROOT / "node_modules" / "playwright" / "cli.js"), "install", "chromium"],
+        ])
+    if install_pdf:
+        commands.append([sys.executable, "-X", "utf8", "-m", "pip", "install", "-r", str(ROOT / "requirements-runtime.txt")])
     return commands
 
 
@@ -69,9 +75,9 @@ def _verified_hints(node: str | None, chrome: str | None) -> tuple[str | None, s
     )
 
 
-def require_ready_runtime(node: str | None = None, chrome: str | None = None, *, need_word: bool = False) -> dict:
+def require_ready_runtime(node: str | None = None, chrome: str | None = None) -> dict:
     node, chrome = _verified_hints(node, chrome)
-    state, errors = check_runtime(node=node, chrome=chrome, need_word=need_word, require_verified=True)
+    state, errors = check_runtime(node=node, chrome=chrome, require_verified=True)
     if errors:
         raise ValueError("运行环境尚未完成一次性配置：\n" + "\n".join(f"- {error}" for error in errors) + "\n请运行：python -X utf8 scripts/ppa.py setup")
     return state
@@ -83,9 +89,7 @@ def command_setup(args: argparse.Namespace) -> int:
     previous = load_verified_state()
     hinted_node, hinted_chrome = _verified_hints(args.node, args.chrome)
     if not args.force and state_is_current(previous):
-        _, current_errors = check_runtime(
-            node=hinted_node, chrome=hinted_chrome, need_word=args.with_word, require_verified=True,
-        )
+        _, current_errors = check_runtime(node=hinted_node, chrome=hinted_chrome, require_verified=True)
         if not current_errors:
             print("通过：当前Skill与运行环境已经完成一次性配置；未重复下载或运行完整测试")
             return 0
@@ -95,16 +99,22 @@ def command_setup(args: argparse.Namespace) -> int:
     env = dict(os.environ)
     env["PYTHONUTF8"] = "1"
     discovered = discover(str(node), hinted_chrome)
-    base_errors = capability_errors(discovered, need_node=True, need_word=False)
+    base_errors = capability_errors(discovered, need_node=True, need_pdf=False)
     node_errors = [error for error in base_errors if "Node.js" in error or "Python" in error]
     if node_errors:
         raise ValueError("\n".join(node_errors))
-    install_commands: list[list[str]] = []
-    if not discovered.get("playwright") or not discovered.get("chrome", {}).get("path"):
+    install_browser = not discovered.get("playwright") or not discovered.get("chrome", {}).get("path")
+    npm = None
+    if install_browser:
         npm = _npm_candidate(node, args.npm)
         if not npm:
             raise ValueError("缺少Playwright/Chromium且未找到npm；请安装带npm的Node.js，或用--npm提供npm/npm.cmd路径")
-        install_commands.extend(setup_commands(node=node, with_word=False, npm=npm))
+    install_commands = setup_commands(
+        node=node,
+        npm=npm,
+        install_browser=install_browser,
+        install_pdf=not discovered.get("pypdf"),
+    )
     for command in install_commands:
         _run(command, env=env)
     discovered = discover(str(node), hinted_chrome)
@@ -112,8 +122,6 @@ def command_setup(args: argparse.Namespace) -> int:
     if not chrome:
         raise ValueError("Playwright Chromium安装完成后仍无法定位浏览器；请用--chrome提供真实路径")
     bootstrap = [sys.executable, "-X", "utf8", str(SCRIPTS / "bootstrap.py"), "--node", str(node), "--chrome", chrome, "--force"]
-    if args.with_word:
-        bootstrap.append("--word")
     _run(bootstrap, env=env)
     print("通过：一次性运行环境安装与版本验证完成；日常报告不会重复下载依赖")
     return 0
@@ -588,7 +596,7 @@ def command_advance(args: argparse.Namespace) -> int:
 
 
 def command_status(args: argparse.Namespace) -> int:
-    runtime = require_ready_runtime(args.node, args.chrome, need_word=args.word)
+    runtime = require_ready_runtime(args.node, args.chrome)
     print(f"环境通过：Node={runtime['node']['path']}；Chromium={runtime['chrome']['path']}")
     if args.work_dir:
         state = workflow_state.load(args.work_dir)
@@ -629,7 +637,7 @@ def command_resume(args: argparse.Namespace) -> int:
 
 
 def command_deliver(args: argparse.Namespace) -> int:
-    runtime = require_ready_runtime(args.node, args.chrome, need_word=args.word)
+    runtime = require_ready_runtime(args.node, args.chrome)
     work_dir = Path(args.work_dir).resolve()
     errors = workflow_state.ready_state_errors(work_dir, package_fingerprint())
     errors.extend(_findings_input_errors(work_dir, workflow_state.load(work_dir)))
@@ -674,7 +682,6 @@ def build_parser() -> argparse.ArgumentParser:
     setup.add_argument("--node")
     setup.add_argument("--npm")
     setup.add_argument("--chrome")
-    setup.add_argument("--with-word", action="store_true")
     setup.add_argument("--force", action="store_true")
     setup.set_defaults(handler=command_setup)
     start = sub.add_parser("start", help="创建新企业五台账和强制流程状态")
@@ -687,7 +694,6 @@ def build_parser() -> argparse.ArgumentParser:
     status.add_argument("--work-dir")
     status.add_argument("--node")
     status.add_argument("--chrome")
-    status.add_argument("--word", action="store_true")
     status.set_defaults(handler=command_status)
     advance = sub.add_parser("advance", help="兼容旧调用；等同于 finalize，不再逐阶段运行正式校验")
     advance.add_argument("--work-dir", required=True)

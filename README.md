@@ -12,15 +12,7 @@
 & <python-path> -X utf8 scripts/ppa.py setup
 ```
 
-仅需 Word 导出时使用 `--with-word`。日常生成报告不再重复安装依赖或运行发布测试。
-
-PDF 证据正文提取首次需要 `pypdf`；若当前 Python 缺少它，请由操作者显式安装一次：
-
-```powershell
-& <python-path> -m pip install pypdf
-```
-
-`collect-web` 不会自动执行 pip；依赖缺失时会保留原始 PDF 并在证据记录中提示上述安装项。
+`setup` 会一次性安装并验证 PDF 正文提取依赖和浏览器运行环境。Word 由 Skill 内置标准库生成，不需要额外依赖或安装开关。日常生成报告不重复安装依赖或运行发布测试。
 
 已有项目遇到兼容版本更新时，执行 `ppa.py resume --work-dir work/company`，保留资料后重新准备、编译和核验，无需新建企业工作区。来源超过24小时仍需实时复验。
 

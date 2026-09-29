@@ -238,23 +238,32 @@ class WorkflowControllerTests(unittest.TestCase):
                 resolved = runtime_state.resolve_playwright_chromium(Path(tmp) / "node.exe", Path(tmp) / "node_modules")
             self.assertEqual(resolved, browser.resolve())
 
-    def test_setup_plan_installs_project_runtime_once_and_word_only_on_request(self):
+    def test_setup_plan_installs_browser_and_pdf_runtime_once(self):
         import ppa
 
         node = Path("C:/runtime/node.exe")
-        commands = ppa.setup_commands(node=node, with_word=False)
+        commands = ppa.setup_commands(node=node, npm="npm.cmd", install_browser=True, install_pdf=True)
         flattened = [" ".join(str(part) for part in command) for command in commands]
         self.assertTrue(any("npm" in command and "ci" in command for command in flattened))
         self.assertTrue(any("playwright" in command and "install" in command and "chromium" in command for command in flattened))
-        self.assertFalse(any("requirements-word.txt" in command for command in flattened))
-        # Word 已改为纯标准库生成（stdlib_docx），不再依赖 python-docx / requirements-word.txt
-        word_commands = ppa.setup_commands(node=node, with_word=True)
-        self.assertFalse(any("requirements-word.txt" in " ".join(str(part) for part in command) for command in word_commands))
+        self.assertTrue(any("pip" in command and "requirements-runtime.txt" in command for command in flattened))
+
+    def test_public_runtime_has_no_retired_word_dependency_switches(self):
+        import ppa
+
+        source = "\n".join(
+            (ROOT / "scripts" / name).read_text(encoding="utf-8")
+            for name in ("ppa.py", "bootstrap.py", "doctor.py", "runtime_state.py", "run_report_pipeline.py")
+        )
+        for retired in ("args.with_word", "--with-word", "need_word", "python_docx", "requirements-word.txt"):
+            self.assertNotIn(retired, source)
+        parser = ppa.build_parser()
+        self.assertTrue(parser.parse_args(["deliver", "--work-dir", "work", "--out-dir", "out", "--word"]).word)
 
     def test_setup_does_not_reuse_stale_receipt_when_runtime_is_missing(self):
         import ppa
 
-        args = argparse.Namespace(force=False, with_word=False, node=None, npm=None, chrome=None)
+        args = argparse.Namespace(force=False, node=None, npm=None, chrome=None)
         receipt = {"verified": True, "fingerprint": "same", "node": {"path": "missing-node"}, "chrome": {"path": "missing-chrome"}}
         with patch.object(ppa, "load_verified_state", return_value=receipt), patch.object(ppa, "state_is_current", return_value=True), patch.object(ppa, "check_runtime", return_value=({}, ["runtime missing"])), patch.object(ppa, "resolve_node", return_value=None):
             with self.assertRaisesRegex(ValueError, "Node.js"):

@@ -7,7 +7,7 @@ import sys
 
 from stdlib_docx import Document
 
-from report_core import financial_change_notes, financial_headers, load_data, require_fixture_authorization, validate_report_data, validate_text
+from report_core import financial_change_notes, financial_headers, load_data, require_fixture_authorization, risk_presentation, validate_report_data, validate_text
 from word_report_builder import add_body, add_cover_line, add_heading, add_native_toc_with_cache, add_standard_table, configure_report_document, try_update_fields_with_word
 
 
@@ -38,6 +38,20 @@ def add_equity_conflict_disclosures(doc, items):
 def add_equity_evidence_summary(doc, equity):
     summary = equity.get("evidence_summary", {})
     add_body(doc, f"股权来源：{summary.get('display_source_title', '需补充股权来源')}（{summary.get('display_source_id', 'E?')}），数据时点{summary.get('as_of_date', '需补充')}。")
+
+
+def add_risk_section(doc, risks):
+    presentation = risk_presentation(risks)
+    if presentation["mode"] == "prose":
+        for paragraph in presentation["paragraphs"]:
+            add_body(doc, paragraph)
+        return
+    if presentation["regulatory"]:
+        add_heading(doc, "（一）行政处罚及监管风险", 2)
+        add_standard_table(doc, ["时间", "风险类型", "具体事项", "处理结果", "是否已整改", "对招商的影响", "来源编号"], presentation["regulatory"], [1.0, 1.7, 5.0, 1.5, 1.5, 3.2, 1.0])
+    if presentation["litigation"]:
+        add_heading(doc, "（二）诉讼、执行及失信情况", 2)
+        add_standard_table(doc, ["时间", "事项类型", "涉及对象或金额", "当前状态", "对招商的影响", "来源编号"], presentation["litigation"], [1.2, 2.2, 4.8, 2.2, 4.0, 1.0])
 
 
 def encouraged_industry_rows(assessment):
@@ -198,8 +212,7 @@ def main() -> int:
     add_heading(doc, "政府补助及财政支持明细表", 3); add_standard_table(doc, ["年度", "名称", "发放部门", "金额", "用途", "附带条件", "来源"], rows(data.get("government_support", []), ("year", "name", "department", "amount", "purpose", "conditions", "source")) or [["—", "本轮公开检索未发现可确认明细", "—", "—", "需企业补充", "需企业补充", "—"]], [1.1, 2.5, 2.0, 1.3, 3.0, 3.0, 1.0])
     add_heading(doc, "（二）经营数据分析", 2); add_body(doc, data.get("financial_analysis", "需企业补充"))
     h1(doc, "三、风险与合规情况")
-    add_heading(doc, "（一）行政处罚及监管风险", 2); add_standard_table(doc, ["时间", "风险类型", "具体事项", "处理结果", "是否已整改", "对招商的影响", "来源编号"], data["risks"].get("regulatory", []), [1.0, 1.7, 5.0, 1.5, 1.5, 3.2, 1.0])
-    add_heading(doc, "（二）诉讼、执行及失信情况", 2); add_standard_table(doc, ["时间", "事项类型", "涉及对象或金额", "当前状态", "对招商的影响", "来源编号"], data["risks"].get("litigation", []), [1.2, 2.2, 4.8, 2.2, 4.0, 1.0])
+    add_risk_section(doc, data["risks"])
     h1(doc, "四、三亚落地业务及落地方式"); add_standard_table(doc, ["建议落地业务", "企业现有事实基础", "三亚具体承接方式", "可形成的业务及价值", "可行性"], rows(data["landing_businesses"], ("business", "fact_basis", "sanya_path", "value", "feasibility")), [3.0, 4.0, 4.0, 4.0, 1.0])
     h1(doc, "五、企业政策匹配")
     add_heading(doc, "（一）重点政策匹配清单", 2)

@@ -137,12 +137,11 @@ def discover(node: str | None = None, chrome: str | None = None) -> dict:
         # On Windows, invoking chrome.exe --version can launch a GUI process and
         # stall the fast doctor. The browser layout gate proves executability.
         "chrome": {"path": str(chrome_path) if chrome_path else "", "version": "detected" if chrome_path else "unavailable"},
-        "python_docx": importlib.util.find_spec("docx") is not None,
         "pypdf": importlib.util.find_spec("pypdf") is not None,
     }
 
 
-def capability_errors(state: dict, *, need_node: bool = True, need_word: bool = False, need_pdf: bool = False) -> list[str]:
+def capability_errors(state: dict, *, need_node: bool = True, need_pdf: bool = True) -> list[str]:
     errors: list[str] = []
     if sys.version_info < (3, 10):
         errors.append("Python版本低于3.10")
@@ -157,7 +156,7 @@ def capability_errors(state: dict, *, need_node: bool = True, need_word: bool = 
     if need_node and not state.get("chrome", {}).get("path"):
         errors.append("未找到Google Chrome/Chromium；请运行 scripts/ppa.py setup，或设置 REPORT_CHROME_EXECUTABLE")
     if need_pdf and not state.get("pypdf"):
-        errors.append("提取政策PDF原文需要pypdf；请运行 scripts/ppa.py setup，或 pip install pypdf")
+        errors.append("提取政策PDF原文需要pypdf；请运行 scripts/ppa.py setup")
     return errors
 
 
@@ -177,9 +176,13 @@ def state_is_current(state: dict | None) -> bool:
     ))
 
 
+def dependency_fingerprint_files() -> tuple[str, ...]:
+    return ("runtime-requirements.json", "package.json", "package-lock.json", "requirements-runtime.txt")
+
+
 def dependency_fingerprint() -> str:
     digest = hashlib.sha256()
-    for name in ("runtime-requirements.json", "package.json", "package-lock.json", "requirements-word.txt"):
+    for name in dependency_fingerprint_files():
         path = ROOT / name
         digest.update(name.encode())
         if path.is_file():

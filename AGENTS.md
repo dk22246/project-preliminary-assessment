@@ -6,7 +6,7 @@ Agents and users must invoke only `scripts/ppa.py`. All other scripts are intern
 
 ```powershell
 # Run once after first install or dependency changes; validates browser availability, not release tests.
-& <python-path> -X utf8 scripts/ppa.py setup [--with-word]
+& <python-path> -X utf8 scripts/ppa.py setup
 
 # Create one clean enterprise workspace.
 & <python-path> -X utf8 scripts/ppa.py start "企业法律全称" --work-dir work/company

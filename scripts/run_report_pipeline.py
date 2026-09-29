@@ -54,7 +54,6 @@ def main(
         parser.error("正式报告必须提供 --workflow-state；只有显式 --fixture-mode 可绕过")
     runtime, runtime_errors = check_runtime(
         node=args.node,
-        need_word=args.word,
         require_verified=not release_validation,
     )
     if runtime_errors:

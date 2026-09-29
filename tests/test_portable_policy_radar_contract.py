@@ -142,7 +142,7 @@ class PortablePolicyRadarContractTests(unittest.TestCase):
             "node_modules": "C:/runtime/node_modules",
             "playwright": True,
             "chrome": {"path": "C:/runtime/chrome.exe", "version": "Chrome 140"},
-            "python_docx": True,
+            "pypdf": True,
         }
         errors = capability_errors(state)
         self.assertTrue(any("Node.js版本不满足" in error for error in errors), errors)

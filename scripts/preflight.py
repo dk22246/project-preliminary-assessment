@@ -17,6 +17,7 @@ from validate_policy_scope import validate_policy
 from validate_research_ledger import validate_research_ledger
 from validate_policy_search_coverage import validate_policy_search_coverage
 from validate_research_stop_gate import validate_research_stop_gate
+from runtime_state import load_verified_state, resolve_node
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -33,7 +34,7 @@ REQUIRED = (
     "references/encouraged-industry-assessment.md", "references/catalogs/source-metadata.json", "references/catalogs/hainan-ftz-encouraged-industry-complete-library.xlsx", "references/catalogs/complete-industry-catalog-library.json", "references/catalogs/catalog-query-expansions.json",
     "references/business-discovery.md", "references/policy-search-coverage.md", "references/policy-source-registry.json", "references/research-route-index.md", "references/department-routing.json", "references/ranking-registry.json", "schemas/enterprise-findings.schema.json", "schemas/policy-findings.schema.json", "schemas/research-ledger.schema.json", "schemas/policy-search-ledger.schema.json", "schemas/policy-evidence.schema.json",
     "scripts/run_report_pipeline.py", "scripts/render_report_html.py", "scripts/verify_html_layout.mjs", "scripts/collect_web_evidence.py", "scripts/validate_evidence.py", "scripts/collect_equity_provider.py", "scripts/validate_equity_evidence.py", "scripts/search_industry_catalog.py", "scripts/build_industry_catalog_library.py", "scripts/validate_industry_catalog_library.py", "scripts/validate_encouraged_industry_assessment.py",
-    "scripts/verify_skill.py", "scripts/bootstrap.py", "scripts/doctor.py", "scripts/runtime_state.py", "scripts/init_report_workspace.py", "scripts/compile_workspace.py", "scripts/research_plan.py", "scripts/policy_roles.py", "scripts/ppa.py", "scripts/workflow_state.py", "scripts/discover_current_policies.py", "scripts/policy_cache.py", "scripts/validate_policy_evidence.py", "scripts/validate_research_stop_gate.py", "runtime-requirements.json", "package-lock.json", "AGENTS.md",
+    "scripts/verify_skill.py", "scripts/bootstrap.py", "scripts/doctor.py", "scripts/runtime_state.py", "scripts/init_report_workspace.py", "scripts/compile_workspace.py", "scripts/research_plan.py", "scripts/policy_roles.py", "scripts/ppa.py", "scripts/workflow_state.py", "scripts/discover_current_policies.py", "scripts/policy_cache.py", "scripts/validate_policy_evidence.py", "scripts/validate_research_stop_gate.py", "runtime-requirements.json", "requirements-runtime.txt", "package-lock.json", "AGENTS.md",
     "scripts/evidence_collectors/__init__.py", "scripts/evidence_collectors/registry.py", "scripts/evidence_collectors/html_extract.py", "scripts/validate_research_ledger.py", "scripts/validate_policy_search_coverage.py",
     "scripts/validate_policy_scope.py", "scripts/validate_report_data.py", "scripts/validate_text_quality.py",
     "tests/test_business_triggered_policy_logic.py", "tests/fixtures/equity-web-capture-valid.json", SAMPLE.relative_to(ROOT).as_posix(),
@@ -114,11 +115,17 @@ def smoke_arguments(out_dir: Path, node: Path) -> list[str]:
     ]
 
 
+def resolve_smoke_node() -> Path | None:
+    configured = os.environ.get("REPORT_NODE_EXECUTABLE") or None
+    verified = load_verified_state() or {}
+    hinted = configured or str(verified.get("node", {}).get("path", "")) or None
+    return resolve_node(hinted)
+
+
 def smoke(out_dir: Path) -> int:
-    configured = os.environ.get("REPORT_NODE_EXECUTABLE")
-    node = Path(configured) if configured else Path(sys.executable).parents[1] / "node" / "bin" / "node.exe"
-    if not node.is_file():
-        print(f"未找到随附 Node，无法执行浏览器版式验收：{node}", file=sys.stderr)
+    node = resolve_smoke_node()
+    if node is None:
+        print("未找到已验证的 Node.js，无法执行浏览器版式验收；请先运行 scripts/ppa.py setup", file=sys.stderr)
         return 1
     from run_report_pipeline import main as run_report_pipeline
     return run_report_pipeline(smoke_arguments(out_dir, node), release_validation=True)

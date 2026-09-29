@@ -5,7 +5,7 @@ import argparse
 from html import escape
 from pathlib import Path
 
-from report_core import equity_svg, financial_change_notes, financial_headers, load_data, require_fixture_authorization, validate_report_data, validate_text
+from report_core import equity_svg, financial_change_notes, financial_headers, load_data, require_fixture_authorization, risk_presentation, validate_report_data, validate_text
 
 
 CSS = r'''
@@ -283,6 +283,24 @@ def section(title: str, body: str) -> str:
     return f'<section id="s{anchor}" class="report-section"><div class="section-head"><h1>{escape(title)}</h1></div>{body}</section>'
 
 
+def risk_block(risks: dict) -> str:
+    presentation = risk_presentation(risks)
+    if presentation["mode"] == "prose":
+        return "".join(f"<p>{escape(text)}</p>" for text in presentation["paragraphs"])
+    parts: list[str] = []
+    if presentation["regulatory"]:
+        parts.extend([
+            "<h2>（一）行政处罚及监管风险</h2>",
+            report_table(["时间", "风险类型", "具体事项", "处理结果", "是否已整改", "对招商的影响", "来源编号"], presentation["regulatory"], "wide risk-table", [6, 12, 33, 10, 10, 21, 8]),
+        ])
+    if presentation["litigation"]:
+        parts.extend([
+            "<h2>（二）诉讼、执行及失信情况</h2>",
+            report_table(["时间", "事项类型", "涉及对象或金额", "当前状态", "对招商的影响", "来源编号"], presentation["litigation"], "wide risk-table", [9, 18, 32, 16, 17, 8]),
+        ])
+    return "".join(parts)
+
+
 def paragraph(value: str) -> str:
     return f"<p>{escape(value)}</p>"
 
@@ -327,9 +345,7 @@ def main() -> int:
     note_html = "" if not notes else '<p class="table-note">注：' + escape("；".join(notes)) + "</p>"
     finance = "<h2>（一）营业收入、利润、纳税及政府补助情况</h2>" + report_table(financial_headers(data["meta"]), financial_rows, "wide financial-table", [10, 11, 11, 11, 11, 9, 10, 20, 7]) + note_html + "<h3>政府补助及财政支持明细表</h3>" + report_table(["年度", "补助或支持名称", "发放部门", "金额", "对应项目或用途", "附带条件或履约要求", "来源编号"], support_rows, "wide support-table", [8, 16, 12, 12, 16, 28, 8]) + "<h2>（二）经营数据分析</h2>" + paragraph(data.get("financial_analysis", "需企业补充"))
     sections.append(section("二、近三年经营数据", finance))
-    risk = data["risks"]
-    risk_body = "<h2>（一）行政处罚及监管风险</h2>" + report_table(["时间", "风险类型", "具体事项", "处理结果", "是否已整改", "对招商的影响", "来源编号"], risk.get("regulatory", []), "wide risk-table", [6, 12, 33, 10, 10, 21, 8]) + "<h2>（二）诉讼、执行及失信情况</h2>" + report_table(["时间", "事项类型", "涉及对象或金额", "当前状态", "对招商的影响", "来源编号"], risk.get("litigation", []), "wide risk-table", [9, 18, 32, 16, 17, 8])
-    sections.append(section("三、风险与合规情况", risk_body))
+    sections.append(section("三、风险与合规情况", risk_block(data["risks"])))
     landing_rows = [[item[key] for key in ("business", "fact_basis", "sanya_path", "value", "feasibility")] for item in data["landing_businesses"]]
     sections.append(section("四、三亚落地业务及落地方式", report_table(["建议落地业务", "企业现有事实基础", "三亚具体承接方式", "可形成的业务及价值", "可行性"], landing_rows, "wide landing-table", [14, 25, 29, 24, 8])))
     policy_body = '<h2>（一）重点政策匹配清单</h2><p class="policy-note">本节依据企业已公开的业务、组织和境内外布局，展示在三亚承接相邻经营活动时可重点沟通的现行政策或办理工具。政策名称直接说明利益或功能，匹配原因同时交代企业事实和触发条件；完整检索、失效政策及排除理由保留在后台台账。</p>' + policy_match_table(data["policies"])

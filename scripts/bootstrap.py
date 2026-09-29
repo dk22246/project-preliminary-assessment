@@ -19,12 +19,11 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="Verify dependencies and browser on first deployment or dependency changes")
     parser.add_argument("--node", help="Node.js executable path")
     parser.add_argument("--chrome", help="Chrome/Chromium executable path")
-    parser.add_argument("--word", action="store_true", help="also require python-docx")
     parser.add_argument("--force", action="store_true", help="rerun dependency and browser verification")
     args = parser.parse_args()
 
     discovered = discover(args.node, args.chrome)
-    errors = capability_errors(discovered, need_node=True, need_word=args.word)
+    errors = capability_errors(discovered, need_node=True, need_pdf=True)
     if errors:
         print("部署能力检查失败：", file=sys.stderr)
         print("\n".join(f"- {error}" for error in errors), file=sys.stderr)

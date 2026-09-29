@@ -123,6 +123,28 @@ def financial_change_notes(financials: list[dict]) -> list[str]:
     return notes
 
 
+def risk_presentation(risks: dict) -> dict:
+    """Choose concise prose for zero/few risks and tables only for larger sets."""
+    regulatory = risks.get("regulatory", []) if isinstance(risks, dict) else []
+    litigation = risks.get("litigation", []) if isinstance(risks, dict) else []
+    total = len(regulatory) + len(litigation)
+    if total == 0:
+        return {
+            "mode": "prose",
+            "paragraphs": ["本轮官方公开检索未发现相关记录；该结论仅限已完成的公开信息核验，不等于企业不存在其他风险。"],
+            "regulatory": regulatory,
+            "litigation": litigation,
+        }
+    if total <= 2:
+        paragraphs: list[str] = []
+        for row in regulatory:
+            paragraphs.append(f"{row[0]}，{row[1]}：{row[2]}；处理结果：{row[3]}；对招商的影响：{row[5]}（{row[6]}）。")
+        for row in litigation:
+            paragraphs.append(f"{row[0]}，{row[1]}：{row[2]}；当前状态：{row[3]}；对招商的影响：{row[4]}（{row[5]}）。")
+        return {"mode": "prose", "paragraphs": paragraphs, "regulatory": regulatory, "litigation": litigation}
+    return {"mode": "tables", "paragraphs": [], "regulatory": regulatory, "litigation": litigation}
+
+
 def validate_report_data(data: dict) -> list[str]:
     errors = [
         f"缺少顶层字段：{name}" if name not in data else f"顶层字段为空：{name}（检查输入及处置结果，不是编译字段丢失）"

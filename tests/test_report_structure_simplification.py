@@ -4,6 +4,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from unittest.mock import patch
 from pathlib import Path
 
 
@@ -11,6 +12,8 @@ ROOT = Path(__file__).parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 
 from report_core import validate_report_data
+import render_report_html
+import render_report_word
 
 
 REPORT = json.loads((ROOT / "tests" / "fixtures" / "release" / "synthetic-report-data.json").read_text(encoding="utf-8"))
@@ -65,6 +68,27 @@ class ReportStructureSimplificationTests(unittest.TestCase):
         errors = validate_report_data(data)
         self.assertTrue(any("overall_judgment" in error for error in errors), errors)
         self.assertTrue(any("sanya_fit" in error for error in errors), errors)
+
+    def test_empty_risks_render_as_brief_prose_without_empty_tables(self):
+        risks = {"regulatory": [], "litigation": []}
+        html = render_report_html.risk_block(risks)
+        self.assertIn("本轮官方公开检索未发现相关记录", html)
+        self.assertNotIn("<table", html)
+
+        with patch.object(render_report_word, "add_standard_table") as add_table, patch.object(render_report_word, "add_heading") as add_heading, patch.object(render_report_word, "add_body") as add_body:
+            render_report_word.add_risk_section(object(), risks)
+        add_table.assert_not_called()
+        add_heading.assert_not_called()
+        self.assertTrue(any("本轮官方公开检索未发现相关记录" in call.args[1] for call in add_body.call_args_list))
+
+    def test_reference_contract_matches_the_five_part_industry_chain_schema(self):
+        template = (ROOT / "references" / "report-template.md").read_text(encoding="utf-8")
+        self.assertIn("产业链定位 + 同类型企业 + 上游产业环节 + 下游产业及渠道 + 行业共性需求", template)
+        self.assertNotIn("上游/中游/下游三段", template)
+        self.assertNotIn("区域产业生态短结论", template)
+
+    def test_orphan_business_decomposition_reference_is_removed(self):
+        self.assertFalse((ROOT / "references" / "business-decomposition.md").exists())
 
 
 if __name__ == "__main__":

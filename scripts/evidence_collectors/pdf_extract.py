@@ -20,7 +20,7 @@ def extract_pdf(path: Path) -> PdfExtraction:
     try:
         from pypdf import PdfReader
     except ImportError:
-        return PdfExtraction("", 0, "PDF文本提取依赖缺失：请首次安装 pypdf（pip install pypdf）")
+        return PdfExtraction("", 0, "PDF文本提取依赖缺失：请运行 scripts/ppa.py setup 完成一次性配置")
     try:
         reader = PdfReader(str(path))
         pages = []
