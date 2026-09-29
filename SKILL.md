@@ -13,7 +13,7 @@ description: Use when 招商人员只提供企业名称或基础资料，需要�
 - 首次部署或依赖变化时运行一次 `ppa.py setup`，只验证依赖和浏览器可用性。发布测试属于维护流程，日常报告不得运行。报告生产期间固定使用同一版本。
 - 每个项目由 `ppa.py start` 创建五份同轮台账和 `workflow-state.json`，不得复制示例企业底稿。
 - 企业输入完成后先运行不依赖政策的 `ppa.py prepare-enterprise`，到达 `landing_businesses_complete` 后再运行 `discover-policies`；补全唯一政策主记录后才 `compile`，再由 `finalize` 对机器生成的五份台账统一终检。失败后修正输入并重新编译、终检，不能因“已经检查过一次”停止修复；不重复运行维护用的全库测试。只有全成功才写 `report_ready` 并绑定五份台账SHA-256。`advance`仅保留为兼容别名。
-- 默认只生成由 `report-data.json` 驱动的HTML。用户明确要求时，才由同一数据附加PDF或可编辑Word；不得分别撰写三套内容。
+- 默认由同一份 `report-data.json` 生成 HTML 与可编辑 Word（报告内附“下载 Word”按钮）；PDF 由报告内“导出 PDF”按钮（浏览器打印）或用户明确要求时生成。不得分别撰写三套内容。
 
 ## 固定工作流
 

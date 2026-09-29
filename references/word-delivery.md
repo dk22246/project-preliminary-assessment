@@ -1,6 +1,6 @@
 # Word 交付与核验门禁
 
-Word 是用户明确需要可编辑报告时的可选交付物。默认只交付 HTML；PDF 和 Word 均须由用户明确要求。若生成 Word，必须读取与 HTML/PDF 完全相同的 `report-data.json`，不得改写事实、数字、政策或来源。
+Word 默认随 HTML 一起交付（同一份 `report-data.json`），报告内附“下载 Word”按钮。PDF 由报告内“导出 PDF”按钮（浏览器打印）或用户明确要求时生成。生成 Word 必须读取与 HTML/PDF 完全相同的 `report-data.json`，不得改写事实、数字、政策或来源。
 
 ## 固定版式
 
