@@ -1,6 +1,6 @@
 ---
 name: project-preliminary-assessment
-description: Use when 招商人员只提供企业名称或基础资料，需要完成三亚中央商务区企业尽调、股权与财务核验、海南岛内实时政策机会发现和整体落地研判，并交付 HTML、可选 PDF 或 Word 报告。
+description: Use when 招商人员只提供企业名称或基础资料，需要完成三亚中央商务区企业尽调、股权与财务核验、海南岛内实时政策机会发现和整体落地研判，并交付 HTML 与可编辑 Word 报告，PDF 按需生成。
 ---
 
 # 项目前期评估
@@ -26,7 +26,7 @@ description: Use when 招商人员只提供企业名称或基础资料，需要�
 7. 运行 `prepare-enterprise` 完成企业侧门禁并到达 `landing_businesses_complete`；
 8. 按业务和主管部门实时检索政策；
 9. 完成报告数据及全部证据门禁；
-10. 生成HTML并完成浏览器版式验收，按需附加PDF或Word。
+10. 同源生成HTML与可编辑Word并完成版式验收，PDF按需生成。
 
 任何阶段都不能跳过。正式交付只接受同一工作区的五份台账、当前Skill指纹和报告就绪哈希。
 
@@ -92,14 +92,14 @@ description: Use when 招商人员只提供企业名称或基础资料，需要�
 6. 综合评估；
 7. 参考资料。
 
-企业基本情况使用简明主体表和短段落介绍企业是谁、做什么、经营表现、员工规模和有证据支持的行业地位。业务表只写企业事实，不提前混入三亚推演。产业链只写定位、同类企业、上游、下游和行业共性需求；上游和下游必须填写有正式来源支持、能够识别的真实代表企业，禁止使用“原料主体、零售终端、食品加工企业”等类别词或占位词冒充企业名。没有交易证据时不得把代表企业称为已确认供应商、客户或合作伙伴。HTML目录必须提供“产业链上下游”直达入口。风险较少时使用简明文字，不制造空表。
+企业基本情况使用简明主体表和短段落介绍企业是谁、做什么、经营表现、员工规模和有证据支持的行业地位。业务表只写企业事实，不提前混入三亚推演。产业链只写定位、同类企业、上游、下游和行业共性需求；上游和下游必须填写有正式来源支持、能够识别的真实代表企业，禁止使用“原料主体、零售终端、食品加工企业”等类别词或占位词冒充企业名。没有交易证据时不得把代表企业称为已确认供应商、客户或合作伙伴。产业链作为企业基本情况的固定子节呈现，不再单列重复目录项。风险较少时使用简明文字，不制造空表。
 
-HTML、PDF和Word必须读取同一 `report-data.json`。股权图、表格、来源编号和政策内容必须同源；HTML必须通过整页、表格和SVG边界检查。具体结构、样式和可选Word边界见 `references/report-template.md`、`references/html-delivery.md`、`references/word-delivery.md`。
+HTML、PDF和Word必须读取同一 `report-data.json`。股权图、表格、来源编号和政策内容必须同源；HTML必须通过整页、表格和SVG边界检查。具体结构、样式和Word交付边界见 `references/report-template.md`、`references/html-delivery.md`、`references/word-delivery.md`。
 
 ## 命令
 
 ```powershell
-# 一次性部署；创建项目；生成路由计划；编译后执行一次最终门禁；默认HTML交付
+# 一次性部署；创建项目；生成路由计划；编译后执行一次最终门禁；默认交付HTML与Word
 & $py -X utf8 scripts/ppa.py setup
 & $py -X utf8 scripts/ppa.py start "企业法律全称" --work-dir work/company
 & $py -X utf8 scripts/ppa.py research-plan --work-dir work/company
@@ -116,7 +116,6 @@ HTML、PDF和Word必须读取同一 `report-data.json`。股权图、表格、�
 & $py -X utf8 scripts/ppa.py collect-equity "企业法律全称" --provider qcc-web --input-json capture.json --out-dir work/company/evidence/qcc
 & $py -X utf8 scripts/ppa.py search-catalog "业务关键词" --subject-type domestic
 & $py -X utf8 scripts/ppa.py deliver --work-dir work/company --out-dir outputs/company --pdf
-& $py -X utf8 scripts/ppa.py deliver --work-dir work/company --out-dir outputs/company --word
 ```
 
 所有路径相对Skill根目录；不得写死本机用户名、磁盘盘符或浏览器路径。完整目录必须按固定Git commit部署，所有文本与结构化数据使用UTF-8。

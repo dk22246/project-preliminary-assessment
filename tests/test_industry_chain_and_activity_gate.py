@@ -99,6 +99,30 @@ class IndustryChainAndActivityGateTests(unittest.TestCase):
         data["encouraged_industry_assessment"]["overall_judgment"] = "direct_match"
         self.assertTrue(any("行为边界不一致" in error for error in validate_assessment(data)))
 
+    def test_activity_completeness_is_checked_per_business_not_globally(self):
+        data = copy.deepcopy(self.data)
+        data["businesses"] = copy.deepcopy(data["businesses"][:2])
+        data["businesses"][0]["sales_channels"] = "线下实体门店与经销渠道"
+        data["businesses"][1]["sales_channels"] = "不适用外部销售渠道"
+        manufacturing = copy.deepcopy(data["encouraged_industry_assessment"]["business_assessments"][0])
+        other_business_sale = copy.deepcopy(data["encouraged_industry_assessment"]["business_assessments"][-1])
+        other_business_sale.update({
+            "business_id": data["businesses"][1]["id"],
+            "business": data["businesses"][1]["segment"],
+            "activity_id": "B02-A99",
+            "activity_name": "线下实体销售",
+            "activity_object": "其他业务的线下门店销售",
+        })
+        data["encouraged_industry_assessment"]["business_assessments"] = [manufacturing, other_business_sale]
+        errors = validate_assessment(data)
+        self.assertTrue(any("B01: 存在制造类经营活动但未拆出同一业务的销售环节" in error for error in errors), errors)
+        self.assertTrue(any("B01: 销售渠道含线下" in error for error in errors), errors)
+
+    def test_activity_reference_has_no_fixed_cap_that_conflicts_with_full_coverage(self):
+        rules = (ROOT / "references" / "encouraged-industry-assessment.md").read_text(encoding="utf-8")
+        self.assertNotIn("每项现有核心业务拆出2—4项", rules)
+        self.assertIn("按实际经营环节全部拆出", rules)
+
 
 if __name__ == "__main__":
     unittest.main()

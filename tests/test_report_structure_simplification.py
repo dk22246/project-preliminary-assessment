@@ -5,6 +5,7 @@ import sys
 import tempfile
 import unittest
 from unittest.mock import patch
+import zipfile
 from pathlib import Path
 
 
@@ -89,6 +90,30 @@ class ReportStructureSimplificationTests(unittest.TestCase):
 
     def test_orphan_business_decomposition_reference_is_removed(self):
         self.assertFalse((ROOT / "references" / "business-decomposition.md").exists())
+
+    def test_word_cover_formats_iso_date_in_the_rendered_document(self):
+        data = copy.deepcopy(REPORT)
+        data["meta"]["generated_at"] = "2026-09-30T08:15:00+08:00"
+        data["equity"] = {
+            "data_status": "inaccessible",
+            "availability_note": "本轮公开检索未取得可靠股权关系，需企业补充。",
+            "search_source_ids": ["E01"],
+            "nodes": [],
+            "edges": [],
+            "conflict_disclosures": [],
+        }
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            source = root / "report-data.json"
+            output = root / "report.docx"
+            source.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
+            argv = ["render_report_word.py", str(source), "--out", str(output), "--fixture-mode"]
+            with patch.object(sys, "argv", argv), patch.object(render_report_word, "try_update_fields_with_word"):
+                self.assertEqual(render_report_word.main(), 0)
+            with zipfile.ZipFile(output) as package:
+                document_xml = package.read("word/document.xml").decode("utf-8")
+        self.assertIn("2026年09月30日", document_xml)
+        self.assertNotIn("2026-09-30T08:15:00+08:00", document_xml)
 
 
 if __name__ == "__main__":

@@ -140,16 +140,25 @@ def validate_assessment(data: dict) -> list[str]:
                     errors.append(f"{business_id}: 海南新增目录条目与内置界定指引不一致")
             if judgment == "direct_match" and _text(matched.get("match_type")) != "direct":
                 errors.append(f"{business_id}: 明确符合必须包含direct条目")
-    # 硬规则：制造类经营活动必须有对应销售环节（制造企业必然销售，除非纯代工）
-    activity_types_present = {_text(item.get("activity_type")) for item in rows}
-    if "manufacturing" in activity_types_present and "sales" not in activity_types_present:
-        errors.append("存在制造类经营活动但未拆出销售环节：制造企业必然有销售或委托销售；如确为纯代工/委托制造，须在对应业务reason中明确说明")
-    # 硬规则：销售渠道（线上/线下）必须在经营活动中拆出对应环节，不得窄化遗漏
-    offline_words = ("门店", "实体店", "实体", "直营", "加盟", "连锁", "体验店", "专柜", "商场", "购物中心", "超市", "便利店")
+    # 硬规则按业务逐项核验，禁止用另一项业务的销售活动替代本业务的经营环节。
+    rows_by_business: dict[str, list[dict]] = {}
+    for item in rows:
+        rows_by_business.setdefault(_text(item.get("business_id")), []).append(item)
+    offline_words = ("门店", "实体店", "实体", "直营", "加盟", "连锁", "体验店", "专柜", "商场", "购物中心", "超市", "便利店", "经销", "分销", "批发", "代理")
     online_words = ("电商", "线上", "平台", "天猫", "京东", "直播", "网购", "商城", "拼多多")
-    sales_rows = [item for item in rows if _text(item.get("activity_type")) == "sales"]
+    pure_oem_words = ("纯代工", "委托制造", "oem", "odm")
     for business in businesses:
         bid = _text(business.get("id"))
+        business_rows = rows_by_business.get(bid, [])
+        sales_rows = [item for item in business_rows if _text(item.get("activity_type")) == "sales"]
+        manufacturing_rows = [item for item in business_rows if _text(item.get("activity_type")) == "manufacturing"]
+        activity_text = " ".join(
+            _text(item.get(key))
+            for item in business_rows
+            for key in ("activity_name", "activity_object", "reason")
+        ).casefold()
+        if manufacturing_rows and not sales_rows and not any(word in activity_text for word in pure_oem_words):
+            errors.append(f"{bid}: 存在制造类经营活动但未拆出同一业务的销售环节；如确为纯代工/委托制造，须在对应业务reason中明确说明")
         channels = _text(business.get("sales_channels"))
         if not channels:
             continue

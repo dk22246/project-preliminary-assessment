@@ -32,7 +32,7 @@
 & <python-path> -X utf8 scripts/ppa.py deliver --work-dir work/company --out-dir outputs/company
 ```
 
-`prepare-enterprise` 不依赖政策输入，成功后进入 `landing_businesses_complete`。`discover-policies` 保存真实回执、候选和正文/附件 evidence 草稿，不自动判定资格或有效性；`finalize` 集中报告独立错误，只有全成功才写 `report_ready` 和最终哈希。PDF 和 Word 分别在最后一条命令增加 `--pdf` 或 `--word`。
+`prepare-enterprise` 不依赖政策输入，成功后进入 `landing_businesses_complete`。`discover-policies` 保存真实回执、候选和正文/附件 evidence 草稿，不自动判定资格或有效性；`finalize` 集中报告独立错误，只有全成功才写 `report_ready` 和最终哈希。`deliver` 默认生成 HTML 与可编辑 Word；需要同步生成 PDF 时增加 `--pdf`。
 
 ## 运行边界
 

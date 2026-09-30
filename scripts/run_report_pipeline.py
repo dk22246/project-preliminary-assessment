@@ -1,4 +1,4 @@
-"""Portable same-data report pipeline: HTML by default; PDF/Word on demand."""
+"""Portable same-data report pipeline: HTML and Word by default; PDF on demand."""
 from __future__ import annotations
 import argparse
 import json
@@ -38,8 +38,8 @@ def main(
     parser.add_argument("report_data")
     parser.add_argument("--out-dir", required=True)
     parser.add_argument("--pdf", action="store_true", help="also convert the generated HTML to PDF")
-    parser.add_argument("--word", action="store_true", help="also generate an editable Word report from the same data")
-    parser.add_argument("--node", help="Node executable; mandatory after data and policy validation for the browser layout gate and optional PDF/Word conversion")
+    parser.add_argument("--word", action="store_true", help=argparse.SUPPRESS)
+    parser.add_argument("--node", help="Node executable; mandatory after data and policy validation for browser layout and equity-image rendering")
     parser.add_argument("--evidence", help="optional validated public-web evidence ledger used in this report")
     parser.add_argument("--equity-evidence", required=True, help="validated provider-backed equity evidence ledger")
     parser.add_argument("--research-ledger", required=True, help="validated business discovery and policy routing ledger")

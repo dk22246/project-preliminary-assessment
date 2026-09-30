@@ -74,6 +74,26 @@ class BusinessTriggeredPolicyLogicTests(unittest.TestCase):
         self.assertIn("导出 PDF", skill)
         self.assertIn("下载 Word", word_rules)
 
+    def test_delivery_contract_has_no_stale_word_opt_in_instructions(self):
+        paths = (
+            ROOT / "SKILL.md",
+            ROOT / "README.md",
+            ROOT / "AGENTS.md",
+            ROOT / "references" / "html-delivery.md",
+            ROOT / "references" / "word-delivery.md",
+            ROOT / "references" / "report-template.md",
+            ROOT / "references" / "policy-scope.md",
+            ROOT / "scripts" / "run_report_pipeline.py",
+        )
+        text = "\n".join(path.read_text(encoding="utf-8") for path in paths)
+        for stale in (
+            "可选Word", "可选 Word", "默认只生成 HTML", "默认只交付 HTML",
+            "PDF 和 Word 均须由用户明确要求", "PDF 和 Word 分别在最后一条命令增加",
+            "Word 是用户明确需要可编辑报告时的可选交付物", "ppa.py deliver --word",
+        ):
+            self.assertNotIn(stale, text)
+        self.assertIn("默认生成 HTML 与可编辑 Word", text)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -756,7 +756,7 @@ def build_parser() -> argparse.ArgumentParser:
     deliver.add_argument("--chrome")
     deliver.add_argument("--evidence")
     deliver.add_argument("--pdf", action="store_true")
-    deliver.add_argument("--word", action="store_true")
+    deliver.add_argument("--word", action="store_true", help=argparse.SUPPRESS)
     deliver.set_defaults(handler=command_deliver)
     return parser
 

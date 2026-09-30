@@ -1405,6 +1405,36 @@
         "verification_needed": "如企业新增智能硬件核心技术研发，应补充研发活动和技术材料后重新判断。"
       },
       {
+        "business_id": "B01",
+        "business": "个人护理电器",
+        "activity_id": "B01-A02",
+        "activity_name": "个人护理电器线上电商销售",
+        "activity_type": "sales",
+        "activity_object": "淘宝天猫、京东等线上渠道",
+        "condition_status": "not_applicable",
+        "judgment": "no_match",
+        "matched_items": [],
+        "reason": "线上渠道销售已单独拆解；本轮未发现能够直接满足条件的鼓励类条目。",
+        "enterprise_source_ids": ["E01"],
+        "catalog_source_ids": [],
+        "verification_needed": "如形成独立平台经营或跨境交易闭环，应补充平台、订单和结算证据后重新判断。"
+      },
+      {
+        "business_id": "B01",
+        "business": "个人护理电器",
+        "activity_id": "B01-A03",
+        "activity_name": "个人护理电器经销销售",
+        "activity_type": "sales",
+        "activity_object": "经销商及分销渠道",
+        "condition_status": "not_applicable",
+        "judgment": "no_match",
+        "matched_items": [],
+        "reason": "线下经销销售已单独拆解；本轮未发现能够直接满足条件的鼓励类条目。",
+        "enterprise_source_ids": ["E01"],
+        "catalog_source_ids": [],
+        "verification_needed": "如在海南建设符合目录条件的商贸设施，应补充具体运营主体和设施材料后重新判断。"
+      },
+      {
         "business_id": "B02",
         "business": "生活及厨房电器",
         "activity_id": "B02-A01",
@@ -1420,6 +1450,36 @@
         ],
         "catalog_source_ids": [],
         "verification_needed": "需补充是否存在目录规定的节能、智能或核心零部件研发活动。"
+      },
+      {
+        "business_id": "B02",
+        "business": "生活及厨房电器",
+        "activity_id": "B02-A02",
+        "activity_name": "生活及厨房电器线上零售",
+        "activity_type": "sales",
+        "activity_object": "线上电商渠道",
+        "condition_status": "not_applicable",
+        "judgment": "no_match",
+        "matched_items": [],
+        "reason": "线上零售已单独拆解；本轮未发现能够直接满足条件的鼓励类条目。",
+        "enterprise_source_ids": ["E01"],
+        "catalog_source_ids": [],
+        "verification_needed": "如形成独立平台运营能力，应补充平台运营和收入证据后重新判断。"
+      },
+      {
+        "business_id": "B02",
+        "business": "生活及厨房电器",
+        "activity_id": "B02-A03",
+        "activity_name": "生活及厨房电器经销销售",
+        "activity_type": "sales",
+        "activity_object": "经销渠道",
+        "condition_status": "not_applicable",
+        "judgment": "no_match",
+        "matched_items": [],
+        "reason": "线下经销销售已单独拆解；本轮未发现能够直接满足条件的鼓励类条目。",
+        "enterprise_source_ids": ["E01"],
+        "catalog_source_ids": [],
+        "verification_needed": "如在海南建设符合目录条件的商贸设施，应补充具体运营主体和设施材料后重新判断。"
       },
       {
         "business_id": "B03",
@@ -1466,6 +1526,21 @@
           "P21"
         ],
         "verification_needed": "需补充海外电商平台店铺、订单、支付结算、跨境物流和境外收入证据。"
+      },
+      {
+        "business_id": "B04",
+        "business": "海外市场运营",
+        "activity_id": "B04-A02",
+        "activity_name": "境外经销销售",
+        "activity_type": "sales",
+        "activity_object": "东南亚、非洲、中东等境外经销渠道",
+        "condition_status": "not_applicable",
+        "judgment": "no_match",
+        "matched_items": [],
+        "reason": "境外经销渠道已单独拆解；本轮未发现能够直接满足条件的鼓励类条目。",
+        "enterprise_source_ids": ["E01"],
+        "catalog_source_ids": [],
+        "verification_needed": "需补充实际经销合同、订单和境外收入证据后进一步核验。"
       }
     ],
     "conflict_check": {

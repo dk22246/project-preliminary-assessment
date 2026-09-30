@@ -184,7 +184,7 @@ def main() -> int:
         add_cover_line(doc, "【自动化测试夹具 · 禁止交付】")
     add_cover_line(doc, data["meta"]["report_title"], title=True)
     add_cover_line(doc, f"编制单位：{data['meta'].get('unit', '三亚中央商务区管理局')}")
-    add_cover_line(doc, f"编制日期：{data['meta']['generated_at']}")
+    add_cover_line(doc, f"编制日期：{format_date(data['meta']['generated_at'])}")
     doc.add_page_break(); add_heading(doc, "目录", 1)
     add_native_toc_with_cache(doc, [(x, 1) for x in ("一、企业基本情况", "二、近三年经营数据", "三、风险与合规情况", "四、三亚落地业务及落地方式", "五、企业政策匹配", "六、综合评估", "七、参考资料")])
     h1(doc, "一、企业基本情况")
