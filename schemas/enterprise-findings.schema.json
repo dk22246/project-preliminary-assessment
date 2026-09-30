@@ -9,10 +9,10 @@
     "report": {
       "type": "object",
       "properties": {
-        "entity_resolution": {"type": "object", "properties": {"user_input": {"type": "string"}, "name_type": {"type": "string"}, "legal_entity": {"type": "string"}, "analysis_entity": {"type": "string"}, "financial_scope": {"type": "string"}, "risk_scope": {"type": "string"}}},
+        "entity_resolution": {"type": "object", "properties": {"user_input": {"type": "string"}, "name_type": {"type": "string"}, "legal_entity": {"type": "string"}, "analysis_entity": {"type": "string"}, "financial_scope": {"type": "string"}, "risk_scope": {"type": "string"}, "equity_summary": {"type": "string", "minLength": 20}}},
         "enterprise_overview": {"type": "object"},
-        "financial_analysis": {"type": "string"},
-        "comprehensive_assessment": {"type": "string"},
+        "financial_analysis": {"type": "string", "minLength": 40},
+        "comprehensive_assessment": {"type": "string", "minLength": 80},
         "government_support": {"type": "array", "items": {"type": "object"}},
         "businesses": {"type": "array", "items": {"type": "object", "required": ["key"], "properties": {"key": {"type": "string", "minLength": 1}}}},
         "financials": {

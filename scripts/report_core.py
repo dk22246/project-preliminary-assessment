@@ -59,6 +59,50 @@ NEGATED_TRANSACTION_TERMS = re.compile(
     r"(?:not|no)\s+(?:a\s+)?(?:confirmed\s+)?(?:supplier|customer|client|partner)",
     re.IGNORECASE,
 )
+CONCLUSION_DIMENSIONS = {
+    "招商价值": ("值得招商", "值得引进", "建议招商", "建议引进", "适合", "契合", "引进价值", "招商价值"),
+    "三亚落地方案": ("落地", "承接", "推进", "落户", "布局", "落地方案", "承接方式"),
+    "价值贡献": ("营收", "税收", "投资", "就业", "品牌", "产业链", "贸易", "价值"),
+    "政策价值": ("政策", "优惠", "免税", "红利", "政策价值"),
+    "主要风险": ("风险", "不确定性", "取决于", "制约", "挑战", "隐患"),
+    "下一轮指标": ("下一轮", "前置条件", "锁定", "待核", "待补", "需核实", "指标"),
+}
+CONCLUSION_FIELDS = (
+    {"path": ("financial_analysis",), "label": "经营数据分析", "min_len": 40, "dimensions": None, "when": None},
+    {"path": ("comprehensive_assessment",), "label": "综合评估", "min_len": 80, "dimensions": CONCLUSION_DIMENSIONS, "when": None},
+    {"path": ("entity_resolution", "equity_summary"), "label": "股权架构综述", "min_len": 20, "dimensions": None, "when": "equity_available"},
+)
+
+
+def _conclusion_field_applies(when: str | None, data: dict) -> bool:
+    if when == "equity_available":
+        return str(data.get("equity", {}).get("data_status", "")).strip() in {"available", "partial"}
+    return True
+
+
+def validate_conclusion_fields(data: dict) -> list[str]:
+    """统一约束结论性长文本字段：非空、最小长度、必要维度覆盖，跨 agent 一致。"""
+    errors: list[str] = []
+    for spec in CONCLUSION_FIELDS:
+        if not _conclusion_field_applies(spec["when"], data):
+            continue
+        node: object = data
+        for key in spec["path"]:
+            if not isinstance(node, dict):
+                node = None
+                break
+            node = node.get(key)
+        text = str(node or "").strip()
+        label = spec["label"]
+        if not text:
+            errors.append(f"{label}缺失或为空：报告会出现“需企业补充”占位，必须填写")
+            continue
+        if len(text) < spec["min_len"]:
+            errors.append(f"{label}过于简略（{len(text)}字，应不少于{spec['min_len']}字）")
+        for dim, anchors in (spec["dimensions"] or {}).items():
+            if not any(anchor in text for anchor in anchors):
+                errors.append(f"{label}缺少“{dim}”的说明")
+    return errors
 
 
 def load_data(path: str | Path) -> dict:
@@ -371,6 +415,7 @@ def validate_report_data(data: dict) -> list[str]:
             errors.append(f"政策展示组{group}缺少事实与条件合并后的report_reason")
     errors.extend(validate_policy_opportunity_radar(data, report_source_ids))
     errors.extend(validate_business_policy_ledger(data))
+    errors.extend(validate_conclusion_fields(data))
     return errors
 
 

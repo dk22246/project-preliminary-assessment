@@ -26,8 +26,8 @@ class RenderInputContractTests(unittest.TestCase):
 
     def test_analysis_and_support_survive_compile(self):
         data = build_findings('契约测试公司')['enterprise-findings.json']
-        data['report'].update(financial_analysis='基于财报的经营分析',
-                              comprehensive_assessment='基于企业事实的综合评估',
+        data['report'].update(financial_analysis='基于近三年财报的经营分析，收入与利润在近期呈现阶段波动，纳税数据为支付的各项税费口径，公开补助的发放部门、项目和履约约束仍需企业补充确认。',
+                              comprehensive_assessment='该企业具备上市公司主体和品牌渠道能力，适合以区域总部和贸易结算功能在三亚中央商务区推进，可贡献营收、税收和就业价值。政策方面可叠加享受企业所得税优惠等红利，政策价值明确。主要风险在于经营实质尚未落地。下一轮须锁定高管派驻、合同签订和收入利润归属的具体指标与前置条件。',
                               government_support=[{'name': '已披露补助', 'amount': '1万元'}])
         with tempfile.TemporaryDirectory() as tmp:
             result = compile_enterprise_findings(data, Path(tmp))['report-data.json']
