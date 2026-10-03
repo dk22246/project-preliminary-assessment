@@ -182,20 +182,20 @@ def main() -> int:
     configure_report_document(doc, data["meta"].get("report_short_name", "招商项目整体落地研判报告"))
     if fixture_only:
         add_cover_line(doc, "【自动化测试夹具 · 禁止交付】")
-    add_cover_line(doc, data["meta"]["report_title"], title=True)
+    add_cover_line(doc, data.get("meta", {}).get("report_title", "招商落地前期评估报告"), title=True)
     add_cover_line(doc, f"编制单位：{data['meta'].get('unit', '三亚中央商务区管理局')}")
-    add_cover_line(doc, f"编制日期：{format_date(data['meta']['generated_at'])}")
+    add_cover_line(doc, f"编制日期：{format_date(data.get('meta', {}).get('generated_at', ''))}")
     doc.add_page_break(); add_heading(doc, "目录", 1)
     add_native_toc_with_cache(doc, [(x, 1) for x in ("一、企业基本情况", "二、近三年经营数据", "三、风险与合规情况", "四、三亚落地业务及落地方式", "五、企业政策匹配", "六、综合评估", "七、参考资料")])
     h1(doc, "一、企业基本情况")
     add_heading(doc, "（一）企业主体认定与企业概况", 2)
     entity = data["entity_resolution"]
     overview = data["enterprise_overview"]
-    entity_rows = [["企业主体", entity.get("legal_entity", "未公开披露")], ["成立时间", overview["established_at"]], ["注册地", overview["registered_location"]], ["企业性质", overview["listing_status"]], ["主营业务", overview["main_business"]], ["分析口径", entity.get("financial_scope", "未公开披露")]]
+    entity_rows = [["企业主体", entity.get("legal_entity", "未公开披露")], ["成立时间", overview.get("established_at", "未公开披露")], ["注册地", overview.get("registered_location", "未公开披露")], ["企业性质", overview.get("listing_status", "未公开披露")], ["主营业务", overview.get("main_business", "未公开披露")], ["分析口径", entity.get("financial_scope", "未公开披露")]]
     add_standard_table(doc, ["基本事项", "企业情况"], entity_rows, [4.2, 11.7])
-    add_body(doc, "企业概况：" + overview["profile"])
-    add_body(doc, "经营表现：" + overview["operating_summary"])
-    add_body(doc, "员工规模：" + overview["employee_scale"])
+    add_body(doc, "企业概况：" + overview.get("profile", "需企业补充"))
+    add_body(doc, "经营表现：" + overview.get("operating_summary", "需企业补充"))
+    add_body(doc, "员工规模：" + overview.get("employee_scale", "未公开披露"))
     industry = data.get("industry_position", {})
     if isinstance(industry, dict):
         industry_text = f"{industry.get('category', '相关行业')}品类定位：{industry.get('position', '未取得可靠排名')}；统计时点：{industry.get('period', '未注明时点')}。{industry.get('statement', '需企业补充')}"

@@ -353,6 +353,10 @@ def validate_report_data(data: dict) -> list[str]:
     if len(data.get("financials", [])) != 3:
         errors.append("财务数据必须恰好包含最近三个完整年度")
     meta = data.get("meta", {})
+    if not str(meta.get("report_title", "")).strip():
+        errors.append("报告缺少report_title标题")
+    if not str(meta.get("generated_at", "")).strip():
+        errors.append("报告缺少generated_at编制日期")
     if str(meta.get("policy_search_mode", "")).strip() != "realtime":
         errors.append("政策检索模式必须为realtime")
     if not str(meta.get("policy_researched_at", "")).strip():
