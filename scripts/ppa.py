@@ -764,6 +764,12 @@ def build_parser() -> argparse.ArgumentParser:
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     try:
+        from self_update import ensure_fresh
+
+        ensure_fresh()
+    except Exception:
+        pass  # 自更新绝不影响主流程，失败即静默降级
+    try:
         return args.handler(args)
     except ValueError as error:
         print(str(error), file=sys.stderr)

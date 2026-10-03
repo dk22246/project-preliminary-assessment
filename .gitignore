@@ -9,3 +9,4 @@ tmp/
 tmp*/
 examples/nanfu-report-data.json
 work/
+.self-update-marker
