@@ -53,6 +53,12 @@ def resolve_node(explicit: str | None = None) -> Path | None:
     for candidate in candidates:
         if candidate and Path(candidate).expanduser().is_file():
             return Path(candidate).expanduser().resolve()
+    # Fall back to a portable Node previously unpacked by `ppa.py setup`.
+    from install_node import portable_node_candidates
+
+    for exe in portable_node_candidates():
+        if exe.is_file():
+            return exe.resolve()
     return None
 
 

@@ -2,6 +2,7 @@
   "schema_version": "1.0",
   "python": ">=3.10",
   "node": ">=18",
+  "node_dist_version": "22.14.0",
   "default_output": [
     "python",
     "node",

@@ -95,7 +95,11 @@ def command_setup(args: argparse.Namespace) -> int:
             return 0
     node = resolve_node(hinted_node)
     if not node:
-        raise ValueError("未找到Node.js >=18；安装Node.js后重试，或用--node提供真实可执行文件")
+        from install_node import ensure_node
+
+        node = ensure_node()
+        if not node:
+            raise ValueError("未找到Node.js >=18，且自动下载Node便携版失败；请手动安装Node.js或用--node提供真实可执行文件")
     env = dict(os.environ)
     env["PYTHONUTF8"] = "1"
     discovered = discover(str(node), hinted_chrome)

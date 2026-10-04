@@ -262,10 +262,12 @@ class WorkflowControllerTests(unittest.TestCase):
 
     def test_setup_does_not_reuse_stale_receipt_when_runtime_is_missing(self):
         import ppa
+        import install_node
 
         args = argparse.Namespace(force=False, node=None, npm=None, chrome=None)
         receipt = {"verified": True, "fingerprint": "same", "node": {"path": "missing-node"}, "chrome": {"path": "missing-chrome"}}
-        with patch.object(ppa, "load_verified_state", return_value=receipt), patch.object(ppa, "state_is_current", return_value=True), patch.object(ppa, "check_runtime", return_value=({}, ["runtime missing"])), patch.object(ppa, "resolve_node", return_value=None):
+        # Node 缺失时 setup 先尝试自动下载便携版；自动安装也失败才报错，且绝不复用 stale receipt 静默通过。
+        with patch.object(ppa, "load_verified_state", return_value=receipt), patch.object(ppa, "state_is_current", return_value=True), patch.object(ppa, "check_runtime", return_value=({}, ["runtime missing"])), patch.object(ppa, "resolve_node", return_value=None), patch.object(install_node, "ensure_node", return_value=None):
             with self.assertRaisesRegex(ValueError, "Node.js"):
                 ppa.command_setup(args)
 
