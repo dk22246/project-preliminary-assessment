@@ -37,7 +37,8 @@ Optional evidence and search commands remain behind the same entrypoint:
 ## Non-negotiable execution rules
 
 - When the user requests Skill maintenance, an Agent may read and edit any tracked source, instruction, reference, schema, template, or test file needed for that maintenance. The input restrictions below apply only while producing an enterprise report; they are not a repository read-only policy.
-- `setup` is deployment-only. Daily report runs must not reinstall dependencies, redownload Chromium, or run the release suite.
+- `setup` is deployment-only. It may install a checksum-verified portable Node runtime under the agent-neutral `PPA_RUNTIME_HOME`; daily report runs must not reinstall dependencies, redownload Chromium, or run the release suite.
+- A detected GitHub fast-forward update must finish first and stop the current command. Rerun the command under the new version; resume an existing workspace when its Skill fingerprint changes. Never continue one command across a code update and never overwrite a dirty or diverged checkout.
 - `start` creates two editable inputs, five generated ledgers, and `workflow-state.json`. Never use `tests/fixtures` as a new report workspace. Fixture data is maintenance-only and every public renderer must reject it unless an internal release test explicitly enables fixture mode.
 - Entity and listing route are written in `enterprise-findings.json.research.enterprise_profile`. Generate and follow only that route's `research-plan.json`; never run both listed and nonlisted research paths.
 - `prepare-enterprise` is independent of policy input and reaches `landing_businesses_complete` after the enterprise three-ledger and landing checks.

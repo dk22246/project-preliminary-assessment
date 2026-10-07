@@ -770,7 +770,13 @@ def main(argv: list[str] | None = None) -> int:
     try:
         from self_update import ensure_fresh
 
-        ensure_fresh()
+        update_status = ensure_fresh()
+        if update_status == "updated":
+            print("Skill已更新并暂停本次命令。请重新执行原命令；已有项目若提示版本变化，先运行 ppa.py resume --work-dir <work-dir>。")
+            return 75
+        if update_status == "blocked":
+            print("检测到GitHub新版，但当前安装无法安全快进；为避免混用版本，本次命令已暂停。", file=sys.stderr)
+            return 75
     except Exception:
         pass  # 自更新绝不影响主流程，失败即静默降级
     try:

@@ -35,6 +35,11 @@ class DeploymentPreflightTests(unittest.TestCase):
         self.assertIn('"-m", "unittest", "discover", "-s", "tests", "-v"', verifier)
         self.assertNotIn("powershell", verifier.lower())
 
+    def test_preflight_requires_portable_runtime_and_update_guards(self):
+        source = (ROOT / "scripts" / "preflight.py").read_text(encoding="utf-8")
+        self.assertIn('"scripts/install_node.py"', source)
+        self.assertIn('"scripts/self_update.py"', source)
+
 
 if __name__ == "__main__":
     unittest.main()

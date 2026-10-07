@@ -5,18 +5,21 @@ Design goal: `setup` must install EVERYTHING a fresh machine needs, including
 Node.js itself, so deployment is a single run and later report runs never trip
 over a missing runtime.
 
-Node is fetched from the official nodejs.org dist, unpacked under
-`~/.workbuddy/binaries/node`, and its path is written to the verified state by
-the normal setup flow so subsequent runs resolve it without re-downloading.
+Node is fetched from the official nodejs.org dist, verified against the
+official SHASUMS256 file, and unpacked under an agent-neutral user runtime
+directory. Its path is written to the verified state by the normal setup flow
+so subsequent runs resolve it without re-downloading.
 The whole installer is idempotent and offline-tolerant (any failure returns
 None and the caller reports a clear manual-install hint).
 """
 from __future__ import annotations
 
 import json
+import hashlib
 import os
 import platform
 import shutil
+import stat
 import subprocess
 import sys
 import tarfile
@@ -28,11 +31,23 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 REQUIREMENTS_FILE = ROOT / "runtime-requirements.json"
 
-# Portable Node home lives at user level (not inside the skill), so it survives
-# skill self-updates and is shared by every deployed copy on the same machine.
-NODE_HOME = Path.home() / ".workbuddy" / "binaries" / "node"
 DEFAULT_VERSION = "22.14.0"
 DIST_BASE = "https://nodejs.org/dist"
+
+
+def runtime_home() -> Path:
+    configured = os.environ.get("PPA_RUNTIME_HOME", "").strip()
+    if configured:
+        return Path(configured).expanduser().resolve()
+    return (Path.home() / ".project-preliminary-assessment" / "runtime").resolve()
+
+
+def node_home() -> Path:
+    return runtime_home() / "node"
+
+
+# Existing installations remain discoverable after migration to the neutral path.
+LEGACY_NODE_HOME = Path.home() / ".workbuddy" / "binaries" / "node"
 
 
 def dist_version() -> str:
@@ -84,14 +99,15 @@ def _node_executable(install_dir: Path) -> Path:
 
 def portable_node_candidates(home: Path | None = None) -> list[Path]:
     """Node executables already unpacked under the portable Node home."""
-    base = home or NODE_HOME
-    if not base.is_dir():
-        return []
     results: list[Path] = []
-    for entry in sorted(base.iterdir(), reverse=True):
-        exe = _node_executable(entry)
-        if exe.is_file():
-            results.append(exe)
+    bases = [home] if home is not None else [node_home(), LEGACY_NODE_HOME]
+    for base in bases:
+        if not base.is_dir():
+            continue
+        for entry in sorted(base.iterdir(), reverse=True):
+            exe = _node_executable(entry)
+            if exe.is_file() and exe not in results:
+                results.append(exe)
     return results
 
 
@@ -116,25 +132,57 @@ def _download(url: str, dest: Path) -> None:
         shutil.copyfileobj(response, out, length=1024 * 256)
 
 
+def _verify_checksum(archive: Path, checksums: Path) -> bool:
+    expected = None
+    for line in checksums.read_text(encoding="utf-8", errors="replace").splitlines():
+        parts = line.strip().split()
+        if len(parts) >= 2 and parts[-1].lstrip("*") == archive.name:
+            expected = parts[0].lower()
+            break
+    if not expected or len(expected) != 64:
+        return False
+    actual = hashlib.sha256(archive.read_bytes()).hexdigest()
+    return actual == expected
+
+
+def _safe_member_path(base: Path, member_name: str) -> Path:
+    normalized = member_name.replace("\\", "/")
+    if not normalized or normalized.startswith("/") or Path(normalized).is_absolute():
+        raise ValueError(f"压缩包包含不安全路径：{member_name}")
+    target = (base / normalized).resolve()
+    resolved_base = base.resolve()
+    if target != resolved_base and resolved_base not in target.parents:
+        raise ValueError(f"压缩包路径越界：{member_name}")
+    return target
+
+
 def _extract(archive: Path, into: Path) -> None:
     into.mkdir(parents=True, exist_ok=True)
     if archive.suffix.lower() == ".zip":
         with zipfile.ZipFile(archive) as zf:
+            for info in zf.infolist():
+                _safe_member_path(into, info.filename)
+                mode = (info.external_attr >> 16) & 0o170000
+                if stat.S_ISLNK(mode):
+                    raise ValueError(f"压缩包包含符号链接：{info.filename}")
             zf.extractall(into)
         return
     mode = "r:xz" if archive.name.endswith(".tar.xz") else "r:gz"
     with tarfile.open(archive, mode=mode) as tf:
-        # `filter` is available since 3.12 and prevents path-traversal; on
-        # older interpreters fall back to plain extractall.
+        members = tf.getmembers()
+        for member in members:
+            _safe_member_path(into, member.name)
+            if member.issym() or member.islnk() or member.isdev():
+                raise ValueError(f"压缩包包含不安全链接或设备：{member.name}")
         if sys.version_info >= (3, 12):
-            tf.extractall(into, filter="data")
+            tf.extractall(into, members=members, filter="data")
         else:
-            tf.extractall(into)
+            tf.extractall(into, members=members)
 
 
 def ensure_node(home: Path | None = None, version: str | None = None) -> Path | None:
     """Return a usable Node >=18, downloading a portable dist if necessary."""
-    base = home or NODE_HOME
+    base = home or node_home()
     ver = version or dist_version()
     for exe in portable_node_candidates(base):
         if _valid_version(exe):
@@ -147,12 +195,21 @@ def ensure_node(home: Path | None = None, version: str | None = None) -> Path | 
     with tempfile.TemporaryDirectory() as temporary:
         tmp = Path(temporary)
         archive = tmp / archive_name
+        checksums = tmp / "SHASUMS256.txt"
         try:
             _download(url, archive)
+            _download(f"{DIST_BASE}/v{ver}/SHASUMS256.txt", checksums)
         except Exception as error:
             print(f"[install-node] 下载失败（{url}）：{error}", file=sys.stderr)
             return None
-        _extract(archive, tmp)
+        if not _verify_checksum(archive, checksums):
+            print("[install-node] Node安装包SHA-256校验失败，已拒绝安装", file=sys.stderr)
+            return None
+        try:
+            _extract(archive, tmp)
+        except (OSError, ValueError, tarfile.TarError, zipfile.BadZipFile) as error:
+            print(f"[install-node] 解压失败：{error}", file=sys.stderr)
+            return None
         src = tmp / f"node-v{ver}-{key}"
         if not src.is_dir():
             # Some archives may lack the top folder; fall back to first dir.

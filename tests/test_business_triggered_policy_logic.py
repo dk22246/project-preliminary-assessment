@@ -94,6 +94,16 @@ class BusinessTriggeredPolicyLogicTests(unittest.TestCase):
             self.assertNotIn(stale, text)
         self.assertIn("默认生成 HTML 与可编辑 Word", text)
 
+    def test_portable_setup_and_reference_routing_are_explicit(self):
+        skill = (ROOT / "SKILL.md").read_text(encoding="utf-8-sig")
+        readme = (ROOT / "README.md").read_text(encoding="utf-8-sig")
+        self.assertIn("references/encouraged-industry-assessment.md", skill)
+        self.assertIn("references/source-registry.md", skill)
+        self.assertIn("PPA_RUNTIME_HOME", skill + readme)
+        self.assertNotIn("~/.workbuddy/binaries/node", skill + readme)
+        self.assertIn("当前命令", skill + readme)
+        self.assertIn("暂停", skill + readme)
+
 
 if __name__ == "__main__":
     unittest.main()

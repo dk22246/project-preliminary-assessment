@@ -1,4 +1,6 @@
 import io
+import hashlib
+import os
 import sys
 import tarfile
 import tempfile
@@ -42,6 +44,13 @@ class InstallNodeTests(unittest.TestCase):
     def test_portable_node_candidates_empty_when_no_home(self):
         self.assertEqual(install_node.portable_node_candidates(home=self._home() / "nope"), [])
 
+    def test_runtime_home_is_agent_neutral_and_configurable(self):
+        self.assertTrue(hasattr(install_node, "node_home"), "installer must expose a configurable neutral runtime home")
+        custom = self._home() / "shared-runtime"
+        with mock.patch.dict(os.environ, {"PPA_RUNTIME_HOME": str(custom)}):
+            self.assertEqual(install_node.node_home(), custom / "node")
+        self.assertNotIn(".workbuddy", str(install_node.node_home()))
+
     def test_portable_node_candidates_finds_exe(self):
         home = self._home()
         install_dir = home / "node-v22.14.0-win-x64"
@@ -69,6 +78,11 @@ class InstallNodeTests(unittest.TestCase):
         home = self._home()
 
         def fake_download(url, dest):
+            if dest.name == "SHASUMS256.txt":
+                archive = next(home_path for home_path in dest.parent.iterdir() if home_path.suffix == ".zip")
+                digest = hashlib.sha256(archive.read_bytes()).hexdigest()
+                dest.write_text(f"{digest}  {archive.name}\n", encoding="utf-8")
+                return
             with zipfile.ZipFile(dest, "w") as zf:
                 zf.writestr("node-v22.14.0-win-x64/node.exe", "fake")
 
@@ -78,6 +92,29 @@ class InstallNodeTests(unittest.TestCase):
         self.assertIsNotNone(exe)
         self.assertTrue(exe.is_file())
         self.assertTrue((home / "node-v22.14.0-win-x64").is_dir())
+
+    def test_ensure_node_rejects_checksum_mismatch(self):
+        home = self._home()
+
+        def fake_download(url, dest):
+            if dest.name == "SHASUMS256.txt":
+                dest.write_text(f"{'0' * 64}  node-v22.14.0-win-x64.zip\n", encoding="utf-8")
+                return
+            with zipfile.ZipFile(dest, "w") as zf:
+                zf.writestr("node-v22.14.0-win-x64/node.exe", "fake")
+
+        with mock.patch.object(install_node, "_download", side_effect=fake_download), mock.patch.object(install_node, "_valid_version", return_value=True), mock.patch.object(install_node, "platform_key", return_value="win-x64"), mock.patch.object(install_node, "dist_version", return_value="22.14.0"):
+            self.assertIsNone(install_node.ensure_node(home=home))
+        self.assertFalse((home / "node-v22.14.0-win-x64").exists())
+
+    def test_extract_zip_rejects_path_traversal(self):
+        root = self._home()
+        archive = root / "unsafe.zip"
+        with zipfile.ZipFile(archive, "w") as zf:
+            zf.writestr("../escaped.txt", "unsafe")
+        with self.assertRaises(ValueError):
+            install_node._extract(archive, root / "out")
+        self.assertFalse((root / "escaped.txt").exists())
 
     def test_extract_tar_gz(self):
         tmp = tempfile.TemporaryDirectory()

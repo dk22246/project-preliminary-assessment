@@ -4,7 +4,7 @@
 
 ## 安装
 
-完整克隆或下载本仓库到 Agent 的 Skill 目录，保持目录名为 `project-preliminary-assessment`。不要只复制 `SKILL.md`。仓库不提供可直接渲染的真实企业示例；维护测试夹具仅位于 `tests/fixtures`，公开渲染入口会拒绝夹具数据，不能将其作为企业项目或交付报告。
+完整克隆本仓库到任意 Agent 的 Skill 目录，保持目录名为 `project-preliminary-assessment`。Git克隆部署支持安全自更新；下载ZIP属于静态部署，不会自动更新。不要只复制 `SKILL.md`。仓库不提供可直接渲染的真实企业示例；维护测试夹具仅位于 `tests/fixtures`，公开渲染入口会拒绝夹具数据，不能将其作为企业项目或交付报告。
 
 首次安装或依赖变化后，在仓库根目录运行一次（仅安装依赖并验证浏览器，不跑完整发布测试）：
 
@@ -12,7 +12,9 @@
 & <python-path> -X utf8 scripts/ppa.py setup
 ```
 
-`setup` 会一次性安装并验证 PDF 正文提取依赖和浏览器运行环境。Word 由 Skill 内置标准库生成，不需要额外依赖或安装开关。日常生成报告不重复安装依赖或运行发布测试。
+`setup` 会一次性安装并验证 Node.js、Playwright/Chromium 与PDF正文提取依赖。缺少Node.js时，程序从Node官方网站下载便携版并核验官方SHA-256；默认安装到用户目录下的 `.project-preliminary-assessment/runtime`，也可通过 `PPA_RUNTIME_HOME` 设置跨Agent共享目录。Word由Skill内置标准库生成，不需要额外依赖。日常生成报告不重复安装依赖或运行发布测试。
+
+Git部署最多每24小时检查一次 `origin/main`。发现新版后只进行标准Git快进，随后暂停当前命令；重新执行原命令后才进入报告流程。已有项目如遇Skill指纹变化，先运行 `ppa.py resume --work-dir work/company`。本地有改动、分支不符或历史分叉时不会覆盖文件，而是暂停并给出处理提示。
 
 已有项目遇到兼容版本更新时，执行 `ppa.py resume --work-dir work/company`，保留资料后重新准备、编译和核验，无需新建企业工作区。来源超过24小时仍需实时复验。
 

@@ -8,7 +8,7 @@ import sys
 import tempfile
 import types
 import unittest
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -270,6 +270,19 @@ class WorkflowControllerTests(unittest.TestCase):
         with patch.object(ppa, "load_verified_state", return_value=receipt), patch.object(ppa, "state_is_current", return_value=True), patch.object(ppa, "check_runtime", return_value=({}, ["runtime missing"])), patch.object(ppa, "resolve_node", return_value=None), patch.object(install_node, "ensure_node", return_value=None):
             with self.assertRaisesRegex(ValueError, "Node.js"):
                 ppa.command_setup(args)
+
+    def test_main_stops_current_command_after_self_update(self):
+        import ppa
+        import self_update
+
+        for status in ("updated", "blocked"):
+            with self.subTest(status=status):
+                handler = MagicMock(return_value=0)
+                parser = MagicMock()
+                parser.parse_args.return_value = argparse.Namespace(handler=handler)
+                with patch.object(ppa, "build_parser", return_value=parser), patch.object(self_update, "ensure_fresh", return_value=status):
+                    self.assertEqual(ppa.main(["doctor"]), 75)
+                handler.assert_not_called()
 
     def test_agent_instructions_expose_only_the_controller_as_public_entry(self):
         instructions = "\n".join(

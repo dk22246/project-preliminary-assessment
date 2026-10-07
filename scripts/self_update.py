@@ -1,17 +1,13 @@
 #!/usr/bin/env python3
-"""Self-update guard: pull the latest skill version from GitHub before running.
+"""Self-update guard: safely fast-forward the installed skill before running.
 
 Design goals (简单清晰):
 - Triggered once at the ppa.py entry, before the real command runs.
 - A 24h TTL avoids hitting the network on every invocation.
-- Only fast-forward updates (never lose local work); any failure degrades
-  silently to the local version, so an offline machine still works.
-
-The environment's git has a known quirk where `git reset` / `git update-ref`
-corrupts branch refs, and `git fetch` does not persist remote-tracking refs.
-So this script intentionally avoids both: it compares via `git ls-remote`,
-downloads via `git fetch` (to FETCH_HEAD), then moves the branch pointer by
-writing the ref file directly and syncing the worktree with `git checkout -f`.
+- Only standard Git fast-forward operations are allowed. Never write `.git`
+  internals directly and never overwrite a dirty worktree.
+- If an update is installed, the caller stops the current command so one
+  report run never mixes old imports with newly checked-out code.
 """
 from __future__ import annotations
 
@@ -40,11 +36,19 @@ def _run(*args: str, cwd: Path | None = None) -> str:
     return (result.stdout or "").strip()
 
 
-def ensure_fresh(quiet: bool = False, root: str | Path | None = None) -> None:
+def _mark_checked(marker: Path) -> None:
+    try:
+        marker.write_text(str(int(time.time())), encoding="utf-8")
+    except OSError:
+        pass
+
+
+def ensure_fresh(quiet: bool = False, root: str | Path | None = None) -> str | None:
     """Check origin/main and fast-forward if a newer version exists.
 
-    Never raises: every branch of failure returns and keeps the local version,
-    so the skill remains usable offline or on non-git deployments.
+    Return ``updated`` after a successful fast-forward or ``blocked`` when a
+    newer remote version exists but cannot be installed safely. Offline and
+    non-git deployments keep using the local version and return ``None``.
     """
     base = Path(root).resolve() if root else ROOT
     marker = base / ".self-update-marker"
@@ -57,35 +61,48 @@ def ensure_fresh(quiet: bool = False, root: str | Path | None = None) -> None:
         current_branch = _run("rev-parse", "--abbrev-ref", "HEAD", cwd=base)
         remote_line = _run("ls-remote", REMOTE, f"refs/heads/{BRANCH}", cwd=base)
         remote = remote_line.split()[0]
-        try:
-            marker.write_text(str(int(time.time())), encoding="utf-8")
-        except OSError:
-            pass
         if remote == local:
+            _mark_checked(marker)
             return  # 已是最新
         if current_branch != BRANCH:
             if not quiet:
-                print(f"[自更新] 远程有新版 {remote[:7]}，但当前在 {current_branch} 分支，切到 {BRANCH} 后自动更新")
-            return
+                print(f"[自更新] 远程有新版 {remote[:7]}，但当前在 {current_branch} 分支，无法安全更新")
+            return "blocked"
         if _run("status", "--porcelain", cwd=base):
             if not quiet:
-                print("[自更新] 检测到未提交改动，跳过自动更新以免覆盖")
-            return
+                print("[自更新] 检测到未提交改动，已暂停运行；请先处理本地改动")
+            return "blocked"
         _run("fetch", REMOTE, BRANCH, cwd=base)
         fetched = _run("rev-parse", "FETCH_HEAD", cwd=base)
         if fetched == local:
+            _mark_checked(marker)
             return
-        # Fast-forward only: raise (and degrade) if local is not an ancestor.
-        _run("merge-base", "--is-ancestor", local, fetched, cwd=base)
-        ref_path = base / ".git" / "refs" / "heads" / BRANCH
-        ref_path.parent.mkdir(parents=True, exist_ok=True)
-        ref_path.write_text(fetched + "\n", encoding="utf-8")
-        _run("checkout", "-f", BRANCH, cwd=base)
+        try:
+            _run("merge-base", "--is-ancestor", local, fetched, cwd=base)
+        except RuntimeError:
+            try:
+                _run("merge-base", "--is-ancestor", fetched, local, cwd=base)
+            except RuntimeError:
+                if not quiet:
+                    print("[自更新] 本地版本与GitHub已分叉，已暂停运行；禁止自动覆盖")
+                return "blocked"
+            _mark_checked(marker)
+            return  # 本地提交领先远端；不得自动降级
+        try:
+            _run("merge", "--ff-only", "FETCH_HEAD", cwd=base)
+        except RuntimeError as error:
+            if not quiet:
+                print(f"[自更新] 快进失败，已暂停运行且未覆盖本地内容（{error}）")
+            return "blocked"
+        _mark_checked(marker)
         if not quiet:
-            print(f"[自更新] 已更新 {local[:7]} -> {fetched[:7]}；本次命令继续，下次起为最新版")
+            print(f"[自更新] 已更新 {local[:7]} -> {fetched[:7]}；当前命令已暂停，重新执行后使用最新版")
+        return "updated"
     except Exception as error:
+        _mark_checked(marker)
         if not quiet:
             print(f"[自更新] 跳过（{error}）")
+        return None
 
 
 if __name__ == "__main__":
