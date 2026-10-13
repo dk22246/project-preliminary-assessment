@@ -63,6 +63,8 @@ class ReportPipelinePolicyEvidenceTests(unittest.TestCase):
                     "--out-dir", str(Path(value) / "out"), "--node", str(node),
                 ], release_validation=True)
             self.assertEqual(result, 0)
+            self.assertFalse(any(any(str(part).endswith("render_report_word.py") for part in command) for command in commands))
+            self.assertFalse(any(any(str(part).endswith("render_report_pdf.mjs") for part in command) for command in commands))
             policy_command = next(command for command in commands if any(str(part).endswith("validate_policy_evidence.py") for part in command))
             self.assertIn("--fixture-mode", policy_command)
             self.assertTrue(any(any(str(part).endswith("validate_research_stop_gate.py") for part in command) for command in commands))

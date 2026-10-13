@@ -79,7 +79,7 @@ def _schema_validate(value: object, schema: dict, path: str, errors: list[str]) 
     if "const" in schema and value != schema["const"]:
         errors.append(f"{path}: 不等于const值")
     if "enum" in schema and value not in schema["enum"]:
-        errors.append(f"{path}: 不在enum允许值内")
+        errors.append(f"{path}: 收到值{value!r}不在enum允许值内，允许：{schema['enum']}")
     if isinstance(value, str) and "minLength" in schema and len(value) < schema["minLength"]:
         errors.append(f"{path}: 长度小于minLength")
     if isinstance(value, list):
@@ -223,6 +223,16 @@ def validate_enterprise_findings(data: object) -> list[str]:
             if _text(key) not in facts:
                 errors.append(f"业务候选引用未知fact key：{key}")
     for row in routes.values():
+        from policy_roles import DEPARTMENT_ROLES
+        allowed_statuses = {"matched_static_rule", "verified_dynamic_route", "rejected_route", "unresolved"}
+        status = _text(row.get("status"))
+        if status not in allowed_statuses:
+            errors.append(f"部门路由{row.get('key')}status收到{status!r}，允许：{sorted(allowed_statuses)}")
+        role = _text(row.get("department_role"))
+        if role and role not in DEPARTMENT_ROLES:
+            errors.append(f"部门路由{row.get('key')}department_role收到{role!r}，允许：{sorted(DEPARTMENT_ROLES)}")
+        if status == "verified_dynamic_route" and not _text(row.get("department_duty_source")):
+            errors.append(f"部门路由{row.get('key')}缺少department_duty_source官方职责依据")
         if _text(row.get("landing_business_key")) not in landings:
             errors.append(f"部门路由引用未知landing business key：{row.get('landing_business_key', '')}")
         for key in _refs(row.get("candidate_keys", []), "部门路由candidate_keys", errors):
@@ -243,7 +253,7 @@ def validate_enterprise_findings(data: object) -> list[str]:
     nodes = _unique_keys(node_rows, "股权节点", errors)
     for row in node_rows:
         if _text(row.get("assertion_type")) not in ASSERTION_TYPES:
-            errors.append(f"股权节点断言类型无效：{row.get('assertion_type', '')}")
+            errors.append(f"股权节点断言类型无效：{row.get('assertion_type', '')}；允许：{sorted(ASSERTION_TYPES)}")
         if not _text(row.get("role")):
             errors.append(f"股权节点{_text(row.get('key')) or '（未命名）'}缺少role；正式报告必须明确节点角色")
         for key in _refs(row.get("source_keys", []), "股权节点source_keys", errors):
@@ -253,7 +263,7 @@ def validate_enterprise_findings(data: object) -> list[str]:
     _unique_keys(edge_rows, "股权连接", errors)
     for row in edge_rows:
         if _text(row.get("assertion_type")) not in ASSERTION_TYPES:
-            errors.append(f"股权连接断言类型无效：{row.get('assertion_type', '')}")
+            errors.append(f"股权连接断言类型无效：{row.get('assertion_type', '')}；允许：{sorted(ASSERTION_TYPES)}")
         for field in ("from_key", "to_key"):
             if _text(row.get(field)) not in nodes:
                 errors.append(f"股权连接引用未知节点key：{row.get(field, '')}")
@@ -347,9 +357,9 @@ def validate_policy_findings(data: object) -> list[str]:
                 if _text(ref) not in known:
                     errors.append(f"政策主记录{key}引用未知{field}：{ref}")
         if _text(row.get("eligibility_status")) not in POLICY_ELIGIBILITY:
-            errors.append(f"政策主记录{key}eligibility_status无效")
+            errors.append(f"政策主记录{key}eligibility_status无效：{row.get('eligibility_status')!r}；允许：{sorted(POLICY_ELIGIBILITY)}")
         if _text(row.get("disposition")) not in POLICY_DISPOSITIONS:
-            errors.append(f"政策主记录{key}disposition无效")
+            errors.append(f"政策主记录{key}disposition无效：{row.get('disposition')!r}；允许：{sorted(POLICY_DISPOSITIONS)}")
         for field in ("topic", "match_reason", "report_group"):
             if not _text(row.get(field)):
                 errors.append(f"政策主记录{key}缺少{field}")

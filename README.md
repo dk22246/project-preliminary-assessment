@@ -1,6 +1,6 @@
 # 项目前期评估 Skill
 
-面向三亚中央商务区招商前期研判的可移植 Codex Skill。输入企业名称后，按上市/非上市路径完成企业研究、股权与财务核验、鼓励类产业目录判断、三亚承接分析和海南岛内实时政策匹配，默认交付 HTML 与 Word，PDF 可选。
+面向三亚中央商务区招商前期研判的可移植 Codex Skill。输入企业名称后，按上市/非上市路径完成企业研究、股权与财务核验、鼓励类产业目录判断、三亚承接分析和海南岛内实时政策匹配，默认交付 HTML，PDF 可选。
 
 ## 安装
 
@@ -12,7 +12,7 @@
 & <python-path> -X utf8 scripts/ppa.py setup
 ```
 
-`setup` 会一次性安装并验证 Node.js、Playwright/Chromium 与PDF正文提取依赖。缺少Node.js时，程序从Node官方网站下载便携版并核验官方SHA-256；默认安装到用户目录下的 `.project-preliminary-assessment/runtime`，也可通过 `PPA_RUNTIME_HOME` 设置跨Agent共享目录。Word由Skill内置标准库生成，不需要额外依赖。日常生成报告不重复安装依赖或运行发布测试。
+`setup` 会一次性安装并验证 Node.js、Playwright/Chromium 与PDF正文提取依赖。缺少Node.js时，程序从Node官方网站下载便携版并核验官方SHA-256；默认安装到用户目录下的 `.project-preliminary-assessment/runtime`，也可通过 `PPA_RUNTIME_HOME` 设置跨Agent共享目录。日常生成报告不重复安装依赖或运行发布测试。
 
 Git部署最多每24小时检查一次 `origin/main`。发现新版后只进行标准Git快进，随后暂停当前命令；重新执行原命令后才进入报告流程。已有项目如遇Skill指纹变化，先运行 `ppa.py resume --work-dir work/company`。本地有改动、分支不符或历史分叉时不会覆盖文件，而是暂停并给出处理提示。
 
@@ -34,7 +34,7 @@ Git部署最多每24小时检查一次 `origin/main`。发现新版后只进行�
 & <python-path> -X utf8 scripts/ppa.py deliver --work-dir work/company --out-dir outputs/company
 ```
 
-`prepare-enterprise` 不依赖政策输入，成功后进入 `landing_businesses_complete`。`discover-policies` 保存真实回执、候选和正文/附件 evidence 草稿，不自动判定资格或有效性；`finalize` 集中报告独立错误，只有全成功才写 `report_ready` 和最终哈希。`deliver` 默认生成 HTML 与可编辑 Word；需要同步生成 PDF 时增加 `--pdf`。
+`prepare-enterprise` 不依赖政策输入，成功后进入 `landing_businesses_complete`。`discover-policies` 保存真实回执、候选和正文/附件 evidence 草稿，不自动判定资格或有效性；`finalize` 集中报告独立错误，只有全成功才写 `report_ready` 和最终哈希。`deliver` 默认生成 HTML；需要同步生成 PDF 时增加 `--pdf`。
 
 ## 运行边界
 

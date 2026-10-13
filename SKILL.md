@@ -1,6 +1,6 @@
 ---
 name: project-preliminary-assessment
-description: Use when 招商人员只提供企业名称或基础资料，需要完成三亚中央商务区企业尽调、股权与财务核验、海南岛内实时政策机会发现和整体落地研判，并交付 HTML 与可编辑 Word 报告，PDF 按需生成。
+description: Use when 招商人员只提供企业名称或基础资料，需要完成三亚中央商务区企业尽调、股权与财务核验、海南岛内实时政策机会发现和整体落地研判，并交付 HTML 报告，PDF 按需生成。
 ---
 
 # 项目前期评估
@@ -14,7 +14,7 @@ description: Use when 招商人员只提供企业名称或基础资料，需要�
 - 每次运行 `ppa.py` 前最多每24小时检查一次 GitHub `origin/main`。发现新版时只允许标准Git快进：更新成功后立即暂停当前命令，重新执行后才使用新版；已有项目按提示运行 `resume` 后继续。工作区有改动、分支不符或历史分叉时阻断当前命令且不覆盖本地内容。离线或非git部署继续使用本地版本。由此确保单条命令不混用版本，报告恢复时重新绑定当前Skill指纹。
 - 每个项目由 `ppa.py start` 创建五份同轮台账和 `workflow-state.json`，不得复制示例企业底稿。
 - 企业输入完成后先运行不依赖政策的 `ppa.py prepare-enterprise`，到达 `landing_businesses_complete` 后再运行 `discover-policies`；补全唯一政策主记录后才 `compile`，再由 `finalize` 对机器生成的五份台账统一终检。失败后修正输入并重新编译、终检，不能因“已经检查过一次”停止修复；不重复运行维护用的全库测试。只有全成功才写 `report_ready` 并绑定五份台账SHA-256。`advance`仅保留为兼容别名。
-- 默认由同一份 `report-data.json` 生成 HTML 与可编辑 Word（报告内附“下载 Word”按钮）；PDF 由报告内“导出 PDF”按钮（浏览器打印）或用户明确要求时生成。不得分别撰写三套内容。
+- 默认由同一份 `report-data.json` 生成 HTML；PDF 由报告内“导出 PDF”按钮（浏览器打印）或用户明确要求时生成。PDF沿用已验收HTML内容。
 
 ## 固定工作流
 
@@ -27,7 +27,7 @@ description: Use when 招商人员只提供企业名称或基础资料，需要�
 7. 运行 `prepare-enterprise` 完成企业侧门禁并到达 `landing_businesses_complete`；
 8. 按业务和主管部门实时检索政策；
 9. 完成报告数据及全部证据门禁；
-10. 同源生成HTML与可编辑Word并完成版式验收，PDF按需生成。
+10. 同源生成HTML并完成版式验收，PDF按需生成。
 
 任何阶段都不能跳过。正式交付只接受同一工作区的五份台账、当前Skill指纹和报告就绪哈希。
 
@@ -44,7 +44,7 @@ description: Use when 招商人员只提供企业名称或基础资料，需要�
 
 两条路由改变来源、动作和停止条件，不改变报告结构、鼓励类产业目录判断、三亚落地分析或实时政策检索。上市母公司材料只能补充非上市分析主体的关系背景，不得把集团合并数据改写为该主体自身数据。详细来源和停止门禁见 `references/evidence-intake.md`、`references/business-discovery.md`。
 
-主体和路由写入 `enterprise-findings.json` 后，运行 `ppa.py research-plan` 生成本轮最小行动清单。只读取 `references/research-route-index.md` 中与当前路由对应的一段；不得同时加载上市和非上市执行细则。上市公司最多一轮集中研究；非上市公司最多为固定来源阶梯加一次定向缺口补查。能并行的独立官方URL必须在同一次 `collect-web` 中批量提交，条件型动作没有明确缺口时标记跳过，不得执行泛搜。进入产业目录、政策、Word/PDF或园区政策阶段时，才读取对应参考文件。
+主体和路由写入 `enterprise-findings.json` 后，运行 `ppa.py research-plan` 生成本轮最小行动清单。只读取 `references/research-route-index.md` 中与当前路由对应的一段；不得同时加载上市和非上市执行细则。上市公司最多一轮集中研究；非上市公司最多为固定来源阶梯加一次定向缺口补查。能并行的独立官方URL必须在同一次 `collect-web` 中批量提交，条件型动作没有明确缺口时标记跳过，不得执行泛搜。进入产业目录、政策、PDF或园区政策阶段时，才读取对应参考文件。
 
 两类主体都研究企业关系、主要业务与产品、代表性上下游、国内外业务、近三年经营数据、政府补助和重大风险。上市主体可以依据法定披露核验具体品类排名、市场份额和竞争位置。非上市主体的地位只核验Fortune Global 500、中国企业500强、中国民营企业500强及一项直接相关的行业500强，不扩展普通榜单或泛化荣誉；缺少可靠数据时明确写“本轮公开检索未发现可靠数据，需企业补充”，不得估算或虚构。
 
@@ -96,12 +96,12 @@ description: Use when 招商人员只提供企业名称或基础资料，需要�
 
 企业基本情况使用简明主体表和短段落介绍企业是谁、做什么、经营表现、员工规模和有证据支持的行业地位。业务表只写企业事实，不提前混入三亚推演。产业链只写定位、同类企业、上游、下游和行业共性需求；上游和下游必须填写有正式来源支持、能够识别的真实代表企业，禁止使用“原料主体、零售终端、食品加工企业”等类别词或占位词冒充企业名。没有交易证据时不得把代表企业称为已确认供应商、客户或合作伙伴。产业链作为企业基本情况的固定子节呈现，不再单列重复目录项。风险较少时使用简明文字，不制造空表。
 
-HTML、PDF和Word必须读取同一 `report-data.json`。股权图、表格、来源编号和政策内容必须同源；HTML必须通过整页、表格和SVG边界检查。具体结构、样式和Word交付边界见 `references/report-template.md`、`references/html-delivery.md`、`references/word-delivery.md`。
+HTML和PDF必须读取同一 `report-data.json`。股权图、表格、来源编号和政策内容必须同源；HTML必须通过整页、表格和SVG边界检查。具体结构和样式见 `references/report-template.md`、`references/html-delivery.md`。
 
 ## 命令
 
 ```powershell
-# 一次性部署；创建项目；生成路由计划；编译后执行一次最终门禁；默认交付HTML与Word
+# 一次性部署；创建项目；生成路由计划；编译后执行一次最终门禁；默认交付HTML
 & $py -X utf8 scripts/ppa.py setup
 & $py -X utf8 scripts/ppa.py start "企业法律全称" --work-dir work/company
 & $py -X utf8 scripts/ppa.py research-plan --work-dir work/company

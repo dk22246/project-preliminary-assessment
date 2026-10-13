@@ -55,7 +55,7 @@ class BusinessTriggeredPolicyLogicTests(unittest.TestCase):
         self.assertIn("prefers-reduced-motion", renderer)
         self.assertIn("模板只改变视觉变量和组件", guidance)
 
-    def test_html_word_default_and_pdf_opt_in(self):
+    def test_html_default_and_pdf_opt_in(self):
         pipeline = (ROOT / "scripts" / "run_report_pipeline.py").read_text(encoding="utf-8")
         skill = (ROOT / "SKILL.md").read_text(encoding="utf-8")
         agent_metadata = (ROOT / "agents" / "openai.yaml").read_text(encoding="utf-8")
@@ -63,16 +63,16 @@ class BusinessTriggeredPolicyLogicTests(unittest.TestCase):
         # PDF 仍是显式按需（--pdf 命令行，或报告内"导出 PDF"按钮走浏览器打印）
         self.assertIn('parser.add_argument("--pdf", action="store_true"', pipeline)
         self.assertIn("if args.pdf:", pipeline)
-        # Word 默认随 HTML 一起生成，不再有 opt-in 门槛；--word 保留向后兼容
-        self.assertIn('parser.add_argument("--word", action="store_true"', pipeline)
+        # Word 不属于公开交付路径。
+        self.assertNotIn('parser.add_argument("--word", action="store_true"', pipeline)
         self.assertNotIn("if args.word:", pipeline)
-        self.assertIn("render_report_word.py", pipeline)
-        # HTML 仍是核心交付；Word 非"verified"表述不变
+        self.assertNotIn("render_report_word.py", pipeline)
+        # HTML 是正式交付。
         self.assertIn("validated HTML report", agent_metadata)
         self.assertNotIn("deliver a verified Word report", agent_metadata)
-        # 文档口径：HTML+Word 默认交付，PDF 按需
+        # PDF 按需。
         self.assertIn("导出 PDF", skill)
-        self.assertIn("下载 Word", word_rules)
+        self.assertNotIn("下载 Word", word_rules)
 
     def test_delivery_contract_has_no_stale_word_opt_in_instructions(self):
         paths = (
@@ -92,7 +92,7 @@ class BusinessTriggeredPolicyLogicTests(unittest.TestCase):
             "Word 是用户明确需要可编辑报告时的可选交付物", "ppa.py deliver --word",
         ):
             self.assertNotIn(stale, text)
-        self.assertIn("默认生成 HTML 与可编辑 Word", text)
+        self.assertIn("默认生成 HTML", text)
 
     def test_portable_setup_and_reference_routing_are_explicit(self):
         skill = (ROOT / "SKILL.md").read_text(encoding="utf-8-sig")

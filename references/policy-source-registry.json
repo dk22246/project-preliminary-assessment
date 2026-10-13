@@ -2,6 +2,7 @@
   "version": "1.0",
   "source": "references/policy-scope.md",
   "departments": [
+    {"department": "海南省药品监督管理局", "jurisdiction": "hainan", "entry_url": "https://amr.hainan.gov.cn/himpa/xxgk/zfwj/xzgfxwj/", "entry_kind": "policy_directory", "path_entries": {"normative_documents": "https://amr.hainan.gov.cn/himpa/xxgk/zfwj/xzgfxwj/", "department_documents": "https://amr.hainan.gov.cn/himpa/xxgk/zfwj/", "application_notices": "https://amr.hainan.gov.cn/himpa/bsfw/"}},
     {"department": "海南省发展和改革委员会", "jurisdiction": "hainan", "entry_url": "https://plan.hainan.gov.cn/sfgw/0500/list.shtml", "entry_kind": "policy_directory"},
     {"department": "海南省商务厅", "jurisdiction": "hainan", "entry_url": "https://dofcom.hainan.gov.cn/dofcom/Policys/list.shtml?ddtab=true", "entry_kind": "policy_directory"},
     {"department": "海南省财政厅", "jurisdiction": "hainan", "entry_url": "https://mof.hainan.gov.cn/", "entry_kind": "homepage"},

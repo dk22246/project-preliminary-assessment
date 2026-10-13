@@ -101,7 +101,15 @@ def build_findings(enterprise: str) -> dict[str, dict]:
         "enterprise-findings.json": {
             "version": "1.0",
             "enterprise": enterprise,
-            "report": {"entity_resolution": {}, "enterprise_overview": {}, "businesses": [], "landing_businesses": []},
+            "report": {
+                "entity_resolution": {field: "" for field in ("user_input", "name_type", "legal_entity", "analysis_entity", "financial_scope", "risk_scope")},
+                "enterprise_overview": {field: "" for field in ("established_at", "registered_location", "listing_status", "main_business", "employee_scale", "profile", "operating_summary")},
+                "businesses": [], "landing_businesses": [],
+                "financials": [{"year": str(year), "data_status": "", "revenue": "", "profit": "", "revenue_change": "", "profit_change": "", "tax_value": "", "tax_basis": "", "government_support": "", "source": "", "availability_note": ""} for year in range(datetime.now(timezone.utc).year - 1, datetime.now(timezone.utc).year - 4, -1)],
+                "industry_chain": {"positioning": {"summary": ""}, "peer_enterprises": [], "upstream": [], "downstream": [], "industry_common_needs": []},
+                "encouraged_industry_assessment": {"catalog_version": "", "overall_judgment": "research_incomplete", "summary": "", "catalogs_checked": [], "business_assessments": []},
+                "industry_position": {}, "top500_status": [], "risks": [],
+            },
             "research": {"enterprise_profile": {}, "research_stop_gate": {}, "facts": [], "business_candidates": [], "department_routes": []},
             "equity": {"data_status": "", "review_status": "incomplete", "provider_attempts": [], "sources": [], "nodes": [], "edges": [], "conflicts": []},
             "sources": [],

@@ -189,6 +189,8 @@ def _route_tasks(research_ledger: dict, report_data: dict) -> list[dict]:
     registry = _source_registry()
     tasks: dict[tuple[str, str], dict] = {}
     for route in research_ledger.get("department_routes", []):
+        if route.get("status") in {"rejected_route", "unresolved"}:
+            continue
         landing_id = str(route.get("landing_business_id", "")).strip()
         department = str(route.get("department", "")).strip()
         registered = registry.get(department, {})
@@ -199,7 +201,7 @@ def _route_tasks(research_ledger: dict, report_data: dict) -> list[dict]:
             or ""
         ).strip()
         if not landing_id or not department or not entry_url:
-            continue
+            raise ValueError(f"政策路由{route.get('id', '未编号')}缺少落地业务、主管部门或官方入口：{department or '未填写部门'}；请在来源注册表或路由entry_url填写经核验的官方入口")
         entry_url = _normalise_url(entry_url)
         business = landing.get(landing_id, {})
         business_topic = str(business.get("business") or business.get("name") or "政策检索")
@@ -414,6 +416,8 @@ def discover_current_policies(
     cache = workspace_cache(out_dir)
     fetch = fetch or (lambda url, headers: _default_fetch(url, headers, request_timeout))
     tasks = _route_tasks(research_ledger, report_data)
+    if not tasks:
+        raise ValueError("没有可执行的主管部门政策路由；请先完成落地业务对应的主管部门及官方入口，不能将0次检索视为无政策")
     entry_items = []
     seen_entries = set()
     for task in tasks:
@@ -901,6 +905,21 @@ def merge_discovery_fragment(policy_findings_path: Path, fragment_path: Path) ->
             if referenced & changed_source_keys:
                 record["review_status"] = "changed_source_pending_review"
     current["discovery_last_researched_at"] = fragment.get("researched_at")
+    # New candidates remain pending judgments; never manufacture eligibility.
+    existing_sources = {key for record in current.get("policy_records", []) for key in record.get("source_keys", [])}
+    for draft in incoming.get("discovered_candidates", []):
+        source_key = next(iter(draft.get("formal_policy_source_keys", [])), None)
+        if source_key and source_key not in existing_sources:
+            current.setdefault("policy_records", []).append({
+                "key": f"review_{source_key}", "source_keys": [source_key],
+                "search_keys": [draft["search_key"]], "evidence_keys": draft.get("evidence_record_keys", []),
+                "fact_keys": [], "landing_business_keys": [],
+                "topic": draft.get("title", "待核验政策"), "match_reason": "待核验原文及企业条件",
+                "eligibility_status": "unknown", "disposition": "pending",
+                "conditions": "", "handling_route": "", "report_group": source_key,
+                "policy": {},
+            })
+            existing_sources.add(source_key)
 
     temporary = path.with_suffix(".tmp")
     temporary.write_text(json.dumps(current, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")

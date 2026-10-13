@@ -1,4 +1,4 @@
-"""Portable same-data report pipeline: HTML and Word by default; PDF on demand."""
+"""Portable report pipeline: HTML by default; PDF on demand."""
 from __future__ import annotations
 import argparse
 import json
@@ -38,7 +38,6 @@ def main(
     parser.add_argument("report_data")
     parser.add_argument("--out-dir", required=True)
     parser.add_argument("--pdf", action="store_true", help="also convert the generated HTML to PDF")
-    parser.add_argument("--word", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--node", help="Node executable; mandatory after data and policy validation for browser layout and equity-image rendering")
     parser.add_argument("--evidence", help="optional validated public-web evidence ledger used in this report")
     parser.add_argument("--equity-evidence", required=True, help="validated provider-backed equity evidence ledger")
@@ -139,16 +138,6 @@ def main(
         raise SystemExit("HTML 版式验收失败，禁止生成或交付后续文件。")
     if args.pdf:
         run([args.node, str(SCRIPTS / "render_report_pdf.mjs"), str(html), str(out / "report.pdf")], env=env)
-    # Word 版已纯标准库（stdlib_docx），秒级生成、零第三方依赖，默认随 HTML 一起产出，
-    # 供报告右上角"下载 Word"按钮使用；--word 保留为向后兼容开关。
-    word_command = python_command(SCRIPTS / "render_report_word.py", str(data), "--out", str(out / "report.docx"))
-    if args.fixture_mode:
-        word_command.append("--fixture-mode")
-    if equity_has_graph:
-        image = out / "equity-chart.png"
-        run([args.node, str(SCRIPTS / "render_svg_png.mjs"), str(out / "equity-chart.svg"), str(image)], env=env)
-        word_command.extend(["--equity-image", str(image)])
-    run(word_command)
     state = workflow_state.load(Path(args.workflow_state).resolve().parent) if args.workflow_state else {}
     phase_metrics = {
         "enterprise_research": workflow_state.phase_seconds(state, "entity_confirmed", "enterprise_research_complete"),
@@ -166,8 +155,8 @@ def main(
         "policy_discovery_seconds": phase_metrics["policy_discovery"],
         "phase_seconds": phase_metrics,
         "timing_scope": "phase_seconds are workflow wall-clock spans; local_validation_seconds and render_and_layout_seconds are measured active automation time",
-        "policy_network_requests": 0,
-        "policy_cache_revalidated": 0,
+        "policy_network_requests": None,
+        "policy_cache_revalidated": None,
         "local_validation_seconds": round(validation_seconds, 3),
         "render_and_layout_seconds": round(perf_counter() - render_started, 3),
         "full_release_tests_run": False,

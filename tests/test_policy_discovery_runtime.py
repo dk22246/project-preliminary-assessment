@@ -35,6 +35,33 @@ def report_data():
 
 
 class PolicyDiscoveryRuntimeTests(unittest.TestCase):
+    def test_discovered_policy_creates_one_pending_review_record(self):
+        import json
+
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            findings = root / "policy-findings.json"
+            fragment = root / "fragment.json"
+            findings.write_text(json.dumps({"enterprise": "测试企业", "sources": [], "evidence": [], "search": {}, "policy_records": []}), encoding="utf-8")
+            fragment.write_text(json.dumps({
+                "enterprise": "测试企业", "researched_at": "now", "sources": [], "evidence": [],
+                "search": {"discovered_candidates": [{"key": "candidate:1", "search_key": "search:1", "title": "测试政策", "formal_policy_source_keys": ["source:1"], "evidence_record_keys": []}]},
+            }), encoding="utf-8")
+            first = merge_discovery_fragment(findings, fragment)
+            second = merge_discovery_fragment(findings, fragment)
+
+        self.assertEqual(len(first["policy_records"]), 1)
+        self.assertEqual(len(second["policy_records"]), 1)
+        self.assertEqual(first["policy_records"][0]["disposition"], "pending")
+
+    def test_zero_active_routes_cannot_pass_as_zero_policy_result(self):
+        with tempfile.TemporaryDirectory() as directory:
+            with self.assertRaisesRegex(ValueError, "0次检索"):
+                discover_current_policies(
+                    {"enterprise": "测试企业", "department_routes": []}, report_data(),
+                    Path(directory), fetch=lambda *_: self.fail("不应发起请求"),
+                )
+
     def test_chinese_route_matter_and_explicit_terms_select_official_titles(self):
         cases = [
             ({"matter": "外贸便利与离岸贸易"}, "关于离岸贸易便利化的通知"),
@@ -378,7 +405,7 @@ class PolicyDiscoveryRuntimeTests(unittest.TestCase):
             enterprise_findings["research"] = {
                 "enterprise_profile": {"analysis_entity": enterprise, "listing_status": "listed", "research_route": "listed_disclosure"},
                 "research_stop_gate": {}, "facts": [], "business_candidates": [],
-                "department_routes": [{"key": "trade-route", "landing_business_key": "trade", "department": "海南省商务厅"}],
+                "department_routes": [{"key": "trade-route", "landing_business_key": "trade", "department": "海南省商务厅", "status": "matched_static_rule", "route_rule_id": "cross_border_trade"}],
             }
             (root / "enterprise-findings.json").write_text(__import__("json").dumps(enterprise_findings, ensure_ascii=False), encoding="utf-8")
             policy_path = root / "policy-findings.json"

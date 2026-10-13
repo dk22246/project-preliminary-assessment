@@ -61,7 +61,7 @@
 
 凡连接线展示持股比例，必须同时写入数值型 `ownership_percent`。`data_status=available` 时，同一被投资主体已展示的直接股东比例必须合计100%；无法可靠拆分剩余股东但同一可靠来源明确给出剩余合计时，才可使用“其他股东合计”节点补足。`data_status=partial` 时只画已核实的关系和比例，未知部分不得补造，连接线比例未知时须明确写“比例未公开”。
 
-完成非上市固定来源阶梯后仍无法取得任何可靠股权关系时，`equity-evidence.json.review_status` 填 `not_public` 或 `inaccessible`，并记录 `availability_note`；报告 `equity.data_status` 使用同一状态、`nodes` 和 `edges` 保持空数组、`search_source_ids` 列出实际查验来源。此时HTML、PDF和Word均省略股权图，显示“股权公开信息不足”及需企业补充的材料，不阻断其他章节。不得用企业名称、自称集团关系、注册资本或平台搜索摘要生成占位股权图。
+完成非上市固定来源阶梯后仍无法取得任何可靠股权关系时，`equity-evidence.json.review_status` 填 `not_public` 或 `inaccessible`，并记录 `availability_note`；报告 `equity.data_status` 使用同一状态、`nodes` 和 `edges` 保持空数组、`search_source_ids` 列出实际查验来源。此时HTML和PDF均省略股权图，显示“股权公开信息不足”及需企业补充的材料，不阻断其他章节。不得用企业名称、自称集团关系、注册资本或平台搜索摘要生成占位股权图。
 
 报告正文只显示“股权来源：资料名称（E编号），数据时点YYYY-MM-DD”。企查查、天眼查的尝试、失败原因、artifact和哈希全部保留在 `equity-evidence.json`，不在报告堆叠。只有存在实质来源差异时，才在图下显示“股权数据差异说明”。
 

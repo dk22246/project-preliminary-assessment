@@ -21,6 +21,7 @@ YOY_PATTERN = re.compile(r"(?:[+-]?\d+(?:\.\d+)?%|—|未计算|未公开披露)
 FINANCIAL_VALUE_PATTERN = re.compile(r"\d{1,3}(?:,\d{3})*(?:\.\d+)?|\d+(?:\.\d+)?")
 FINANCIAL_UNAVAILABLE = "未公开披露"
 FINANCIAL_DATA_STATUSES = {"available", "partial", "not_public", "inaccessible"}
+TAX_BASES = {"纳税总额", "支付的各项税费", "所得税费用", "税金及附加", "其他公开税费口径", "需企业补充"}
 INDUSTRY_EVIDENCE_STATUSES = {"ranked", "market_share", "tier", "qualitative_only", "not_public"}
 EQUITY_CONFLICT_FIELDS = (
     "id",
@@ -299,11 +300,11 @@ def validate_report_data(data: dict) -> list[str]:
             if not str(item.get(field, "")).strip():
                 errors.append(f"股权差异说明{conflict_id or '未编号'}缺少{field}")
         if item.get("severity") not in EQUITY_CONFLICT_SEVERITIES:
-            errors.append(f"股权差异说明{conflict_id or '未编号'}的severity无效")
+            errors.append(f"股权差异说明{conflict_id or '未编号'}的severity无效：{item.get('severity')!r}；允许：{sorted(EQUITY_CONFLICT_SEVERITIES)}")
         if item.get("status") not in EQUITY_CONFLICT_STATUSES:
-            errors.append(f"股权差异说明{conflict_id or '未编号'}的status无效")
+            errors.append(f"股权差异说明{conflict_id or '未编号'}的status无效：{item.get('status')!r}；允许：{sorted(EQUITY_CONFLICT_STATUSES)}")
         if item.get("graph_action") not in EQUITY_GRAPH_ACTIONS:
-            errors.append(f"股权差异说明{conflict_id or '未编号'}的graph_action无效")
+            errors.append(f"股权差异说明{conflict_id or '未编号'}的graph_action无效：{item.get('graph_action')!r}；允许：{sorted(EQUITY_GRAPH_ACTIONS)}")
         if not isinstance(item.get("affected_node_ids"), list) or not isinstance(item.get("affected_edges"), list):
             errors.append(f"股权差异说明{conflict_id or '未编号'}缺少结构化影响范围")
         evidence_source_ids = item.get("evidence_source_ids", [])
@@ -375,7 +376,7 @@ def validate_report_data(data: dict) -> list[str]:
                 errors.append(f"财务行缺少{field}：{row}")
         data_status = str(row.get("data_status", "")).strip()
         if data_status not in FINANCIAL_DATA_STATUSES:
-            errors.append(f"财务行data_status不规范：{data_status or '缺失'}")
+            errors.append(f"财务行data_status不规范：{data_status or '缺失'}；允许：{sorted(FINANCIAL_DATA_STATUSES)}")
         for field in ("revenue", "profit"):
             value = str(row.get(field, "")).strip()
             if value and value != FINANCIAL_UNAVAILABLE and not FINANCIAL_VALUE_PATTERN.fullmatch(value):
@@ -397,8 +398,8 @@ def validate_report_data(data: dict) -> list[str]:
             errors.append(f"财务行{row.get('year', '未注明年度')}未计算同比时必须填写change_note")
         if len(str(row.get("change_note", "")).strip()) > 160:
             errors.append(f"财务行{row.get('year', '未注明年度')}change_note 过长，应移入经营分析")
-        if row.get("tax_basis") not in ("纳税总额", "支付的各项税费", "所得税费用", "税金及附加", "其他公开税费口径", "需企业补充"):
-            errors.append(f"纳税口径不规范：{row.get('tax_basis')}")
+        if row.get("tax_basis") not in TAX_BASES:
+            errors.append(f"纳税口径不规范：{row.get('tax_basis')!r}；允许：{sorted(TAX_BASES)}")
     for item in data.get("landing_businesses", []):
         for field in ("id", "business", "fact_basis", "sanya_path", "value", "feasibility"):
             if not str(item.get(field, "")).strip():
@@ -460,7 +461,7 @@ def validate_policy_opportunity_radar(data: dict, report_source_ids: set[str] | 
                 errors.append(f"政策机会雷达{label}的机会主题为空或重复：{topic or '空'}")
             topics.add(topic)
             if disposition not in OPPORTUNITY_DISPOSITIONS:
-                errors.append(f"政策机会雷达{label}/{topic or '未命名主题'}的disposition无效")
+                errors.append(f"政策机会雷达{label}/{topic or '未命名主题'}的disposition无效：{disposition!r}；允许：{sorted(OPPORTUNITY_DISPOSITIONS)}")
             if not str(opportunity.get("reason", "")).strip():
                 errors.append(f"政策机会雷达{label}/{topic or '未命名主题'}缺少处置原因")
             if disposition == "research_incomplete":
@@ -532,10 +533,10 @@ def validate_top500_status(data: dict, report_source_ids: set[str]) -> list[str]
         if item.get("year") != expected_year:
             errors.append(f"top500_status/{label}/{status or 'unknown'}必须使用最新正式年度{expected_year}")
         if status not in TOP500_STATUSES:
-            errors.append(f"top500_status/{label}的status无效")
+            errors.append(f"top500_status/{label}的status无效：{status!r}；允许：{sorted(TOP500_STATUSES)}")
         relationship = item.get("relationship_to_target")
         if relationship not in TOP500_RELATIONSHIPS:
-            errors.append(f"top500_status/{label}的relationship_to_target无效")
+            errors.append(f"top500_status/{label}的relationship_to_target无效：{relationship!r}；允许：{sorted(TOP500_RELATIONSHIPS)}")
         source_ids = item.get("source_ids", [])
         valid_official_source = any(
             source_id in report_source_ids and str(source_id).startswith("E")

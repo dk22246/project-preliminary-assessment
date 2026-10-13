@@ -48,6 +48,8 @@ class FastPathMetricsTests(unittest.TestCase):
         self.assertIn('"timing_scope"', text)
         self.assertIn('"phase_seconds"', text)
         self.assertIn('"full_release_tests_run": False', text)
+        self.assertNotIn('"policy_network_requests": 0', text)
+        self.assertNotIn('"policy_cache_revalidated": 0', text)
 
 
 if __name__ == "__main__":

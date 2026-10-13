@@ -258,7 +258,8 @@ class WorkflowControllerTests(unittest.TestCase):
         for retired in ("args.with_word", "--with-word", "need_word", "python_docx", "requirements-word.txt"):
             self.assertNotIn(retired, source)
         parser = ppa.build_parser()
-        self.assertTrue(parser.parse_args(["deliver", "--work-dir", "work", "--out-dir", "out", "--word"]).word)
+        with self.assertRaises(SystemExit):
+            parser.parse_args(["deliver", "--work-dir", "work", "--out-dir", "out", "--word"])
 
     def test_setup_does_not_reuse_stale_receipt_when_runtime_is_missing(self):
         import ppa

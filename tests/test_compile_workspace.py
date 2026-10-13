@@ -215,7 +215,7 @@ class CompileWorkspaceTests(unittest.TestCase):
                     "research_stop_gate": {},
                     "facts": [{"key": "overseas", "source_keys": ["annual"], "action": "海外销售", "object": "境外客户", "enterprise_role": "出口方", "confidence": "high"}],
                     "business_candidates": [{"key": "trade_candidate", "name": "贸易结算", "fact_keys": ["overseas"]}],
-                    "department_routes": [{"key": "trade_route", "landing_business_key": "trade", "candidate_keys": ["trade_candidate"], "department": "海南省商务厅"}],
+                    "department_routes": [{"key": "trade_route", "landing_business_key": "trade", "candidate_keys": ["trade_candidate"], "department": "海南省商务厅", "status": "matched_static_rule", "route_rule_id": "cross_border_trade"}],
                 },
                 "equity": {"provider_attempts": [], "sources": [], "nodes": [], "edges": [], "conflicts": [], "review_status": "incomplete"},
             }

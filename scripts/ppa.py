@@ -660,8 +660,6 @@ def command_deliver(args: argparse.Namespace) -> int:
         call.extend(["--evidence", args.evidence])
     if args.pdf:
         call.append("--pdf")
-    if args.word:
-        call.append("--word")
     result = pipeline(call, trusted_workflow=True)
     if result:
         return result
@@ -760,7 +758,6 @@ def build_parser() -> argparse.ArgumentParser:
     deliver.add_argument("--chrome")
     deliver.add_argument("--evidence")
     deliver.add_argument("--pdf", action="store_true")
-    deliver.add_argument("--word", action="store_true", help=argparse.SUPPRESS)
     deliver.set_defaults(handler=command_deliver)
     return parser
 
