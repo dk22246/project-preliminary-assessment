@@ -16,7 +16,7 @@ def build_payloads(enterprise: str) -> dict[str, dict]:
     return {
         "report-data.json": {
             "meta": {
-                "report_title": f"{enterprise}招商落地前期评估报告",
+                "report_title": f"{enterprise}前期研判报告",
                 "generated_at": now,
                 "reporting_entity": enterprise,
                 "policy_researched_at": "",

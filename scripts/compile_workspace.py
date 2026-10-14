@@ -556,7 +556,7 @@ def _compile_enterprise_findings(findings: dict, workspace: Path) -> tuple[dict[
     report["encouraged_industry_assessment"] = _enrich_catalog_assessment(report.get("encouraged_industry_assessment"))
     report["sources"] = sources
     report["meta"]["reporting_entity"] = enterprise
-    report["meta"]["report_title"] = f"{enterprise}招商落地前期评估报告"
+    report["meta"]["report_title"] = payloads["report-data.json"]["meta"]["report_title"]
 
     research = _merge(payloads["research-ledger.json"], _replace_refs(research_input, maps))
     research["enterprise"] = enterprise

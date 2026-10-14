@@ -145,6 +145,7 @@ class CompileWorkspaceTests(unittest.TestCase):
             compiled = compile_workspace.compile_workspace(root)
             ids = [item["id"] for item in compiled["report-data.json"]["sources"]]
             self.assertEqual(ids, ["P01", "E01", "P02", "P03"])
+            self.assertEqual(compiled["report-data.json"]["meta"]["report_title"], "测试企业有限公司前期研判报告")
 
     def test_canonical_equity_graph_derives_matching_views(self):
         import compile_workspace

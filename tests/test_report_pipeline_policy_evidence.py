@@ -11,6 +11,22 @@ sys.path.insert(0, str(ROOT / "scripts"))
 
 
 class ReportPipelinePolicyEvidenceTests(unittest.TestCase):
+    def test_html_cover_and_document_title_use_one_report_title(self):
+        import render_report_html
+
+        data = json.loads((ROOT / "tests" / "fixtures" / "release" / "synthetic-report-data.json").read_text(encoding="utf-8"))
+        title = "【自动化测试夹具·禁止交付】测试企业有限公司前期研判报告"
+        data["meta"]["report_title"] = title
+        with tempfile.TemporaryDirectory() as tmp:
+            source = Path(tmp) / "report-data.json"
+            output = Path(tmp) / "report.html"
+            source.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
+            with patch.object(sys, "argv", ["render_report_html.py", str(source), "--out", str(output), "--fixture-mode"]):
+                self.assertEqual(render_report_html.main(), 0)
+            html = output.read_text(encoding="utf-8")
+        self.assertIn(f"<title>{title}</title>", html)
+        self.assertIn(f"<h1>{title}</h1>", html)
+
     def test_preflight_smoke_uses_packaged_policy_evidence_in_explicit_fixture_mode(self):
         import preflight
 

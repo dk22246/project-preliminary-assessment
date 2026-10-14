@@ -15,6 +15,7 @@ description: Use when 招商人员只提供企业名称或基础资料，需要�
 - 每个项目由 `ppa.py start` 创建五份同轮台账和 `workflow-state.json`，不得复制示例企业底稿。
 - 企业输入完成后先运行不依赖政策的 `ppa.py prepare-enterprise`，到达 `landing_businesses_complete` 后再运行 `discover-policies`；补全唯一政策主记录后才 `compile`，再由 `finalize` 对机器生成的五份台账统一终检。失败后修正输入并重新编译、终检，不能因“已经检查过一次”停止修复；不重复运行维护用的全库测试。只有全成功才写 `report_ready` 并绑定五份台账SHA-256。`advance`仅保留为兼容别名。
 - 默认由同一份 `report-data.json` 生成 HTML；PDF 由报告内“导出 PDF”按钮（浏览器打印）或用户明确要求时生成。PDF沿用已验收HTML内容。
+- 正式报告标题统一为“企业法律全称＋前期研判报告”，HTML 封面、浏览器标题和由该 HTML 生成的 PDF 使用同一个标题。
 
 ## 固定工作流
 
